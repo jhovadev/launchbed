@@ -59,11 +59,19 @@ export async function runSmoke(baseUrl, fetchFn = fetch, { timeoutMs = 20000 } =
   const home = await makeRequest('/');
   if (!(home.headers.get('content-type') || '').includes('text/html')) throw new Error('/: expected HTML');
   const html = await home.text();
-  if (!html.includes('id="configurator"')) throw new Error('/: configurator section missing');
+  // A 200 HTML response may still be a stale deployment, a protection page, or an SSR error.
+  // Show a short, safe title to make the correct deployment straightforward to identify.
+  const pageTitle = (/<title[^>]*>([^<]{0,100})<\/title>/i.exec(html)?.[1] || '(no HTML title)').trim();
+  const diagnose = (issue) => new Error(`/: ${issue}; page title: ${pageTitle}; requested origin: ${base}. Check the Ready production deployment in Vercel.`);
+  if (!html.includes('id="configurator"')) throw diagnose('configurator section missing');
   // client:load still server-renders SolidJS. An incomplete SSR stream can be HTTP 200;
   // a section wrapper alone is not proof the Configurator component rendered.
   if (!/<form\b/.test(html) || !html.includes('id="projectName"')) {
-    throw new Error('/: Solid configurator form missing (check SSR function logs)');
+    throw diagnose('Solid configurator form missing (check SSR function logs)');
+  }
+
+  if (!html.includes('data-kotlaunch-ui="f17b"')) {
+    throw diagnose('outdated project builder; F1.7B has not reached this deployment');
   }
 
   const catalog = await (await makeRequest('/api/catalog')).json();

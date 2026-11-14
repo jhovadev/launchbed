@@ -91,24 +91,33 @@ export default function Configurator(props: Props) {
     minSdk: props.catalog.template.minSdk,
     compileSdk: props.catalog.template.compileSdk,
     targetSdk: props.catalog.template.targetSdk,
-    seedColor: "#006C4C",
+    seedColor: (props.presets ?? []).find((preset) => preset.id === "compose-minimal")?.defaultTheme.seedColor ?? "#6750A4",
     fontFamily: "default",
     cornerRadius: 12,
     defaultMode: "system",
   });
   const [previewMode, setPreviewMode] = createSignal<"light" | "dark">("light");
-  const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings">("welcome");
+  // The minimal preset is a usable, predictable starting point on both SSR and hydration.
+  const starterPreset = (props.presets ?? []).find((preset) => preset.id === "compose-minimal" && preset.status === "stable");
+  const [presetId, setPresetId] = createSignal<string>(starterPreset?.id ?? "");
+  const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings" | "notes" | "catalog">("welcome");
   const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
+  const [addonQuery, setAddonQuery] = createSignal("");
+  const supportedPresets = (props.presets ?? []).filter((preset) => preset.status === "stable" || preset.status === "beta");
+  const upcomingPresets = (props.presets ?? []).filter((preset) => preset.status === "planned");
+  const selectedPreset = createMemo(() => (props.presets ?? []).find((preset) => preset.id === presetId()));
+  const requiredAddons = createMemo(() => selectedPreset()?.requiredAddons ?? []);
   const availableScreens = createMemo(() => {
-    const screens: ("welcome" | "dashboard" | "settings")[] = ["welcome"];
+    const screens: ("welcome" | "dashboard" | "settings" | "notes" | "catalog")[] = ["welcome"];
     if (selectedAddons().includes("ui/dashboard")) screens.push("dashboard");
     if (selectedAddons().includes("ui/settings")) screens.push("settings");
+    if (selectedAddons().includes("ui/notes")) screens.push("notes");
+    if (selectedAddons().includes("ui/catalog")) screens.push("catalog");
     return screens;
   });
   const activePreviewScreen = createMemo(() =>
     availableScreens().includes(previewScreen()) ? previewScreen() : "welcome",
   );
-  const [presetId, setPresetId] = createSignal<string>("");
   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string[]>>({});
   const [formError, setFormError] = createSignal("");
   const [status, setStatus] = createSignal("");
@@ -118,8 +127,15 @@ export default function Configurator(props: Props) {
   const tokens = createMemo(() => resolveThemeTokens(themeConfig(form())));
 
   const generatedAddons = createMemo(() => props.catalog.addons.filter((addon) => addon.generatable));
+  const filteredAddons = (category: string) => generatedAddons().filter((addon) =>
+    addon.category === category &&
+    `${addon.displayName} ${addon.description} ${addon.id}`.toLowerCase().includes(addonQuery().trim().toLowerCase()),
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]): void {
+    setPlan(null);
+    setStatus("");
+    clearErrors();
     setForm((previous) => {
       const next = { ...previous, [key]: value };
       if (key === "minSdk" && next.targetSdk < (value as number)) next.targetSdk = value as number;
@@ -128,24 +144,47 @@ export default function Configurator(props: Props) {
   }
 
   function applyPreset(id: string): void {
+    setPlan(null);
+    setStatus("");
+    clearErrors();
     setPresetId(id);
     const preset = (props.presets ?? []).find((entry) => entry.id === id);
     if (!preset || !(preset.status === "stable" || preset.status === "beta")) return;
     setSelectedAddons([...preset.requiredAddons].sort());
+    setPreviewScreen(preset.previewScreens.find((screen) => screen !== "welcome") ?? "welcome");
     const theme = preset.defaultTheme;
-    setForm((previous) => ({
-      ...previous,
-      seedColor: theme.seedColor,
-      fontFamily: theme.typography.fontFamily,
-      cornerRadius: theme.shape.cornerRadius,
-      defaultMode: theme.defaultMode,
-    }));
+    setForm((previous) => {
+      const minSdk = Math.max(previous.minSdk, preset.compatibility.minSdk);
+      return {
+        ...previous,
+        minSdk,
+        targetSdk: Math.max(previous.targetSdk, minSdk),
+        seedColor: theme.seedColor,
+        fontFamily: theme.typography.fontFamily,
+        cornerRadius: theme.shape.cornerRadius,
+        defaultMode: theme.defaultMode,
+      };
+    });
   }
 
   function toggleAddon(id: string, checked: boolean): void {
+    // Preset requirements are always added by the generator; never show them as removable.
+    if (!checked && requiredAddons().includes(id)) return;
+    setPlan(null);
+    setStatus("");
+    clearErrors();
     setSelectedAddons((previous) =>
       checked ? [...new Set([...previous, id])].sort() : previous.filter((value) => value !== id),
     );
+  }
+
+  function resetToCustom(): void {
+    setPlan(null);
+    setStatus("");
+    clearErrors();
+    setPresetId("");
+    setSelectedAddons([]);
+    setPreviewScreen("welcome");
   }
 
   function requestBody(): ProjectRequest {
@@ -269,412 +308,269 @@ export default function Configurator(props: Props) {
   const errorFor = (field: string) => fieldErrors()[field] ?? [];
 
   return (
-    <div class="workspace">
-      <form
-        class="panel form-panel"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void generate();
-        }}
-        noValidate
-      >
-        <Show when={formError()}>
-          <div class="alert" role="alert">
-            <strong>We could not generate this project.</strong>
-            <p>{formError()}</p>
-            <Show when={Object.keys(fieldErrors()).length > 0}>
-              <ul>
-                <For each={Object.entries(fieldErrors())}>
-                  {([field, messages]) => (
-                    <li>
-                      <code>{field}</code>: {messages.join(" ")}
-                    </li>
-                  )}
-                </For>
-              </ul>
-            </Show>
-          </div>
-        </Show>
-
-        <section aria-labelledby="section-preset">
-          <h2 id="section-preset">
-            <span class="step">00</span> Project template
-          </h2>
-          <p class="section-help">
-            Presets are declarative configurations over the same generator. The backend resolves and
-            validates every dependency.
-          </p>
-          <div class="field">
-            <label for="preset">Preset</label>
-            <select
-              id="preset"
-              value={presetId()}
-              onChange={(event) => applyPreset(event.currentTarget.value)}
-            >
-              <option value="">Custom (manual selection)</option>
-              <For each={(props.presets ?? [])}>
-                {(preset) => (
-                  <option value={preset.id} disabled={!(preset.status === "stable" || preset.status === "beta")}>
-                    {preset.name} ({preset.status})
-                  </option>
-                )}
-              </For>
-            </select>
-          </div>
-          <Show when={presetId()}>
-            {(id) => {
-              const preset = (props.presets ?? []).find((entry) => entry.id === id());
-              return preset ? (
-                <p class="section-help">
-                  {preset.description} Required addons:{" "}
-                  {preset.requiredAddons.length === 0 ? "none" : preset.requiredAddons.join(", ")}.
-                </p>
-              ) : null;
-            }}
-          </Show>
-        </section>
-
-        <section aria-labelledby="section-identity">
-          <h2 id="section-identity">
-            <span class="step">01</span> Identity
-          </h2>
-          <p class="section-help">
-            <code>applicationId</code> is installed on the device. <code>namespace</code> only controls the
-            generated <code>R</code> class. They can differ, and the Kotlin package can differ from both.
-          </p>
-          <div class="field">
-            <label for="projectName">Project name</label>
-            <input
-              id="projectName"
-              name="projectName"
-              value={form().projectName}
-              required
-              maxlength={64}
-              autocomplete="off"
-              aria-invalid={errorFor("projectName").length > 0}
-              aria-describedby={errorFor("projectName").length > 0 ? "projectName-error" : undefined}
-              onInput={(event) => update("projectName", event.currentTarget.value)}
-            />
-            <Show when={errorFor("projectName").length > 0}>
-              <p class="field-error" id="projectName-error">{errorFor("projectName").join(" ")}</p>
-            </Show>
-          </div>
-          <div class="field-grid">
-            <div class="field">
-              <label for="applicationId">Application ID</label>
-              <input
-                id="applicationId"
-                name="applicationId"
-                value={form().applicationId}
-                required
-                spellcheck={false}
-                autocomplete="off"
-                aria-invalid={errorFor("applicationId").length > 0}
-                onInput={(event) => update("applicationId", event.currentTarget.value)}
-              />
-              <Show when={errorFor("applicationId").length > 0}>
-                <p class="field-error">{errorFor("applicationId").join(" ")}</p>
+    <div class="builder" data-kotlaunch-ui="f17b">
+      <header class="builder-heading">
+        <div>
+          <p class="eyebrow">Project builder</p>
+          <h2>Make it yours.</h2>
+          <p class="builder-intro">Pick a starting point, give your app a name, then download a real Android project.</p>
+        </div>
+        <span class="builder-trust">No sign-up · No cloud build</span>
+      </header>
+      <div class="workspace">
+        <form class="panel form-panel" onSubmit={(event) => { event.preventDefault(); void generate(); }} noValidate>
+          <Show when={formError()}>
+            <div class="alert" role="alert" aria-live="assertive">
+              <strong>We could not generate this project.</strong>
+              <p>{formError()}</p>
+              <Show when={Object.keys(fieldErrors()).length > 0}>
+                <ul><For each={Object.entries(fieldErrors())}>{([field, messages]) => <li><code>{field}</code>: {messages.join(" ")}</li>}</For></ul>
               </Show>
             </div>
-            <div class="field">
-              <label for="namespace">Namespace</label>
-              <input
-                id="namespace"
-                name="namespace"
-                value={form().namespace}
-                required
-                spellcheck={false}
-                autocomplete="off"
-                aria-invalid={errorFor("namespace").length > 0}
-                onInput={(event) => update("namespace", event.currentTarget.value)}
-              />
-              <Show when={errorFor("namespace").length > 0}>
-                <p class="field-error">{errorFor("namespace").join(" ")}</p>
-              </Show>
-            </div>
-          </div>
-          <div class="field">
-            <label for="packageName">Kotlin package <span class="optional">optional</span></label>
-            <input
-              id="packageName"
-              name="packageName"
-              value={form().packageName}
-              placeholder="Defaults to the namespace"
-              spellcheck={false}
-              autocomplete="off"
-              aria-invalid={errorFor("packageName").length > 0}
-              onInput={(event) => update("packageName", event.currentTarget.value)}
-            />
-            <Show when={errorFor("packageName").length > 0}>
-              <p class="field-error">{errorFor("packageName").join(" ")}</p>
-            </Show>
-          </div>
-        </section>
-
-        <section aria-labelledby="section-sdk">
-          <h2 id="section-sdk">
-            <span class="step">02</span> Android SDK
-          </h2>
-          <div class="field-grid three">
-            <div class="field">
-              <label for="minSdk">minSdk</label>
-              <select
-                id="minSdk"
-                value={String(form().minSdk)}
-                onChange={(event) => update("minSdk", Number(event.currentTarget.value))}
-              >
-                <For each={SDK_MIN}>{(value) => <option value={String(value)}>{value}</option>}</For>
-              </select>
-            </div>
-            <div class="field">
-              <label for="targetSdk">targetSdk</label>
-              <select
-                id="targetSdk"
-                value={String(form().targetSdk)}
-                onChange={(event) => update("targetSdk", Number(event.currentTarget.value))}
-              >
-                <For each={SDK_MIN}>{(value) => <option value={String(value)}>{value}</option>}</For>
-              </select>
-            </div>
-            <div class="field">
-              <label for="compileSdk">compileSdk</label>
-              <select
-                id="compileSdk"
-                value={String(form().compileSdk)}
-                onChange={(event) => update("compileSdk", Number(event.currentTarget.value))}
-              >
-                <For each={SDK_COMPILE}>{(value) => <option value={String(value)}>{value}</option>}</For>
-              </select>
-            </div>
-          </div>
-          <Show when={errorFor("targetSdk").length > 0 || errorFor("minSdk").length > 0 || errorFor("compileSdk").length > 0}>
-            <p class="field-error">{[...errorFor("minSdk"), ...errorFor("targetSdk"), ...errorFor("compileSdk")].join(" ")}</p>
           </Show>
-        </section>
 
-        <section aria-labelledby="section-theme">
-          <h2 id="section-theme">
-            <span class="step">03</span> Theme
-          </h2>
-          <fieldset class="field">
-            <legend>Seed color</legend>
-            <div class="preset-row">
-              <For each={PRESETS}>
-                {(preset) => (
-                  <label class="preset" classList={{ selected: form().seedColor.toLowerCase() === preset.value.toLowerCase() }}>
-                    <input
-                      type="radio"
-                      name="seedPreset"
-                      value={preset.value}
-                      checked={form().seedColor.toLowerCase() === preset.value.toLowerCase()}
-                      onChange={() => update("seedColor", preset.value)}
-                    />
-                    <span class="preset-chip" style={{ "background-color": preset.value }} aria-hidden="true" />
-                    <span>{preset.name}</span>
-                  </label>
-                )}
-              </For>
-              <label class="preset custom">
-                <span class="preset-chip" style={{ "background-color": form().seedColor }} aria-hidden="true" />
-                <span>Custom</span>
-                <input
-                  type="color"
-                  name="seedColor"
-                  value={form().seedColor}
-                  aria-label="Custom seed color"
-                  onInput={(event) => update("seedColor", event.currentTarget.value)}
-                />
-              </label>
+          <section class="builder-section" aria-labelledby="section-preset">
+            <div class="section-heading">
+              <span class="step">01</span>
+              <div><h3 id="section-preset">Choose a starting point</h3><p>Use a ready-to-build template, or start with an empty project.</p></div>
             </div>
-          </fieldset>
-
-          <div class="field-grid">
-            <div class="field">
-              <label for="fontFamily">Typography</label>
-              <select
-                id="fontFamily"
-                value={form().fontFamily}
-                onChange={(event) =>
-                  update("fontFamily", event.currentTarget.value as FormState["fontFamily"])
-                }
-              >
-                <For each={FONTS}>{(font) => <option value={font.value}>{font.label}</option>}</For>
-              </select>
-            </div>
-            <div class="field">
-              <label for="cornerRadius">Corner radius: {form().cornerRadius} dp</label>
-              <input
-                id="cornerRadius"
-                type="range"
-                min="0"
-                max="32"
-                step="1"
-                value={String(form().cornerRadius)}
-                onInput={(event) => update("cornerRadius", Number(event.currentTarget.value))}
-              />
-            </div>
-          </div>
-
-          <div class="field">
-            <span class="label">Default app mode</span>
-            <div class="segmented" role="group" aria-label="Default app mode">
-              <For each={[{ value: "system", label: "Follow system" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const}>
-                {(option) => (
-                  <label classList={{ selected: form().defaultMode === option.value }}>
-                    <input
-                      type="radio"
-                      name="defaultMode"
-                      value={option.value}
-                      checked={form().defaultMode === option.value}
-                      onChange={() => update("defaultMode", option.value)}
-                    />
-                    {option.label}
-                  </label>
-                )}
-              </For>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="section-addons">
-          <h2 id="section-addons">
-            <span class="step">04</span> Addons
-          </h2>
-          <p class="section-help">
-            F0 ships a declarative catalog. Only <strong>stable</strong> and <strong>beta</strong> addons with
-            file operations can be generated; planned entries are visible but disabled.
-          </p>
-          <Show when={generatedAddons().length === 0}>
-            <p class="notice">
-              No addon is generatable in F0. The catalog is a contract for later patches; the generated project
-              is the minimal Android template.
-            </p>
-          </Show>
-          <For each={["storage", "ui", "native", "tooling", "foundation"]}>
-            {(category) => (
-              <fieldset class="addon-group">
-                <legend>{CATEGORY_LABELS[category]}</legend>
-                <For each={props.catalog.addons.filter((addon) => addon.category === category)}>
-                  {(addon) => (
-                    <label class="addon" classList={{ disabled: !addon.generatable }}>
-                      <input
-                        type="checkbox"
-                        value={addon.id}
-                        disabled={!addon.generatable}
-                        checked={selectedAddons().includes(addon.id)}
-                        onChange={(event) => toggleAddon(addon.id, event.currentTarget.checked)}
-                      />
-                      <span class="addon-body">
-                        <span class="addon-title">
-                          {addon.displayName}
-                          <span class={`badge badge-${addon.status}`}>{addon.status}</span>
-                        </span>
-                        <span class="addon-description">{addon.description}</span>
+            <fieldset class="template-fieldset">
+              <legend class="sr-only">Project template</legend>
+              <div class="template-grid">
+                <For each={supportedPresets}>
+                  {(preset) => (
+                    <label class="template-card" classList={{ "is-selected": presetId() === preset.id }}>
+                      <input type="radio" name="preset" value={preset.id} checked={presetId() === preset.id}
+                        onChange={() => applyPreset(preset.id)} />
+                      <span class="template-card-top">
+                        <span class="template-icon" aria-hidden="true">{preset.id === "local-notes" ? "N" : preset.id === "catalog-ui" ? "C" : preset.id === "compose-starter" ? "S" : "K"}</span>
+                        <span class={`badge badge-${preset.status}`}>{preset.status}</span>
                       </span>
+                      <span class="template-card-name">{preset.name}</span>
+                      <span class="template-card-description">{preset.description}</span>
+                      <span class="template-card-foot">{preset.requiredAddons.length} included capabilities</span>
                     </label>
                   )}
                 </For>
-              </fieldset>
-            )}
-          </For>
-          <Show when={errorFor("addons").length > 0}>
-            <p class="field-error">{errorFor("addons").join(" ")}</p>
-          </Show>
-        </section>
-
-        <div class="actions">
-          <button type="submit" class="button primary" disabled={busy() !== null}>
-            {busy() === "generate" ? "Generating…" : "Generate project ZIP"}
-          </button>
-          <button type="button" class="button secondary" disabled={busy() !== null} onClick={() => void checkPlan()}>
-            {busy() === "plan" ? "Planning…" : "Inspect plan"}
-          </button>
-        </div>
-
-        <div class="status" aria-live="polite" role="status">
-          {status()}
-        </div>
-
-        <Show when={plan()}>
-          {(summary) => (
-            <div class="plan">
-              <h3>GenerationPlan preview</h3>
-              <dl>
-                <div><dt>Files</dt><dd>{summary().files}</dd></div>
-                <div><dt>Uncompressed</dt><dd>{formatBytes(summary().bytes)}</dd></div>
-                <div><dt>Addons</dt><dd>{summary().addons.length === 0 ? "none" : summary().addons.join(", ")}</dd></div>
-              </dl>
-              <Show when={summary().warnings.length > 0}>
-                <ul class="warnings">
-                  <For each={summary().warnings}>{(warning) => <li>{warning}</li>}</For>
-                </ul>
-              </Show>
-              <p class="plan-note">
-                The ZIP is verified against this plan before download: same paths, same bytes, normalized
-                permissions.
-              </p>
-            </div>
-          )}
-        </Show>
-      </form>
-
-      <aside class="panel preview-panel" aria-labelledby="preview-title">
-        <div class="preview-header">
-          <h2 id="preview-title">Preview</h2>
-          <Show when={availableScreens().length > 1}>
-            <div class="segmented small" role="group" aria-label="Preview screen">
-              <For each={availableScreens()}>
-                {(screen) => (
-                  <label classList={{ selected: activePreviewScreen() === screen }}>
-                    <input
-                      type="radio"
-                      name="previewScreen"
-                      value={screen}
-                      checked={activePreviewScreen() === screen}
-                      onChange={() => setPreviewScreen(screen)}
-                    />
-                    {screen}
-                  </label>
-                )}
-              </For>
-            </div>
-          </Show>
-          <div class="segmented small" role="group" aria-label="Preview mode">
-            <For each={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const}>
-              {(option) => (
-                <label classList={{ selected: previewMode() === option.value }}>
-                  <input
-                    type="radio"
-                    name="previewMode"
-                    value={option.value}
-                    checked={previewMode() === option.value}
-                    onChange={() => setPreviewMode(option.value)}
-                  />
-                  {option.label}
+                <label class="template-card custom-template" classList={{ "is-selected": presetId() === "" }}>
+                  <input type="radio" name="preset" value="" checked={presetId() === ""} onChange={resetToCustom} />
+                  <span class="template-card-top"><span class="template-icon" aria-hidden="true">+</span><span class="badge badge-stable">flexible</span></span>
+                  <span class="template-card-name">Custom setup</span>
+                  <span class="template-card-description">Start minimal and pick only the capabilities you need.</span>
+                  <span class="template-card-foot">Choose your own addons</span>
                 </label>
-              )}
-            </For>
+              </div>
+            </fieldset>
+            <Show when={upcomingPresets.length > 0}>
+              <details class="upcoming-presets">
+                <summary>{upcomingPresets.length} more templates coming soon</summary>
+                <ul><For each={upcomingPresets}>{(preset) => <li><strong>{preset.name}</strong> — {preset.description}</li>}</For></ul>
+              </details>
+            </Show>
+          </section>
+
+          <section class="builder-section" aria-labelledby="section-identity">
+            <div class="section-heading"><span class="step">02</span><div><h3 id="section-identity">Name your app</h3><p>Only two fields are required. The technical defaults are already filled in.</p></div></div>
+            <div class="field">
+              <label for="projectName">Project name</label>
+              <input id="projectName" name="projectName" value={form().projectName} required maxlength={64} autocomplete="off"
+                aria-invalid={errorFor("projectName").length > 0}
+                aria-describedby={errorFor("projectName").length > 0 ? "projectName-error" : undefined}
+                onInput={(event) => update("projectName", event.currentTarget.value)} />
+              <Show when={errorFor("projectName").length > 0}><p class="field-error" id="projectName-error">{errorFor("projectName").join(" ")}</p></Show>
+            </div>
+            <div class="field">
+              <label for="applicationId">Application ID <span class="field-hint">unique app identifier</span></label>
+              <input id="applicationId" name="applicationId" value={form().applicationId} required spellcheck={false} autocomplete="off"
+                aria-invalid={errorFor("applicationId").length > 0}
+                aria-describedby={errorFor("applicationId").length > 0 ? "applicationId-error" : undefined}
+                onInput={(event) => {
+                  const previousId = form().applicationId;
+                  const previousNamespace = form().namespace;
+                  update("applicationId", event.currentTarget.value);
+                  if (previousId === previousNamespace) update("namespace", event.currentTarget.value);
+                }} />
+              <Show when={errorFor("applicationId").length > 0}><p class="field-error" id="applicationId-error">{errorFor("applicationId").join(" ")}</p></Show>
+              <p class="field-help">Example: com.yourcompany.myapp. You can change the package separately below.</p>
+            </div>
+            <details class="advanced-panel">
+              <summary>Advanced Android settings <span>Namespace, Kotlin package & SDK</span></summary>
+              <div class="advanced-content">
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="namespace">Namespace</label>
+                    <input id="namespace" name="namespace" value={form().namespace} required spellcheck={false} autocomplete="off"
+                      aria-invalid={errorFor("namespace").length > 0} aria-describedby={errorFor("namespace").length > 0 ? "namespace-error" : undefined}
+                      onInput={(event) => update("namespace", event.currentTarget.value)} />
+                    <Show when={errorFor("namespace").length > 0}><p class="field-error" id="namespace-error">{errorFor("namespace").join(" ")}</p></Show>
+                  </div>
+                  <div class="field">
+                    <label for="packageName">Kotlin package <span class="optional">optional</span></label>
+                    <input id="packageName" name="packageName" value={form().packageName} placeholder="Defaults to namespace" spellcheck={false} autocomplete="off"
+                      aria-invalid={errorFor("packageName").length > 0} aria-describedby={errorFor("packageName").length > 0 ? "packageName-error" : undefined}
+                      onInput={(event) => update("packageName", event.currentTarget.value)} />
+                    <Show when={errorFor("packageName").length > 0}><p class="field-error" id="packageName-error">{errorFor("packageName").join(" ")}</p></Show>
+                  </div>
+                </div>
+                <div class="field-grid three">
+                  <div class="field"><label for="minSdk">Minimum SDK</label>
+                    <select id="minSdk" value={String(form().minSdk)} onChange={(event) => update("minSdk", Number(event.currentTarget.value))}>
+                      <For each={SDK_MIN}>{(value) => <option value={String(value)} disabled={value < (selectedPreset()?.compatibility.minSdk ?? props.catalog.template.minSdk)}>API {value}</option>}</For>
+                    </select>
+                  </div>
+                  <div class="field"><label for="targetSdk">Target SDK</label>
+                    <select id="targetSdk" value={String(form().targetSdk)} onChange={(event) => update("targetSdk", Number(event.currentTarget.value))}>
+                      <For each={SDK_MIN}>{(value) => <option value={String(value)}>API {value}</option>}</For>
+                    </select>
+                  </div>
+                  <div class="field"><label for="compileSdk">Compile SDK</label>
+                    <select id="compileSdk" value={String(form().compileSdk)} onChange={(event) => update("compileSdk", Number(event.currentTarget.value))}>
+                      <For each={SDK_COMPILE}>{(value) => <option value={String(value)}>API {value}</option>}</For>
+                    </select>
+                  </div>
+                </div>
+                <Show when={errorFor("minSdk").length || errorFor("targetSdk").length || errorFor("compileSdk").length}>
+                  <p class="field-error">{[...errorFor("minSdk"), ...errorFor("targetSdk"), ...errorFor("compileSdk")].join(" ")}</p>
+                </Show>
+                <p class="field-help">The generator validates SDK compatibility. Keep these defaults unless your project needs a different API level.</p>
+              </div>
+            </details>
+          </section>
+
+          <section class="builder-section" aria-labelledby="section-theme">
+            <div class="section-heading"><span class="step">03</span><div><h3 id="section-theme">Choose a look</h3><p>See your Material 3 colors update in the preview.</p></div></div>
+            <fieldset class="field">
+              <legend>Color palette</legend>
+              <div class="preset-row">
+                <For each={PRESETS}>{(preset) => (
+                  <label class="preset" classList={{ selected: form().seedColor.toLowerCase() === preset.value.toLowerCase() }}>
+                    <input type="radio" name="seedPreset" value={preset.value} checked={form().seedColor.toLowerCase() === preset.value.toLowerCase()}
+                      onChange={() => update("seedColor", preset.value)} />
+                    <span class="preset-chip" style={{ "background-color": preset.value }} aria-hidden="true" /><span>{preset.name}</span>
+                  </label>
+                )}</For>
+                <label class="preset custom"><span class="preset-chip" style={{ "background-color": form().seedColor }} aria-hidden="true" /><span>Custom</span>
+                  <input type="color" name="seedColor" value={form().seedColor} aria-label="Custom seed color"
+                    onInput={(event) => update("seedColor", event.currentTarget.value)} />
+                </label>
+              </div>
+            </fieldset>
+            <details class="advanced-panel">
+              <summary>Fine-tune appearance <span>Fonts, corners & app theme</span></summary>
+              <div class="advanced-content">
+                <div class="field-grid">
+                  <div class="field"><label for="fontFamily">Typography</label>
+                    <select id="fontFamily" value={form().fontFamily} onChange={(event) => update("fontFamily", event.currentTarget.value as FormState["fontFamily"])}>
+                      <For each={FONTS}>{(font) => <option value={font.value}>{font.label}</option>}</For>
+                    </select>
+                  </div>
+                  <div class="field"><label for="cornerRadius">Corner radius: {form().cornerRadius} dp</label>
+                    <input id="cornerRadius" type="range" min="0" max="32" step="1" value={String(form().cornerRadius)}
+                      onInput={(event) => update("cornerRadius", Number(event.currentTarget.value))} />
+                  </div>
+                </div>
+                <div class="field"><span class="label">Default app theme</span>
+                  <div class="segmented" role="group" aria-label="Default app mode">
+                    <For each={[{ value: "system", label: "System" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const}>
+                      {(option) => <label classList={{ selected: form().defaultMode === option.value }}>
+                        <input type="radio" name="defaultMode" value={option.value} checked={form().defaultMode === option.value}
+                          onChange={() => update("defaultMode", option.value)} />{option.label}
+                      </label>}</For>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          <section class="builder-section" aria-labelledby="section-addons">
+            <div class="section-heading"><span class="step">04</span><div><h3 id="section-addons">Add capabilities</h3><p>Optional. Built-in template requirements are already selected.</p></div></div>
+            <details class="addon-disclosure">
+              <summary>Browse available addons <span>{selectedAddons().length} selected</span></summary>
+              <div class="addon-picker">
+                <div class="field"><label for="addonSearch">Search capabilities</label>
+                  <input type="search" id="addonSearch" value={addonQuery()} placeholder="Try Room, navigation, or UI…"
+                    onInput={(event) => setAddonQuery(event.currentTarget.value)} />
+                </div>
+                <For each={["storage", "ui", "tooling", "native", "foundation"]}>
+                  {(category) => <Show when={filteredAddons(category).length > 0}>
+                    <fieldset class="addon-group"><legend>{CATEGORY_LABELS[category]}</legend>
+                      <For each={filteredAddons(category)}>{(addon) => (
+                        <label class="addon" classList={{ "is-required": requiredAddons().includes(addon.id) }}>
+                          <input type="checkbox" value={addon.id} checked={selectedAddons().includes(addon.id)}
+                            disabled={requiredAddons().includes(addon.id)} onChange={(event) => toggleAddon(addon.id, event.currentTarget.checked)} />
+                          <span class="addon-body"><span class="addon-title">{addon.displayName}
+                            <Show when={requiredAddons().includes(addon.id)}><span class="badge badge-stable">included</span></Show>
+                            <span class={`badge badge-${addon.status}`}>{addon.status}</span>
+                          </span><span class="addon-description">{addon.description}</span></span>
+                        </label>
+                      )}</For>
+                    </fieldset>
+                  </Show>}</For>
+                <Show when={generatedAddons().length === 0}><p class="notice">No additional addons are available yet.</p></Show>
+                <Show when={generatedAddons().length > 0 && !["storage", "ui", "tooling", "native", "foundation"].some((category) => filteredAddons(category).length > 0)}>
+                  <p class="field-help">No available addon matches this search.</p>
+                </Show>
+                <p class="field-help">Planned addons are hidden until they can produce real code. Required addons cannot be removed from a preset.</p>
+                <Show when={errorFor("addons").length > 0}><p class="field-error">{errorFor("addons").join(" ")}</p></Show>
+              </div>
+            </details>
+            <Show when={selectedAddons().length > 0}>
+              <p class="addon-selection">Selected: {selectedAddons().map((id) => props.catalog.addons.find((item) => item.id === id)?.displayName ?? id).join(" · ")}</p>
+            </Show>
+          </section>
+
+          <div class="actions">
+            <div class="actions-copy"><strong>Ready to launch?</strong><span>Your ZIP includes the Gradle wrapper, Kotlin sources and setup scripts.</span></div>
+            <button type="submit" class="button primary" disabled={busy() !== null}>
+              {busy() === "generate" ? "Preparing your ZIP…" : "Download Android project"}
+            </button>
+            <button type="button" class="button secondary" disabled={busy() !== null} onClick={() => void checkPlan()}>
+              {busy() === "plan" ? "Reviewing…" : "Preview file plan"}
+            </button>
           </div>
-        </div>
-        <PreviewScreen
-          tokens={tokens()}
-          mode={previewMode()}
-          screen={activePreviewScreen()}
-          projectName={form().projectName || "Android App"}
-          caption="Web simulation of the generated Compose screen using the same Material 3 tokens. It is not a Compose runtime."
-        />
-        <dl class="summary">
-          <div><dt>Application ID</dt><dd><code>{form().applicationId}</code></dd></div>
-          <div><dt>Namespace</dt><dd><code>{form().namespace}</code></dd></div>
-          <div><dt>Kotlin package</dt><dd><code>{form().packageName.trim() || form().namespace}</code></dd></div>
-          <div><dt>SDK</dt><dd>{form().minSdk} / {form().targetSdk} / {form().compileSdk}</dd></div>
-          <div><dt>Seed</dt><dd><code>{form().seedColor.toUpperCase()}</code></dd></div>
-        </dl>
-        <p class="preview-note">
-          The generated project is independent: it uses its own Gradle wrapper, version catalog and tool
-          matrix. Nothing calls back to this server.
-        </p>
-      </aside>
+          <div class="status" aria-live="polite" role="status">{status()}</div>
+          <Show when={plan()}>{(summary) => <div class="plan"><h3>Generated files</h3>
+            <dl><div><dt>Files</dt><dd>{summary().files}</dd></div><div><dt>Source size</dt><dd>{formatBytes(summary().bytes)}</dd></div>
+              <div><dt>Resolved addons</dt><dd>{summary().addons.length === 0 ? "none" : summary().addons.join(", ")}</dd></div></dl>
+            <Show when={summary().warnings.length > 0}><ul class="warnings"><For each={summary().warnings}>{(warning) => <li>{warning}</li>}</For></ul></Show>
+            <p class="plan-note">The ZIP is verified against this plan before download.</p>
+          </div>}</Show>
+        </form>
+
+        <aside class="panel preview-panel" aria-labelledby="preview-title">
+          <div class="preview-header"><div><span class="preview-kicker">Live preview</span><h3 id="preview-title">Your Android app</h3></div>
+            <div class="segmented small" role="group" aria-label="Preview mode">
+              <For each={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const}>{(option) => (
+                <label classList={{ selected: previewMode() === option.value }}><input type="radio" name="previewMode" value={option.value}
+                  checked={previewMode() === option.value} onChange={() => setPreviewMode(option.value)} />{option.label}</label>
+              )}</For>
+            </div>
+          </div>
+          <Show when={availableScreens().length > 1}>
+            <div class="preview-screens" role="group" aria-label="Preview screen">
+              <For each={availableScreens()}>{(screen) => <button type="button" class="preview-screen-button"
+                classList={{ selected: activePreviewScreen() === screen }} aria-pressed={activePreviewScreen() === screen}
+                onClick={() => setPreviewScreen(screen)}>{screen}</button>}</For>
+            </div>
+          </Show>
+          <PreviewScreen tokens={tokens()} mode={previewMode()} screen={activePreviewScreen()}
+            projectName={form().projectName || "Android App"}
+            caption="Illustrative Compose preview. Not a running emulator." />
+          <div class="preview-summary-head"><strong>Your configuration</strong><span>{selectedAddons().length} capabilities</span></div>
+          <dl class="summary">
+            <div><dt>Template</dt><dd>{selectedPreset()?.name ?? "Custom"}</dd></div>
+            <div><dt>App ID</dt><dd><code>{form().applicationId}</code></dd></div>
+            <div><dt>Minimum SDK</dt><dd>API {form().minSdk}</dd></div>
+          </dl>
+          <details class="preview-details"><summary>Show technical details</summary>
+            <dl class="summary"><div><dt>Namespace</dt><dd><code>{form().namespace}</code></dd></div>
+              <div><dt>Package</dt><dd><code>{form().packageName.trim() || form().namespace}</code></dd></div>
+              <div><dt>SDK targets</dt><dd>{form().targetSdk} / {form().compileSdk}</dd></div>
+            </dl>
+          </details>
+          <p class="preview-note">Everything is generated as source code and builds locally. No account required.</p>
+        </aside>
+      </div>
     </div>
   );
 }

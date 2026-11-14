@@ -1,72 +1,52 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Configurator from "../components/Configurator";
-import { buildCatalog } from "@android-initializr/catalog";
-import { ALL_PRESETS } from "@android-initializr/catalog";
+import { buildCatalog, ALL_PRESETS } from "@android-initializr/catalog";
 
 const catalog = buildCatalog();
-const presets = ALL_PRESETS;
 ---
 
-<Layout title="Kotlaunch — Native Android Initializr">
-  <section class="hero">
+<Layout title="Kotlaunch — Build native Android apps, minus the setup">
+  <section class="hero hero-new" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <p class="eyebrow">Kotlin · Jetpack Compose · Material 3</p>
-      <h1>Native Android,<br /><em>from a single request.</em></h1>
+      <p class="eyebrow"><span class="hero-spark" aria-hidden="true"></span> Native Android, simplified</p>
+      <h1 id="hero-title">Ship the app.<br /><em>Skip the setup.</em></h1>
       <p class="lede">
-        Configure a real Android project and download a ZIP that builds on its own with the Gradle
-        wrapper. No Android Studio, no remote build service, no vendor account.
+        Start with Kotlin and Jetpack Compose. Choose the features you need,
+        personalize your project and download buildable source code in one ZIP.
       </p>
-      <ul class="chips" aria-label="Key properties">
-        <li>Deterministic ZIP</li>
-        <li>Web and CLI share one engine</li>
-        <li>Pinned toolchain</li>
-        <li>MIT</li>
+      <div class="hero-actions">
+        <a href="#configurator" class="button primary">Build my project <span aria-hidden="true">→</span></a>
+        <a href="https://github.com/jhovadev/kotlaunch" class="hero-source" target="_blank" rel="noopener noreferrer">View open source code <span aria-hidden="true">↗</span></a>
+      </div>
+      <ul class="chips" aria-label="Project features">
+        <li>No account</li>
+        <li>Native Kotlin</li>
+        <li>CLI-first</li>
+        <li>MIT licensed</li>
       </ul>
     </div>
-    <div class="pipeline" aria-label="Generation pipeline">
-      <p class="pipeline-title">Request → ZIP</p>
-      <ol>
-        <li><code>validate</code><span>Zod contracts, size limits</span></li>
-        <li><code>resolve</code><span>addons, conflicts, SDK floors</span></li>
-        <li><code>plan</code><span>paths, sizes, SHA-256</span></li>
-        <li><code>render</code><span>local templates only</span></li>
-        <li><code>package</code><span>fixed timestamps, 0644/0755</span></li>
-      </ol>
-      <p class="pipeline-note">Two identical requests always produce identical bytes.</p>
+    <div class="hero-guide" aria-label="How Kotlaunch works">
+      <p class="guide-eyebrow">A project in three steps</p>
+      <div class="guide-step"><span class="guide-number">01</span><div><strong>Pick a template</strong><p>Minimal, Starter, Notes or Catalog.</p></div></div>
+      <div class="guide-step"><span class="guide-number">02</span><div><strong>Make it yours</strong><p>Set your app ID, colors and addons.</p></div></div>
+      <div class="guide-step"><span class="guide-number">03</span><div><strong>Download and build</strong><p>Open the ZIP and run Gradle locally.</p></div></div>
+      <div class="guide-bottom"><span class="guide-ready-dot" aria-hidden="true"></span> Buildable source. No hosted app builder.</div>
     </div>
   </section>
 
   <section id="configurator" aria-label="Project configurator">
-    <Configurator catalog={catalog} presets={presets} client:load />
+    <Configurator catalog={catalog} presets={ALL_PRESETS} client:load />
   </section>
 
-  <section class="facts" aria-labelledby="facts-title">
-    <h2 id="facts-title">What is actually implemented</h2>
+  <section class="facts" id="how-it-works" aria-labelledby="facts-title">
+    <p class="eyebrow">Built for developers</p>
+    <h2 id="facts-title">Real projects, not mockups.</h2>
     <div class="facts-grid">
-      <article>
-        <h3>Generation engine</h3>
-        <p>
-          Shared TypeScript planner used by the web API and the CLI. Strict schemas, path validation,
-          request/ZIP limits and a plan-to-ZIP byte comparison before download.
-        </p>
-      </article>
-      <article>
-        <h3>Android template</h3>
-        <p>
-          Kotlin + Compose Material 3, version catalog, Gradle wrapper with checksum, unit tests,
-          <code>mise.toml</code>, <code>justfile</code> and SDK setup scripts for POSIX shells and
-          PowerShell.
-        </p>
-      </article>
-      <article>
-        <h3>Presets and addon status</h3>
-        <p>
-          Minimal, Starter, Notes and Catalog presets are generable. Some addons are <code>beta</code>
-          pending device instrumentation; planned addons cannot be generated. The web preview
-          simulates Compose using shared design tokens.
-        </p>
-      </article>
+      <article><span class="fact-symbol" aria-hidden="true">&#123; &#125;</span><h3>Real Android code</h3><p>Kotlin, Compose Material 3, a Gradle wrapper, version catalog and ready-to-run tooling.</p></article>
+      <article><span class="fact-symbol" aria-hidden="true">≡</span><h3>Composable features</h3><p>Addons are validated against dependencies, conflicts and SDK requirements before packaging.</p></article>
+      <article><span class="fact-symbol" aria-hidden="true">✓</span><h3>Reproducible output</h3><p>The generator verifies ZIP contents against a plan. Identical requests produce identical ZIP bytes.</p></article>
     </div>
+    <p class="facts-note">Some templates and addons are beta while Android device tests are pending. Planned features are not offered as downloadable code.</p>
   </section>
 </Layout>

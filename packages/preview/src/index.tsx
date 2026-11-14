@@ -4,7 +4,7 @@ export interface PreviewScreenProps {
   tokens: ThemeTokens;
   mode: "light" | "dark";
   projectName: string;
-  screen?: "welcome" | "dashboard" | "settings";
+  screen?: "welcome" | "dashboard" | "settings" | "notes" | "catalog";
   /** Optional caption rendered under the device frame. */
   caption?: string;
 }
@@ -39,7 +39,36 @@ export function PreviewScreen(props: PreviewScreenProps) {
           </span>
         </div>
         <div class="aip-body" style={{ "background-color": colors().background }}>
-          {props.screen === "dashboard" ? (
+          {props.screen === "notes" ? (
+            <>
+              <h3 class="aip-headline" style={{ color: colors().primary }}>My notes</h3>
+              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Your ideas, kept on this device.</p>
+              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
+                <span class="aip-card-title" style={{ color: colors().onSurface }}>Getting started</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>A place for your first note</span>
+              </div>
+              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
+                <span class="aip-card-title" style={{ color: colors().onSurface }}>Ideas for the week</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Saved locally with Room</span>
+              </div>
+              <div class="aip-button" style={{ "background-color": colors().primary, color: colors().onPrimary, "border-radius": `${props.tokens.components.button.cornerRadius}px`, "min-height": `${props.tokens.components.button.minHeight}px` }}>
+                Add note
+              </div>
+            </>
+          ) : props.screen === "catalog" ? (
+            <>
+              <h3 class="aip-headline" style={{ color: colors().primary }}>Catalog</h3>
+              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Browse sample categories and items.</p>
+              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
+                <span class="aip-card-title" style={{ color: colors().onSurface }}>Search items</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Explore the demo collection</span>
+              </div>
+              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
+                <span class="aip-card-title" style={{ color: colors().onSurface }}>Featured collection</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Example data · Compose UI</span>
+              </div>
+            </>
+          ) : props.screen === "dashboard" ? (
             <>
               <h3 class="aip-headline" style={{ color: colors().primary }}>Dashboard</h3>
               <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
