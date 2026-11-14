@@ -43,3 +43,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 bun-error.log
+
+# Local Vercel project state (not a deployment artifact)
+.vercel/

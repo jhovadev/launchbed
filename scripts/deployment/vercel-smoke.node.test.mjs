@@ -1,0 +1,49 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { normalizeBaseUrl, parseArgs, runSmoke } from './vercel-smoke.mjs';
+
+test('rejects unsafe URLs and accepts HTTPS or localhost HTTP', () => {
+  assert.equal(normalizeBaseUrl('https://kotlaunch.vercel.app/'), 'https://kotlaunch.vercel.app');
+  assert.equal(normalizeBaseUrl('http://127.0.0.1:4321/'), 'http://127.0.0.1:4321');
+  for (const bad of ['http://kotlaunch.vercel.app/', 'javascript:alert(1)', 'https://test:token@example.com/', 'https://example.com/path', 'https://example.com/?x=1']) {
+    assert.throws(() => normalizeBaseUrl(bad));
+  }
+});
+
+test('validates timeout and arguments strictly', () => {
+  assert.deepEqual(parseArgs(['--url', 'https://kotlaunch.vercel.app', '--timeout-ms', '1000']), { baseUrl: 'https://kotlaunch.vercel.app', timeoutMs: 1000 });
+  for (const argv of [['--unknown'], ['--url'], ['--url', 'https://test.com', '--timeout-ms', '0'], ['--url', 'https://test.com', '--timeout-ms', 'Infinity']]) {
+    assert.throws(() => parseArgs(argv));
+  }
+});
+
+function mockResponses({ corruptZip = false, mismatchHash = false } = {}) {
+  const reqHash = 'example-deterministic-hash';
+  const zip = Buffer.from('504b03046162636465666768696a6b6c6d6e6f707172737475767778797a', 'hex');
+  const fakeFetch = async (url) => {
+    const path = new URL(url).pathname;
+    if (path === '/') return new Response('<div id="configurator">Test</div>', { headers: { 'content-type': 'text/html' } });
+    if (path === '/api/catalog') return Response.json({ addons: [] });
+    if (path === '/api/presets') return Response.json({ presets: [{}, {}, {}, {}] });
+    if (path === '/api/plan') return Response.json({ totals: { files: 3 }, request: { hash: reqHash } });
+    if (path === '/api/generate') {
+      return new Response(corruptZip ? Buffer.from('bad zip of adequate length for test data') : zip, {
+        headers: { 'content-type': 'application/zip', 'x-generation-hash': mismatchHash ? 'not-matching' : reqHash, 'x-generation-files': '3' },
+      });
+    }
+    throw new Error(`Unexpected path ${path}`);
+  };
+  return fakeFetch;
+}
+
+test('verifies homepage, API contracts and repeat ZIP determinism', async () => {
+  const result = await runSmoke('https://kotlaunch.vercel.app', mockResponses());
+  assert.equal(result.presets, 4);
+  assert.equal(result.files, 3);
+  assert.ok(result.zipSha256.length === 64);
+});
+
+test('rejects invalid ZIP and mismatched request hash', async () => {
+  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ corruptZip: true })), /invalid ZIP/);
+  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ mismatchHash: true })), /request hash/);
+});

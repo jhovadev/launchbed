@@ -47,6 +47,8 @@
     "integrity:patch-replay": "node scripts/integrity/patch-replay.mjs",
     "integrity:parser-test": "node --test scripts/integrity/gates.node.test.mjs",
     "release:parser-test": "node --test scripts/release/native-apk.node.test.mjs",
-    "release:audit": "bun run scripts/release-audit.ts build --all"
+    "release:audit": "bun run scripts/release-audit.ts build --all",
+    "deploy:smoke": "node scripts/deployment/vercel-smoke.mjs",
+    "deploy:check": "node scripts/deployment/preflight.mjs"
   }
 }

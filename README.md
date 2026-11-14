@@ -1,13 +1,17 @@
-# Android Initializr
+# Kotlaunch — Native Android Initializr
 
 Generate **native Android** projects — Kotlin + Jetpack Compose Material 3 — from the
 web, an HTTP API or the CLI. The generated ZIP builds on its own with the Gradle
 wrapper; Android Studio is optional.
 
-> **F0 status:** foundation and architecture. One real template, one shared
-> generation engine, a declarative addon catalog, deterministic ZIPs and verified
-> Android builds. No authentication, Turso Sync, production FFI plugins, remote
-> APK builds or plugin marketplace yet.
+> **Current scope:** Native Compose presets, declarative addons, deterministic ZIPs,
+> material design tokens, web and CLI generation. Some addons remain beta pending
+> instrumented runtime tests. No managed APK builds or cloud synchronization.
+
+## Deploy the web app to Vercel
+
+See [docs/deployment-vercel.md](docs/deployment-vercel.md) for the SSR adapter, Bun
+lockfile update, monorepo root settings and production API smoke tests.
 
 ## Quick start (no Android Studio)
 

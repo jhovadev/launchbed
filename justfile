@@ -151,3 +151,15 @@ release-parser-test:
 # Requires a configured JDK 21 + Android SDK; does NOT use a phone or sign APKs.
 release-audit:
     bun run scripts/release-audit.ts build --all
+
+# F1.7A: require installed/pinned Vercel adapter and synchronized Bun lockfile.
+vercel-preflight:
+    node scripts/deployment/preflight.mjs
+
+# Verify that Vercel's SSR adapter can produce a deployment bundle locally.
+vercel-build: vercel-preflight
+    KOTLAUNCH_DEPLOY_TARGET=vercel bun run build
+
+# Probe the live Vercel URL (KOTLAUNCH_DEPLOY_URL is required).
+vercel-smoke:
+    node scripts/deployment/vercel-smoke.mjs

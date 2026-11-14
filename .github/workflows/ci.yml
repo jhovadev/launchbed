@@ -35,8 +35,10 @@ jobs:
         run: bun run integrity:check
       - name: Template drift check
         run: bun run templates:check
-      - name: Build web app
+      - name: Build web app (standalone Node)
         run: bun run build
+      - name: Build web app (Vercel SSR adapter)
+        run: bun run deploy:check && KOTLAUNCH_DEPLOY_TARGET=vercel bun run build
 
   android-smoke:
     runs-on: ubuntu-latest
