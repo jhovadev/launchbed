@@ -21,6 +21,7 @@ bun run check:astro
 bun test packages tests
 node --test scripts/deployment/vercel-smoke.node.test.mjs
 bun run build                       # preserves Node standalone build
+bun run deploy:ssr-smoke            # renders GET / through the real Node SSR server and checks ZIP APIs
 KOTLAUNCH_DEPLOY_TARGET=vercel bun run build  # builds Vercel SSR adapter
 ```
 
@@ -80,3 +81,9 @@ The smoke checks the homepage, the catalog and presets endpoints, POST `/api/pla
 Public ZIP generation consumes function CPU and bandwidth. Existing Zod/ZIP limits prevent oversized input and output, but they are **not** rate limiting. Configure platform abuse protection/rate limits and observe function logs before promoting heavy traffic. Do not store credentials inside generated ZIPs or assume the preview renders actual Jetpack Compose.
 
 This deployment does not claim that Android device tests, release signing or APK publication have passed. Those remain separately gated by the existing runtime and release checks.
+
+## SSR hydration regression (F1.7A.1)
+
+The homepage uses `<Configurator client:load />` and renders the Solid component on the server before hydrating. `createMemo()` evaluates its initial callback synchronously, so signals referenced by it must be declared earlier. In F1.7A the `availableScreens` memo used `selectedAddons` before initialization, causing runtime `ReferenceError` on Vercel despite successful TypeScript and Astro builds.
+
+F1.7A.1 moves the `selectedAddons` signal above that memo and adds a real HTTP SSR smoke to CI. The live deployment smoke now requires both the configurator section and the actual generated form; a shell-only SSR response cannot pass. Do not replace `client:load` with `client:only` to mask future SSR issues. Run `bun run build && bun run deploy:ssr-smoke` before `KOTLAUNCH_DEPLOY_TARGET=vercel bun run build`.

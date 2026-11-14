@@ -37,6 +37,8 @@ jobs:
         run: bun run templates:check
       - name: Build web app (standalone Node)
         run: bun run build
+      - name: SSR smoke (real homepage and ZIP API)
+        run: bun run deploy:ssr-smoke
       - name: Build web app (Vercel SSR adapter)
         run: bun run deploy:check && KOTLAUNCH_DEPLOY_TARGET=vercel bun run build
 

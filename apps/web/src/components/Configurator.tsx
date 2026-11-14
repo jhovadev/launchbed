@@ -98,6 +98,7 @@ export default function Configurator(props: Props) {
   });
   const [previewMode, setPreviewMode] = createSignal<"light" | "dark">("light");
   const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings">("welcome");
+  const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
   const availableScreens = createMemo(() => {
     const screens: ("welcome" | "dashboard" | "settings")[] = ["welcome"];
     if (selectedAddons().includes("ui/dashboard")) screens.push("dashboard");
@@ -107,7 +108,6 @@ export default function Configurator(props: Props) {
   const activePreviewScreen = createMemo(() =>
     availableScreens().includes(previewScreen()) ? previewScreen() : "welcome",
   );
-  const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
   const [presetId, setPresetId] = createSignal<string>("");
   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string[]>>({});
   const [formError, setFormError] = createSignal("");

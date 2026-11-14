@@ -22,7 +22,7 @@ function mockResponses({ corruptZip = false, mismatchHash = false } = {}) {
   const zip = Buffer.from('504b03046162636465666768696a6b6c6d6e6f707172737475767778797a', 'hex');
   const fakeFetch = async (url) => {
     const path = new URL(url).pathname;
-    if (path === '/') return new Response('<div id="configurator">Test</div>', { headers: { 'content-type': 'text/html' } });
+    if (path === '/') return new Response('<div id="configurator"><form><input id="projectName" name="projectName" /></form></div>', { headers: { 'content-type': 'text/html' } });
     if (path === '/api/catalog') return Response.json({ addons: [] });
     if (path === '/api/presets') return Response.json({ presets: [{}, {}, {}, {}] });
     if (path === '/api/plan') return Response.json({ totals: { files: 3 }, request: { hash: reqHash } });
@@ -46,4 +46,14 @@ test('verifies homepage, API contracts and repeat ZIP determinism', async () => 
 test('rejects invalid ZIP and mismatched request hash', async () => {
   await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ corruptZip: true })), /invalid ZIP/);
   await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ mismatchHash: true })), /request hash/);
+});
+
+test('does not accept a shell-only SSR response with missing Solid form', async () => {
+  const onlyShell = async (url, init) => {
+    if (new URL(url).pathname === '/') {
+      return new Response('<section id="configurator">Loading</section>', { headers: { 'content-type': 'text/html' } });
+    }
+    return mockResponses()(url, init);
+  };
+  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', onlyShell), /Solid configurator form missing/);
 });

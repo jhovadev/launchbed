@@ -59,7 +59,12 @@ export async function runSmoke(baseUrl, fetchFn = fetch, { timeoutMs = 20000 } =
   const home = await makeRequest('/');
   if (!(home.headers.get('content-type') || '').includes('text/html')) throw new Error('/: expected HTML');
   const html = await home.text();
-  if (!html.includes('configurator')) throw new Error('/: configurator HTML missing');
+  if (!html.includes('id="configurator"')) throw new Error('/: configurator section missing');
+  // client:load still server-renders SolidJS. An incomplete SSR stream can be HTTP 200;
+  // a section wrapper alone is not proof the Configurator component rendered.
+  if (!/<form\b/.test(html) || !html.includes('id="projectName"')) {
+    throw new Error('/: Solid configurator form missing (check SSR function logs)');
+  }
 
   const catalog = await (await makeRequest('/api/catalog')).json();
   if (!catalog || typeof catalog !== 'object' || 'error' in catalog) throw new Error('/api/catalog: invalid payload');

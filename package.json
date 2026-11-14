@@ -49,6 +49,7 @@
     "release:parser-test": "node --test scripts/release/native-apk.node.test.mjs",
     "release:audit": "bun run scripts/release-audit.ts build --all",
     "deploy:smoke": "node scripts/deployment/vercel-smoke.mjs",
+    "deploy:ssr-smoke": "node scripts/deployment/local-ssr-smoke.mjs",
     "deploy:check": "node scripts/deployment/preflight.mjs"
   }
 }
