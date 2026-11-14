@@ -25,10 +25,12 @@ dynamic `+` versions. The generated template matrix lives in
 | --- | --- | --- |
 | Android Gradle Plugin | 9.5.1 | Requires Gradle >= 9.6.0, JDK >= 17, max API 37, default Build Tools 36.0.0 |
 | Gradle | 9.6.0 | Wrapper pins SHA-256 `bbaeb2fef8710818cf0e261201dab964c572f92b942812df0c3620d62a529a01` |
-| Kotlin / KGP | 2.4.10 | AGP 9.5 docs use 2.4.10; upgraded via `buildscript.classpath` |
-| Compose compiler plugin | 2.4.10 | Must equal the Kotlin version |
+| Kotlin / KGP | 2.3.10 | AGP 9.5 supports 2.2.10+; pinned to 2.3.10 for KSP/Compose compiler alignment |
 | Compose BOM | 2026.09.00 | Compose 1.12+ requires `compileSdk 37` and AGP 9 |
 | activity-compose | 1.13.0 | Official Compose setup page |
+| Room | 2.8.5 | room-runtime, room-compiler, room-gradle-plugin |
+| KSP | 2.3.10 | symbol-processing-gradle-plugin; must match Kotlin |
+| Compose compiler plugin | 2.3.10 | Must equal the Kotlin version |
 | JUnit | 4.13.2 | Local unit tests |
 | minSdk default | 26 | Allowed 24–37 |
 | targetSdk default | 36 | Must be >= minSdk and <= compileSdk |
@@ -78,3 +80,10 @@ Apache-2.0: AndroidX/Compose/Material 3, Android Gradle Plugin, Gradle, Kotlin,
 Material Color Utilities, scrcpy, Turso/libSQL components.
 Upstream licenses remain with their owners; no third-party binary is
 redistributed by this repository except the official Gradle Wrapper JAR.
+
+## Astro tooling
+
+- `@astrojs/check` 0.9.12 requires TypeScript 5/6 and does not support 7.0. The
+  repository therefore runs `astro check` with a local `typescript@6.0.3` in
+  `apps/web`, while the root typecheck uses TypeScript 7.0.2.
+- `just check` includes both `bun run typecheck` and `bun run check:astro`.

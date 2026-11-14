@@ -43,7 +43,7 @@ generate:
     bun run generate:example
 
 # Full local verification (no Android SDK required)
-check: typecheck test templates-check build
+check: typecheck check-astro test templates-check build
 
 # Real Android smoke test (requires JDK 21 + Android SDK 37)
 android-smoke:
@@ -57,3 +57,97 @@ doctor:
     @echo "just     $(just --version 2>/dev/null || echo MISSING)"
     @echo "ANDROID_HOME ${ANDROID_HOME:-unset}"
     @echo "ANDROID_SDK_ROOT ${ANDROID_SDK_ROOT:-unset}"
+
+# Typecheck .astro files (astro check; uses TypeScript 6 locally for compatibility)
+check-astro:
+    bun run check:astro
+
+# F1.6A: pure device parser tests (Node, no Android SDK required)
+runtime-parser-test:
+    node --test scripts/runtime/*.node.test.mjs
+
+# Read-only Android runtime checks
+runtime-doctor:
+    bun run scripts/android-runtime.ts doctor
+
+runtime-devices:
+    bun run scripts/android-runtime.ts devices
+
+# F1.6E: read-only readiness check of an authorized, fully booted device.
+runtime-device-check:
+    bun run scripts/android-runtime.ts device-check
+
+emulator-list:
+    bun run scripts/android-runtime.ts emulator-list
+
+# F1.6F: list locally installed system images; no downloads or mutations.
+emulator-images:
+    node scripts/runtime/avd-provision.mjs images
+
+# Explicitly create one AVD using an already installed image. No SDK installation.
+# AVD_NAME and AVD_IMAGE must be supplied; existing AVDs cannot be overwritten.
+emulator-create:
+    node scripts/runtime/avd-provision.mjs create
+
+# Pure CLI AVD provisioning tests; no Android SDK or device required.
+emulator-provision-test:
+    node --test scripts/runtime/avd-provision.node.test.mjs
+
+# Explicitly start the AVD specified by AVD_NAME; never downloads SDK images.
+emulator-start:
+    bun run scripts/android-runtime.ts emulator-start
+
+# Explicitly stop emulator specified by ANDROID_SERIAL; refuses physical devices.
+emulator-stop:
+    bun run scripts/android-runtime.ts emulator-stop
+
+# Build + lint + JVM tests + compile instrumentation APKs for all presets.
+android-runtime-compile:
+    bun run scripts/android-runtime.ts test --all
+
+# Execute instrumented suites on the selected ADB serial (ANDROID_SERIAL).
+android-test:
+    bun run scripts/android-runtime.ts test --all --run
+
+android-test-room:
+    bun run scripts/android-runtime.ts test --preset local-notes --run
+
+android-test-ui:
+    bun run scripts/android-runtime.ts test --preset compose-starter --run
+
+# F1.6B: generation benchmark (no Android SDK needed; ignored JSON report).
+benchmark-generator:
+    bun run scripts/performance-baseline.ts generator
+
+# F1.6B: fixed-directory Gradle benchmark for the minimal preset (SDK required).
+benchmark-android:
+    bun run scripts/performance-baseline.ts android
+
+# F1.6B: pure Node benchmark helper tests (no Bun/SDK required).
+benchmark-parser-test:
+    node --test scripts/performance/metrics.node.test.mjs
+
+# F1.6C: deterministic source ZIP, license and sensitive-file checks; no Android SDK required.
+integrity-check:
+    bun run scripts/integrity-check.ts
+
+# Verify historical F0 -> F1.6B patch chain in a disposable clone, with external ZIPs extracted to ~/Downloads.
+patch-replay:
+    node scripts/integrity/patch-replay.mjs
+
+# Only reports PASS with actual device instrumentation + benchmark evidence; exit 78 if BLOCKED.
+release-check:
+    bun run scripts/integrity-check.ts --release
+
+# Pure parser/classifier tests, no device or SDK required.
+integrity-parser-test:
+    node --test scripts/integrity/gates.node.test.mjs
+
+# F1.6D: checks native ELF/ZIP structure and release-evidence classifier without an SDK.
+release-parser-test:
+    node --test scripts/release/native-apk.node.test.mjs
+
+# Opt-in: generates all four unsigned optimized release APKs and performs static audit.
+# Requires a configured JDK 21 + Android SDK; does NOT use a phone or sign APKs.
+release-audit:
+    bun run scripts/release-audit.ts build --all

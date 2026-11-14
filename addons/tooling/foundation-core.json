@@ -1,0 +1,28 @@
+{
+  "id": "foundation/core",
+  "version": "0.1.0",
+  "displayName": "Foundation Core",
+  "description": "Reserved for shared Kotlin contracts once multiple addons need them.",
+  "category": "foundation",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "foundation"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Planned only; no code is generated in F1.4."
+    ]
+  },
+  "license": "MIT"
+}

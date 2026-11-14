@@ -8,9 +8,10 @@
  *   bun run scripts/embed-templates.ts --check   # verify (CI)
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = join(import.meta.dir, "..");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const TEMPLATE_DIR = join(ROOT, "templates", "android-compose-minimal");
 const FRAGMENTS_DIR = join(ROOT, "templates", "fragments");
 const OUT_FILE = join(ROOT, "packages", "generator", "src", "templates.generated.ts");

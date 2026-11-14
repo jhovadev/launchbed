@@ -1,0 +1,56 @@
+{
+  "id": "compose-minimal",
+  "version": "0.1.0",
+  "name": "Compose Minimal",
+  "description": "Minimal native Android app with no optional addons.",
+  "category": "application",
+  "status": "stable",
+  "baseTemplate": "android-compose-minimal",
+  "requiredAddons": [],
+  "optionalAddons": [],
+  "defaultTheme": {
+    "seedColor": "#6750A4",
+    "schemeVariant": "tonalSpot",
+    "defaultMode": "system",
+    "typography": {
+      "fontFamily": "default"
+    },
+    "shape": {
+      "cornerRadius": 12
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "components": {
+      "card": {
+        "cornerRadius": 16,
+        "elevation": 1
+      },
+      "button": {
+        "cornerRadius": 20,
+        "minHeight": 48
+      }
+    },
+    "overrides": {
+      "light": {},
+      "dark": {}
+    }
+  },
+  "previewScreens": [
+    "welcome"
+  ],
+  "compatibility": {
+    "minSdk": 26,
+    "notes": [
+      "Permanent regression control."
+    ]
+  },
+  "capabilities": [
+    "minimal",
+    "android"
+  ]
+}

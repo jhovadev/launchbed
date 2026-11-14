@@ -13,6 +13,7 @@
     "@android-initializr/catalog": "workspace:*",
     "@android-initializr/design-tokens": "workspace:*",
     "@android-initializr/resolver": "workspace:*",
-    "@android-initializr/schema": "workspace:*"
+    "@android-initializr/schema": "workspace:*",
+    "smol-toml": "1.9.1"
   }
 }

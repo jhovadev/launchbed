@@ -87,3 +87,61 @@ catalog, `mise.toml`, `justfile` and scripts. It has no runtime dependency on th
 Initializr server or this monorepo. `just android-smoke` proves this by extracting
 a ZIP into `build/android-smoke` and running `assembleDebug` and
 `testDebugUnitTest` there.
+
+## Addon composition (F1.0)
+
+Addons describe changes with typed operations:
+
+- `add`: create a new file from a trusted local fragment. Protected template
+  files cannot be added or overwritten.
+- `insert`: insert rendered lines into a declared template slot. Slot markers
+  (`// @initializr-slot <id>`) are fixed, server-owned strings, never user
+  regular expressions.
+- `merge`: structured updates for Gradle files and the version catalog.
+  Gradle targets are `settings-includes`, `root-plugins`, `app-plugins`,
+  `app-dependencies`; `version-catalog` is parsed and re-serialized canonically.
+- `modify` and legacy `append` are parsed for schema compatibility but rejected
+  at execution. Use `insert` or `merge`.
+
+Composition order:
+
+1. resolver output is already sorted by addon id;
+2. operations are validated and collected;
+3. aliases/lines are checked for conflicts and identical duplicates are deduped;
+4. slot contributions are sorted by addon id then declaration index and applied;
+5. the version catalog is merged and re-parsed;
+6. paths and limits are validated, then the plan records operations;
+7. the deterministic ZIP is produced and verified.
+
+Slot insertion order is deterministic, not generally commutative. Two addons
+contributing different lines to the same slot produce stable output regardless
+of user selection order; aliases with incompatible values are rejected before
+any ZIP is produced.
+
+## Composable UI addons (F1.2)
+
+`ui/navigation` generates a single `AppRoot` with a typed `AppRoute` sealed
+interface and one `NavDisplay`. Destination registration is slot-based:
+
+- `app-imports`: imports for contributed screens
+- `app-routes`: `@Serializable data object ... : AppRoute`
+- `app-entries`: `entry<AppRoute.X> { Screen() }`
+
+`ui/dashboard` and `ui/settings` depend on `ui/navigation` and contribute their
+imports, route and entry through those slots. `MainActivity` uses a
+`main-content` slot with a generated fallback to `HomeScreen()` when navigation
+is absent, so no addon overwrites `MainActivity` directly.
+
+Initial destination is resolved during generation from the selected addons:
+Dashboard, then Settings, then Welcome. Selection order does not change bytes.
+
+The web preview renders Welcome, Dashboard or Settings using the same resolved
+tokens; it is a simulation, not Compose.
+
+## Project presets (F1.5)
+
+A preset is a declarative configuration over the existing generator: base
+template, required/optional addons, default theme, preview screens, compatibility
+and capabilities. The backend remains the source of truth; the web selector only
+changes request fields. Presets do not duplicate Gradle files or bypass the
+resolver.

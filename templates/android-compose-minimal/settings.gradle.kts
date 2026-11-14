@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "{{projectName}}"
 include(":app")
+// @initializr-slot settings-includes

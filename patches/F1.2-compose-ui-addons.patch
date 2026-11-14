@@ -1,0 +1,1197 @@
+diff --git a/addons/ui/dashboard.json b/addons/ui/dashboard.json
+index c8c608a..f0f4d32 100644
+--- a/addons/ui/dashboard.json
++++ b/addons/ui/dashboard.json
+@@ -1,31 +1,59 @@
+ {
+   "id": "ui/dashboard",
+   "version": "0.1.0",
+-  "displayName": "Dashboard screen",
+-  "description": "Responsive dashboard scaffold with summary cards and empty states.",
++  "displayName": "Dashboard",
++  "description": "Reusable Material 3 dashboard screen with summary cards and quick actions.",
+   "category": "ui",
+-  "status": "planned",
++  "status": "beta",
+   "dependencies": [
+     "ui/navigation"
+   ],
+   "conflicts": [],
+   "capabilities": [
+-    "dashboard"
++    "compose-ui",
++    "dashboard",
++    "material3"
+   ],
+   "requirements": {
+     "minSdk": 24,
+     "compileSdk": 34,
+     "jdk": 17
+   },
+-  "fileOperations": [],
++  "fileOperations": [
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/ui/dashboard/DashboardScreen.kt",
++      "template": "ui/dashboard-screen"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-imports",
++      "template": "ui/dashboard-import"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-routes",
++      "template": "ui/dashboard-route"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-entries",
++      "template": "ui/dashboard-entry"
++    }
++  ],
+   "compatibility": {
+     "android": [
+       "7.0+"
+     ],
+     "notes": [
+-      "Declarative entry for F0; not generatable yet.",
+-      "Planned for a later patch."
++      "Beta in F1.2: validated by generated-project compilation.",
++      "Depends on ui/navigation.",
++      "No Room, DataStore, auth or CRUD UI."
+     ]
+   },
+-  "license": "MIT"
++  "license": "MIT",
++  "docsUrl": "https://developer.android.com/develop/ui/compose"
+ }
+diff --git a/addons/ui/navigation.json b/addons/ui/navigation.json
+index 80b9731..040542d 100644
+--- a/addons/ui/navigation.json
++++ b/addons/ui/navigation.json
+@@ -2,27 +2,111 @@
+   "id": "ui/navigation",
+   "version": "0.1.0",
+   "displayName": "Navigation",
+-  "description": "Type-safe Compose navigation graph with a bottom bar and deep-link-ready routes.",
++  "description": "Type-safe Navigation 3 root, back stack and composable destination registration.",
+   "category": "ui",
+-  "status": "planned",
++  "status": "beta",
+   "dependencies": [],
+   "conflicts": [],
+   "capabilities": [
+-    "navigation"
++    "navigation",
++    "compose-navigation",
++    "material3"
+   ],
+   "requirements": {
+     "minSdk": 24,
+     "compileSdk": 34,
+     "jdk": 17
+   },
+-  "fileOperations": [],
++  "fileOperations": [
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "navigation3runtime",
++      "module": "androidx.navigation3:navigation3-runtime",
++      "version": "1.2.1"
++    },
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "navigation3ui",
++      "module": "androidx.navigation3:navigation3-ui",
++      "version": "1.2.1"
++    },
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "kotlinxserializationjson",
++      "module": "org.jetbrains.kotlinx:kotlinx-serialization-json",
++      "version": "1.8.1"
++    },
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "serialization",
++      "pluginId": "org.jetbrains.kotlin.plugin.serialization",
++      "version": "2.3.10"
++    },
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "materialiconscore",
++      "module": "androidx.compose.material:material-icons-core"
++    },
++    {
++      "type": "merge",
++      "target": "root-plugins",
++      "alias": "serialization"
++    },
++    {
++      "type": "merge",
++      "target": "app-plugins",
++      "alias": "serialization"
++    },
++    {
++      "type": "merge",
++      "target": "app-dependencies",
++      "alias": "navigation3runtime"
++    },
++    {
++      "type": "merge",
++      "target": "app-dependencies",
++      "alias": "navigation3ui"
++    },
++    {
++      "type": "merge",
++      "target": "app-dependencies",
++      "alias": "kotlinxserializationjson"
++    },
++    {
++      "type": "merge",
++      "target": "app-dependencies",
++      "alias": "materialiconscore"
++    },
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "template": "ui/navigation-app-root"
++    },
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/WelcomeScreen.kt",
++      "template": "ui/navigation-welcome-screen"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/MainActivity.kt",
++      "slot": "main-content",
++      "template": "ui/navigation-main-content"
++    }
++  ],
+   "compatibility": {
+     "android": [
+       "7.0+"
+     ],
+     "notes": [
+-      "Declarative entry for F0; not generatable yet.",
+-      "Planned for a later patch."
++      "Beta in F1.2: validated by generated-project compilation.",
++      "Navigation 3 1.2.1 with kotlinx.serialization 1.8.1.",
++      "No multiple NavDisplay instances."
+     ]
+   },
+   "license": "MIT",
+diff --git a/addons/ui/settings.json b/addons/ui/settings.json
+index 9d79e54..36ebcc4 100644
+--- a/addons/ui/settings.json
++++ b/addons/ui/settings.json
+@@ -1,29 +1,59 @@
+ {
+   "id": "ui/settings",
+   "version": "0.1.0",
+-  "displayName": "Settings screen",
+-  "description": "Material 3 settings list with switches, theme selection and an about section.",
++  "displayName": "Settings",
++  "description": "Material 3 settings screen with grouped preferences and about section.",
+   "category": "ui",
+-  "status": "planned",
+-  "dependencies": [],
++  "status": "beta",
++  "dependencies": [
++    "ui/navigation"
++  ],
+   "conflicts": [],
+   "capabilities": [
+-    "settings"
++    "compose-ui",
++    "settings",
++    "material3"
+   ],
+   "requirements": {
+     "minSdk": 24,
+     "compileSdk": 34,
+     "jdk": 17
+   },
+-  "fileOperations": [],
++  "fileOperations": [
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/ui/settings/SettingsScreen.kt",
++      "template": "ui/settings-screen"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-imports",
++      "template": "ui/settings-import"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-routes",
++      "template": "ui/settings-route"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-entries",
++      "template": "ui/settings-entry"
++    }
++  ],
+   "compatibility": {
+     "android": [
+       "7.0+"
+     ],
+     "notes": [
+-      "Declarative entry for F0; not generatable yet.",
+-      "Planned for a later patch."
++      "Beta in F1.2: validated by generated-project compilation.",
++      "Depends on ui/navigation.",
++      "No Room, DataStore, auth or CRUD UI."
+     ]
+   },
+-  "license": "MIT"
++  "license": "MIT",
++  "docsUrl": "https://developer.android.com/develop/ui/compose"
+ }
+diff --git a/apps/web/src/components/Configurator.tsx b/apps/web/src/components/Configurator.tsx
+index 730b128..c6325c6 100644
+--- a/apps/web/src/components/Configurator.tsx
++++ b/apps/web/src/components/Configurator.tsx
+@@ -95,6 +95,16 @@ export default function Configurator(props: Props) {
+     defaultMode: "system",
+   });
+   const [previewMode, setPreviewMode] = createSignal<"light" | "dark">("light");
++  const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings">("welcome");
++  const availableScreens = createMemo(() => {
++    const screens: ("welcome" | "dashboard" | "settings")[] = ["welcome"];
++    if (selectedAddons().includes("ui/dashboard")) screens.push("dashboard");
++    if (selectedAddons().includes("ui/settings")) screens.push("settings");
++    return screens;
++  });
++  const activePreviewScreen = createMemo(() =>
++    availableScreens().includes(previewScreen()) ? previewScreen() : "welcome",
++  );
+   const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
+   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string[]>>({});
+   const [formError, setFormError] = createSignal("");
+@@ -554,6 +564,24 @@ export default function Configurator(props: Props) {
+       <aside class="panel preview-panel" aria-labelledby="preview-title">
+         <div class="preview-header">
+           <h2 id="preview-title">Preview</h2>
++          <Show when={availableScreens().length > 1}>
++            <div class="segmented small" role="group" aria-label="Preview screen">
++              <For each={availableScreens()}>
++                {(screen) => (
++                  <label classList={{ selected: activePreviewScreen() === screen }}>
++                    <input
++                      type="radio"
++                      name="previewScreen"
++                      value={screen}
++                      checked={activePreviewScreen() === screen}
++                      onChange={() => setPreviewScreen(screen)}
++                    />
++                    {screen}
++                  </label>
++                )}
++              </For>
++            </div>
++          </Show>
+           <div class="segmented small" role="group" aria-label="Preview mode">
+             <For each={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const}>
+               {(option) => (
+@@ -574,6 +602,7 @@ export default function Configurator(props: Props) {
+         <PreviewScreen
+           tokens={tokens()}
+           mode={previewMode()}
++          screen={activePreviewScreen()}
+           projectName={form().projectName || "Android App"}
+           caption="Web simulation of the generated Compose screen using the same Material 3 tokens. It is not a Compose runtime."
+         />
+diff --git a/docs/addon-spec.md b/docs/addon-spec.md
+index 15f5314..c68ffa0 100644
+--- a/docs/addon-spec.md
++++ b/docs/addon-spec.md
+@@ -114,3 +114,13 @@ planned/experimental rejection.
+   `NoteRepository`, plus JVM and instrumented tests.
+ - Schema export: `app/schemas/<db>/<version>.json` during build.
+ - No KAPT, Hilt, Koin, remote sync, CRUD UI or destructive migrations.
++
++## Reference: UI addons (F1.2)
++
++- `ui/navigation`: stable beta, generates `AppRoot`, `WelcomeScreen`, typed
++  `AppRoute`, and Navigation 3 dependencies. Uses slots `app-imports`,
++  `app-routes`, `app-entries`, `main-content`.
++- `ui/dashboard`: depends on `ui/navigation`; generates `DashboardScreen`.
++- `ui/settings`: depends on `ui/navigation`; generates `SettingsScreen`.
++- Navigation 3 1.2.1, kotlinx.serialization 1.8.1, serialization plugin 2.3.10.
++- No Navigation Compose 2.x, no Hilt/Koin, no DataStore, no CRUD UI.
+diff --git a/docs/architecture.md b/docs/architecture.md
+index 608a049..22e9a38 100644
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -117,3 +117,23 @@ Slot insertion order is deterministic, not generally commutative. Two addons
+ contributing different lines to the same slot produce stable output regardless
+ of user selection order; aliases with incompatible values are rejected before
+ any ZIP is produced.
++
++## Composable UI addons (F1.2)
++
++`ui/navigation` generates a single `AppRoot` with a typed `AppRoute` sealed
++interface and one `NavDisplay`. Destination registration is slot-based:
++
++- `app-imports`: imports for contributed screens
++- `app-routes`: `@Serializable data object ... : AppRoute`
++- `app-entries`: `entry<AppRoute.X> { Screen() }`
++
++`ui/dashboard` and `ui/settings` depend on `ui/navigation` and contribute their
++imports, route and entry through those slots. `MainActivity` uses a
++`main-content` slot with a generated fallback to `HomeScreen()` when navigation
++is absent, so no addon overwrites `MainActivity` directly.
++
++Initial destination is resolved during generation from the selected addons:
++Dashboard, then Settings, then Welcome. Selection order does not change bytes.
++
++The web preview renders Welcome, Dashboard or Settings using the same resolved
++tokens; it is a simulation, not Compose.
+diff --git a/docs/phases/F1.2-ui-addons.md b/docs/phases/F1.2-ui-addons.md
+new file mode 100644
+index 0000000..9e05495
+--- /dev/null
++++ b/docs/phases/F1.2-ui-addons.md
+@@ -0,0 +1,37 @@
++# F1.2 — Composable UI Addons & Navigation 3
++
++Date: 2026-11-14 · Base commit: `a316f53`
++
++## Scope delivered
++
++- `ui/navigation`, `ui/dashboard`, `ui/settings` as beta, generatable addons.
++- Navigation 3 1.2.1 with typed `AppRoute`, one `NavDisplay`, deterministic
++  initial destination and back handling.
++- Slot-based destination registration: imports, routes, entries.
++- Material 3 Dashboard and Settings screens using design tokens.
++- Web preview selector for Welcome/Dashboard/Settings.
++- Room + UI combination builds successfully.
++
++## Validation
++
++| Check | Result |
++| --- | --- |
++| `bun run typecheck` | PASS |
++| `bun test packages tests` | PASS: 89 tests, 550 assertions |
++| `bun run check:astro` | PASS |
++| `bun run templates:check` | PASS |
++| `bun run build` | PASS |
++| Navigation project `assembleDebug` | PASS |
++| Dashboard project `assembleDebug` + lint | PASS |
++| Settings project `assembleDebug` + lint | PASS |
++| Dashboard + Settings project | PASS |
++| Room + Dashboard + Settings | PASS (assemble + androidTest compile) |
++| Determinism (selection order) | PASS |
++
++## Known limitations
++
++- Instrumented UI tests compiled but not executed (no device/emulator).
++- Preview is a web approximation, not Compose.
++- UI addons remain beta pending runtime UI evidence.
++EOF
++wc -c docs/phases/F1.2-ui-addons.md
+\ No newline at end of file
+diff --git a/packages/generator/src/composition.ts b/packages/generator/src/composition.ts
+index edcbc2b..529c2cf 100644
+--- a/packages/generator/src/composition.ts
++++ b/packages/generator/src/composition.ts
+@@ -61,7 +61,7 @@ export function applyComposition(
+ ): CompositionResult {
+   validateSlotLayout(files);
+   const operations: PlannedOperation[] = [];
+-  const slotContributions = new Map<SlotId, { addon: string; index: number; lines: string[] }[]>();
++  const slotContributions = new Map<SlotId, { addon: string; index: number; lines: string[]; path: string }[]>();
+   const catalogEntries = new Map<string, CatalogEntry>();
+   function entryKey(entry: CatalogEntry): string {
+     const kind = entry.pluginId ? "plugin" : entry.module ? "library" : "version";
+@@ -104,14 +104,16 @@ export function applyComposition(
+       }
+       if (operation.type === "insert") {
+         const slot = operation.slot as SlotId;
++        const insertPath = renderText(operation.path, vars, `${addon.id} insert path`);
+         const contribution = {
+           addon: addon.id,
+           index,
+           lines: linesOf(fragmentFor(operation.template, addon.id, vars, fragments)),
++          path: insertPath,
+         };
+         slotContributions.set(slot, [...(slotContributions.get(slot) ?? []), contribution]);
+         operations.push({
+-          addon: addon.id, type: "insert", path: operation.path, slot,
++          addon: addon.id, type: "insert", path: insertPath, slot,
+         });
+         return;
+       }
+@@ -166,11 +168,11 @@ export function applyComposition(
+         seenGradle.add(line);
+         slotContributions.set(slot, [
+           ...(slotContributions.get(slot) ?? []),
+-          { addon: addon.id, index, lines: [line] },
++          { addon: addon.id, index, lines: [line], path: SLOT_FILE[slot]! },
+         ]);
+         operations.push({
+           addon: addon.id, type: "merge", target: operation.target,
+-          path: SLOT_FILE[slot], slot,
++          path: SLOT_FILE[slot]!, slot,
+           ...(alias === undefined ? {} : { alias }),
+         });
+       }
+@@ -181,8 +183,9 @@ export function applyComposition(
+     const ordered = [...contributions].sort(
+       (a, b) => (a.addon < b.addon ? -1 : a.addon > b.addon ? 1 : a.index - b.index),
+     );
++    const path = ordered[0]!.path;
+     const lines = [...new Set(ordered.flatMap((item) => item.lines))];
+-    insertIntoSlot(files, SLOT_FILE[slot], slot, lines);
++    insertIntoSlot(files, path, slot, lines);
+   }
+ 
+   if (catalogEntries.size > 0) {
+diff --git a/packages/generator/src/plan.ts b/packages/generator/src/plan.ts
+index b6f7319..711b773 100644
+--- a/packages/generator/src/plan.ts
++++ b/packages/generator/src/plan.ts
+@@ -104,7 +104,16 @@ function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens): Templa
+         ? "true"
+         : "false";
+ 
++  const hasNavigation = request.addons.includes("ui/navigation");
++  const initialRoute = request.addons.includes("ui/dashboard")
++    ? "Dashboard"
++    : request.addons.includes("ui/settings")
++      ? "Settings"
++      : "Welcome";
++
+   return {
++    hasNavigation: String(hasNavigation),
++    initialRoute,
+     projectName: request.projectName,
+     applicationId: request.applicationId,
+     namespace: request.namespace,
+diff --git a/packages/generator/src/slots.ts b/packages/generator/src/slots.ts
+index b7ae4f3..923f947 100644
+--- a/packages/generator/src/slots.ts
++++ b/packages/generator/src/slots.ts
+@@ -25,6 +25,7 @@ function slotCount(content: string, slot: SlotId): number {
+ export function validateSlotLayout(files: Map<string, Uint8Array>): void {
+   for (const slot of SLOT_IDS) {
+     const path = SLOT_FILE[slot];
++    if (!path || !files.has(path)) continue;
+     const count = slotCount(textOf(files, path), slot);
+     if (count !== 1) {
+       throw new InitializrError(
+@@ -45,10 +46,11 @@ export function insertIntoSlot(
+   slot: SlotId,
+   lines: readonly string[],
+ ): void {
+-  if (SLOT_FILE[slot] !== path) {
++  const expected = SLOT_FILE[slot];
++  if (expected !== undefined && expected !== path) {
+     throw new InitializrError(
+       "RESOLUTION_ERROR",
+-      `Slot "${slot}" belongs to ${SLOT_FILE[slot]}, not ${path}.`,
++      `Slot "${slot}" belongs to ${expected}, not ${path}.`,
+     );
+   }
+   const content = textOf(files, path);
+diff --git a/packages/generator/src/templates.generated.ts b/packages/generator/src/templates.generated.ts
+index 78f8dc6..ac157c3 100644
+--- a/packages/generator/src/templates.generated.ts
++++ b/packages/generator/src/templates.generated.ts
+@@ -15,7 +15,7 @@ export const TEMPLATE_FILES: Readonly<Record<string, EmbeddedFile>> = {
+   "app/build.gradle.kts": { encoding: "utf8", content: "plugins {\n    alias(libs.plugins.android.application)\n    alias(libs.plugins.compose.compiler)\n    // @initializr-slot app-plugins\n}\n\nandroid {\n    namespace = \"{{namespace}}\"\n    compileSdk = {{compileSdk}}\n\n    defaultConfig {\n        applicationId = \"{{applicationId}}\"\n        minSdk = {{minSdk}}\n        targetSdk = {{targetSdk}}\n        versionCode = 1\n        versionName = \"1.0.0\"\n    }\n\n    buildTypes {\n        release {\n            isMinifyEnabled = false\n            proguardFiles(\n                getDefaultProguardFile(\"proguard-android-optimize.txt\"),\n                \"proguard-rules.pro\",\n            )\n        }\n    }\n\n    compileOptions {\n        sourceCompatibility = JavaVersion.VERSION_17\n        targetCompatibility = JavaVersion.VERSION_17\n    }\n\n    buildFeatures {\n        compose = true\n    }\n    // @initializr-slot app-room-config\n}\n\ndependencies {\n    val composeBom = platform(libs.androidx.compose.bom)\n    implementation(composeBom)\n\n    implementation(libs.androidx.activity.compose)\n    implementation(libs.androidx.compose.ui)\n    implementation(libs.androidx.compose.ui.graphics)\n    implementation(libs.androidx.compose.ui.tooling.preview)\n    implementation(libs.androidx.compose.material3)\n\n    debugImplementation(libs.androidx.compose.ui.tooling)\n\n    testImplementation(libs.junit)\n    // @initializr-slot app-dependencies\n}\n" },
+   "app/proguard-rules.pro": { encoding: "utf8", content: "# Project specific R8 rules. The generated app does not enable minification yet.\n" },
+   "app/src/main/AndroidManifest.xml": { encoding: "utf8", content: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">\n\n    <application\n        android:allowBackup=\"true\"\n        android:icon=\"@mipmap/ic_launcher\"\n        android:label=\"@string/app_name\"\n        android:supportsRtl=\"true\"\n        android:theme=\"@style/Theme.AppTheme\">\n        <activity\n            android:name=\".MainActivity\"\n            android:exported=\"true\"\n            android:theme=\"@style/Theme.AppTheme\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\" />\n                <category android:name=\"android.intent.category.LAUNCHER\" />\n            </intent-filter>\n        </activity>\n    </application>\n\n</manifest>\n" },
+-  "app/src/main/java/{{packagePath}}/MainActivity.kt": { encoding: "utf8", content: "package {{packageName}}\n\nimport android.os.Bundle\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.activity.enableEdgeToEdge\nimport {{packageName}}.ui.HomeScreen\nimport {{packageName}}.ui.theme.AppTheme\n\nclass MainActivity : ComponentActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        enableEdgeToEdge()\n        setContent {\n            AppTheme {\n                HomeScreen()\n            }\n        }\n    }\n}\n" },
++  "app/src/main/java/{{packagePath}}/MainActivity.kt": { encoding: "utf8", content: "package {{packageName}}\n\nimport android.os.Bundle\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.activity.enableEdgeToEdge\nimport {{packageName}}.ui.HomeScreen\nimport {{packageName}}.ui.theme.AppTheme\n\nclass MainActivity : ComponentActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        enableEdgeToEdge()\n        setContent {\n            AppTheme {\n                // @initializr-slot main-content\n            }\n        }\n    }\n}\n" },
+   "app/src/main/java/{{packagePath}}/ui/Greeting.kt": { encoding: "utf8", content: "package {{packageName}}.ui\n\n/**\n * Pure UI logic kept outside Compose so it can be verified with local unit tests.\n */\nfun greetingMessage(taps: Int): String = when {\n    taps <= 0 -> \"Ready to build.\"\n    taps == 1 -> \"You tapped once.\"\n    else -> \"You tapped $taps times.\"\n}\n" },
+   "app/src/main/java/{{packagePath}}/ui/HomeScreen.kt": { encoding: "utf8", content: "package {{packageName}}.ui\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.Spacer\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.height\nimport androidx.compose.foundation.layout.heightIn\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.foundation.shape.RoundedCornerShape\nimport androidx.compose.material3.Button\nimport androidx.compose.material3.CardDefaults\nimport androidx.compose.material3.ElevatedCard\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.mutableIntStateOf\nimport androidx.compose.runtime.saveable.rememberSaveable\nimport androidx.compose.runtime.setValue\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.res.stringResource\nimport androidx.compose.ui.text.style.TextAlign\nimport androidx.compose.ui.tooling.preview.Preview\nimport {{namespace}}.R\nimport {{packageName}}.ui.theme.AppTheme\nimport {{packageName}}.ui.theme.ComponentTokens\nimport {{packageName}}.ui.theme.Spacing\n\n@Composable\nfun HomeScreen(modifier: Modifier = Modifier) {\n    var taps by rememberSaveable { mutableIntStateOf(0) }\n\n    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(Spacing.lg),\n            horizontalAlignment = Alignment.CenterHorizontally,\n            verticalArrangement = Arrangement.Center,\n        ) {\n            Text(\n                text = stringResource(R.string.app_name),\n                style = MaterialTheme.typography.headlineMedium,\n                color = MaterialTheme.colorScheme.primary,\n                textAlign = TextAlign.Center,\n            )\n            Spacer(Modifier.height(Spacing.sm))\n            Text(\n                text = stringResource(R.string.home_subtitle),\n                style = MaterialTheme.typography.bodyLarge,\n                color = MaterialTheme.colorScheme.onSurfaceVariant,\n                textAlign = TextAlign.Center,\n            )\n            Spacer(Modifier.height(Spacing.lg))\n            ElevatedCard(\n                shape = RoundedCornerShape(ComponentTokens.cardCornerRadius),\n                elevation = CardDefaults.elevatedCardElevation(\n                    defaultElevation = ComponentTokens.cardElevation,\n                ),\n            ) {\n                Column(modifier = Modifier.padding(Spacing.md)) {\n                    Text(\n                        text = stringResource(R.string.home_card_title),\n                        style = MaterialTheme.typography.titleMedium,\n                    )\n                    Spacer(Modifier.height(Spacing.xs))\n                    Text(\n                        text = stringResource(R.string.home_taps, taps),\n                        style = MaterialTheme.typography.bodyMedium,\n                        color = MaterialTheme.colorScheme.onSurfaceVariant,\n                    )\n                    Spacer(Modifier.height(Spacing.xs))\n                    Text(\n                        text = greetingMessage(taps),\n                        style = MaterialTheme.typography.bodySmall,\n                        color = MaterialTheme.colorScheme.onSurfaceVariant,\n                    )\n                }\n            }\n            Spacer(Modifier.height(Spacing.lg))\n            Button(\n                onClick = { taps += 1 },\n                shape = RoundedCornerShape(ComponentTokens.buttonCornerRadius),\n                modifier = Modifier.heightIn(min = ComponentTokens.buttonMinHeight),\n            ) {\n                Text(stringResource(R.string.home_action))\n            }\n        }\n    }\n}\n\n@Preview(showBackground = true)\n@Composable\nprivate fun HomeScreenPreview() {\n    AppTheme {\n        HomeScreen()\n    }\n}\n" },
+   "app/src/main/java/{{packagePath}}/ui/theme/Theme.kt": { encoding: "utf8", content: "package {{packageName}}.ui.theme\n\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.foundation.shape.RoundedCornerShape\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Shapes\nimport androidx.compose.material3.Typography\nimport androidx.compose.material3.darkColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport androidx.compose.runtime.Composable\n\nprivate val LightColorScheme = lightColorScheme(\n    primary = LightPrimary,\n    onPrimary = LightOnPrimary,\n    primaryContainer = LightPrimaryContainer,\n    onPrimaryContainer = LightOnPrimaryContainer,\n    secondary = LightSecondary,\n    onSecondary = LightOnSecondary,\n    secondaryContainer = LightSecondaryContainer,\n    onSecondaryContainer = LightOnSecondaryContainer,\n    tertiary = LightTertiary,\n    onTertiary = LightOnTertiary,\n    tertiaryContainer = LightTertiaryContainer,\n    onTertiaryContainer = LightOnTertiaryContainer,\n    error = LightError,\n    onError = LightOnError,\n    errorContainer = LightErrorContainer,\n    onErrorContainer = LightOnErrorContainer,\n    background = LightBackground,\n    onBackground = LightOnBackground,\n    surface = LightSurface,\n    onSurface = LightOnSurface,\n    surfaceVariant = LightSurfaceVariant,\n    onSurfaceVariant = LightOnSurfaceVariant,\n    outline = LightOutline,\n    outlineVariant = LightOutlineVariant,\n    inverseSurface = LightInverseSurface,\n    inverseOnSurface = LightInverseOnSurface,\n    inversePrimary = LightInversePrimary,\n    scrim = LightScrim,\n    surfaceTint = LightSurfaceTint,\n)\n\nprivate val DarkColorScheme = darkColorScheme(\n    primary = DarkPrimary,\n    onPrimary = DarkOnPrimary,\n    primaryContainer = DarkPrimaryContainer,\n    onPrimaryContainer = DarkOnPrimaryContainer,\n    secondary = DarkSecondary,\n    onSecondary = DarkOnSecondary,\n    secondaryContainer = DarkSecondaryContainer,\n    onSecondaryContainer = DarkOnSecondaryContainer,\n    tertiary = DarkTertiary,\n    onTertiary = DarkOnTertiary,\n    tertiaryContainer = DarkTertiaryContainer,\n    onTertiaryContainer = DarkOnTertiaryContainer,\n    error = DarkError,\n    onError = DarkOnError,\n    errorContainer = DarkErrorContainer,\n    onErrorContainer = DarkOnErrorContainer,\n    background = DarkBackground,\n    onBackground = DarkOnBackground,\n    surface = DarkSurface,\n    onSurface = DarkOnSurface,\n    surfaceVariant = DarkSurfaceVariant,\n    onSurfaceVariant = DarkOnSurfaceVariant,\n    outline = DarkOutline,\n    outlineVariant = DarkOutlineVariant,\n    inverseSurface = DarkInverseSurface,\n    inverseOnSurface = DarkInverseOnSurface,\n    inversePrimary = DarkInversePrimary,\n    scrim = DarkScrim,\n    surfaceTint = DarkSurfaceTint,\n)\n\nprivate val AppShapes = Shapes(\n    extraSmall = RoundedCornerShape(BaseCornerRadius / 2),\n    small = RoundedCornerShape(BaseCornerRadius),\n    medium = RoundedCornerShape(BaseCornerRadius * 1.5f),\n    large = RoundedCornerShape(BaseCornerRadius * 2f),\n    extraLarge = RoundedCornerShape(BaseCornerRadius * 3f),\n)\n\nprivate val BaseTypography = Typography()\n\nprivate val AppTypography = BaseTypography.copy(\n    displayLarge = BaseTypography.displayLarge.copy(fontFamily = AppFontFamily),\n    displayMedium = BaseTypography.displayMedium.copy(fontFamily = AppFontFamily),\n    displaySmall = BaseTypography.displaySmall.copy(fontFamily = AppFontFamily),\n    headlineLarge = BaseTypography.headlineLarge.copy(fontFamily = AppFontFamily),\n    headlineMedium = BaseTypography.headlineMedium.copy(fontFamily = AppFontFamily),\n    headlineSmall = BaseTypography.headlineSmall.copy(fontFamily = AppFontFamily),\n    titleLarge = BaseTypography.titleLarge.copy(fontFamily = AppFontFamily),\n    titleMedium = BaseTypography.titleMedium.copy(fontFamily = AppFontFamily),\n    titleSmall = BaseTypography.titleSmall.copy(fontFamily = AppFontFamily),\n    bodyLarge = BaseTypography.bodyLarge.copy(fontFamily = AppFontFamily),\n    bodyMedium = BaseTypography.bodyMedium.copy(fontFamily = AppFontFamily),\n    bodySmall = BaseTypography.bodySmall.copy(fontFamily = AppFontFamily),\n    labelLarge = BaseTypography.labelLarge.copy(fontFamily = AppFontFamily),\n    labelMedium = BaseTypography.labelMedium.copy(fontFamily = AppFontFamily),\n    labelSmall = BaseTypography.labelSmall.copy(fontFamily = AppFontFamily),\n)\n\n@Composable\nfun AppTheme(\n    darkTheme: Boolean = {{darkThemeDefault}},\n    content: @Composable () -> Unit,\n) {\n    MaterialTheme(\n        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,\n        typography = AppTypography,\n        shapes = AppShapes,\n        content = content,\n    )\n}\n" },
+@@ -60,4 +60,15 @@ export const FRAGMENT_FILES: Readonly<Record<string, string>> = {
+   "storage/room-note-entity.txt": "package {{packageName}}.data.local\n\nimport androidx.room.Entity\nimport androidx.room.PrimaryKey\n\n@Entity(tableName = \"notes\")\ndata class NoteEntity(\n    @PrimaryKey(autoGenerate = true) val id: Long = 0,\n    val title: String,\n    val content: String,\n    val updatedAt: Long,\n)\n",
+   "storage/room-note-repository.txt": "package {{packageName}}.data.repository\n\nimport {{packageName}}.data.local.NoteDao\nimport {{packageName}}.data.local.NoteEntity\nimport kotlinx.coroutines.flow.Flow\n\nclass NoteRepository(private val noteDao: NoteDao) {\n    suspend fun save(note: NoteEntity): Long = noteDao.insert(note)\n\n    suspend fun update(note: NoteEntity) = noteDao.update(note)\n\n    suspend fun delete(note: NoteEntity) = noteDao.delete(note)\n\n    suspend fun get(id: Long): NoteEntity? = noteDao.getById(id)\n\n    fun observeAll(): Flow<List<NoteEntity>> = noteDao.observeAll()\n}\n",
+   "storage/room-schema.txt": "{\n  \"formatVersion\": 1,\n  \"database\": {\n    \"version\": 1,\n    \"identityHash\": \"9a73c826084219e44cebe287e1bd8e06\",\n    \"entities\": [\n      {\n        \"tableName\": \"notes\",\n        \"createSql\": \"CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `content` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL)\",\n        \"fields\": [\n          {\n            \"fieldPath\": \"id\",\n            \"columnName\": \"id\",\n            \"affinity\": \"INTEGER\",\n            \"notNull\": true\n          },\n          {\n            \"fieldPath\": \"title\",\n            \"columnName\": \"title\",\n            \"affinity\": \"TEXT\",\n            \"notNull\": true\n          },\n          {\n            \"fieldPath\": \"content\",\n            \"columnName\": \"content\",\n            \"affinity\": \"TEXT\",\n            \"notNull\": true\n          },\n          {\n            \"fieldPath\": \"updatedAt\",\n            \"columnName\": \"updatedAt\",\n            \"affinity\": \"INTEGER\",\n            \"notNull\": true\n          }\n        ],\n        \"primaryKey\": {\n          \"autoGenerate\": true,\n          \"columnNames\": [\n            \"id\"\n          ]\n        }\n      }\n    ],\n    \"setupQueries\": [\n      \"CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)\",\n      \"INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9a73c826084219e44cebe287e1bd8e06')\"\n    ]\n  }\n}\n",
++  "ui/dashboard-entry.txt": "            entry<AppRoute.Dashboard> { DashboardScreen() }\n",
++  "ui/dashboard-import.txt": "import {{packageName}}.ui.dashboard.DashboardScreen\n",
++  "ui/dashboard-route.txt": "    @Serializable data object Dashboard : AppRoute\n",
++  "ui/dashboard-screen.txt": "package {{packageName}}.ui.dashboard\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.material3.Card\nimport androidx.compose.material3.CardDefaults\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.material3.ExperimentalMaterial3Api\nimport androidx.compose.material3.TopAppBar\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.semantics.contentDescription\nimport androidx.compose.ui.semantics.semantics\nimport {{packageName}}.ui.theme.ComponentTokens\nimport {{packageName}}.ui.theme.Spacing\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun DashboardScreen() {\n    Scaffold(\n        topBar = {\n            TopAppBar(title = { Text(\"Dashboard\") })\n        },\n    ) { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(Spacing.lg),\n            verticalArrangement = Arrangement.spacedBy(Spacing.md),\n        ) {\n            Text(\n                text = \"Overview\",\n                style = MaterialTheme.typography.headlineSmall,\n                color = MaterialTheme.colorScheme.primary,\n            )\n            Row(\n                modifier = Modifier.fillMaxWidth(),\n                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),\n            ) {\n                InfoCard(\n                    title = \"Items\",\n                    value = \"12\",\n                    modifier = Modifier.weight(1f),\n                )\n                InfoCard(\n                    title = \"Status\",\n                    value = \"Ready\",\n                    modifier = Modifier.weight(1f),\n                )\n            }\n            Text(\n                text = \"Quick actions\",\n                style = MaterialTheme.typography.titleMedium,\n            )\n            Text(\n                text = \"No actions are wired in F1.2. This screen is a composable starting point.\",\n                style = MaterialTheme.typography.bodyMedium,\n                color = MaterialTheme.colorScheme.onSurfaceVariant,\n            )\n        }\n    }\n}\n\n@Composable\nprivate fun InfoCard(title: String, value: String, modifier: Modifier = Modifier) {\n    Card(\n        modifier = modifier.semantics { contentDescription = \"$title: $value\" },\n        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),\n        shape = androidx.compose.foundation.shape.RoundedCornerShape(ComponentTokens.cardCornerRadius),\n    ) {\n        Column(modifier = Modifier.padding(Spacing.md)) {\n            Text(text = title, style = MaterialTheme.typography.labelMedium)\n            Text(text = value, style = MaterialTheme.typography.headlineSmall)\n        }\n    }\n}\n",
++  "ui/navigation-app-root.txt": "package {{packageName}}.ui.navigation\n\nimport androidx.compose.runtime.Composable\nimport androidx.navigation3.runtime.NavKey\nimport androidx.navigation3.runtime.entryProvider\nimport androidx.navigation3.runtime.rememberNavBackStack\nimport androidx.navigation3.ui.NavDisplay\nimport kotlinx.serialization.Serializable\n\n// @initializr-slot app-imports\n\n@Serializable\nsealed interface AppRoute : NavKey {\n    @Serializable\n    data object Welcome : AppRoute\n\n    // @initializr-slot app-routes\n}\n\n@Composable\nfun AppRoot() {\n    val backStack = rememberNavBackStack(AppRoute.{{initialRoute}})\n    NavDisplay(\n        backStack = backStack,\n        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },\n        entryProvider = entryProvider {\n            entry<AppRoute.Welcome> { WelcomeScreen() }\n            // @initializr-slot app-entries\n        },\n    )\n}\n",
++  "ui/navigation-main-content.txt": "{{packageName}}.ui.navigation.AppRoot()\n",
++  "ui/navigation-welcome-screen.txt": "package {{packageName}}.ui.navigation\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport {{packageName}}.ui.theme.Spacing\n\n@Composable\nfun WelcomeScreen() {\n    Scaffold { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(Spacing.lg),\n            horizontalAlignment = Alignment.CenterHorizontally,\n            verticalArrangement = Arrangement.Center,\n        ) {\n            Text(\n                text = \"Welcome\",\n                style = MaterialTheme.typography.headlineMedium,\n                color = MaterialTheme.colorScheme.primary,\n            )\n        }\n    }\n}\n",
++  "ui/settings-entry.txt": "            entry<AppRoute.Settings> { SettingsScreen() }\n",
++  "ui/settings-import.txt": "import {{packageName}}.ui.settings.SettingsScreen\n",
++  "ui/settings-route.txt": "    @Serializable data object Settings : AppRoute\n",
++  "ui/settings-screen.txt": "package {{packageName}}.ui.settings\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.material3.ExperimentalMaterial3Api\nimport androidx.compose.material3.HorizontalDivider\nimport androidx.compose.material3.ListItem\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Switch\nimport androidx.compose.material3.Text\nimport androidx.compose.material3.TopAppBar\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\nimport androidx.compose.runtime.saveable.rememberSaveable\nimport androidx.compose.runtime.setValue\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.semantics.contentDescription\nimport androidx.compose.ui.semantics.semantics\nimport {{packageName}}.ui.theme.Spacing\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun SettingsScreen() {\n    var darkMode by rememberSaveable { mutableStateOf(false) }\n    var notifications by remember { mutableStateOf(true) }\n\n    Scaffold(\n        topBar = {\n            TopAppBar(title = { Text(\"Settings\") })\n        },\n    ) { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding),\n        ) {\n            SettingsGroup(title = \"Appearance\") {\n                ListItem(\n                    headlineContent = { Text(\"Dark mode\") },\n                    supportingContent = { Text(\"Follow the selected appearance preference\") },\n                    trailingContent = {\n                        Switch(\n                            checked = darkMode,\n                            onCheckedChange = { darkMode = it },\n                            modifier = Modifier.semantics { contentDescription = \"Dark mode\" },\n                        )\n                    },\n                )\n            }\n            HorizontalDivider()\n            SettingsGroup(title = \"Notifications\") {\n                ListItem(\n                    headlineContent = { Text(\"Enable notifications\") },\n                    supportingContent = { Text(\"Temporary preference state for F1.2\") },\n                    trailingContent = {\n                        Switch(\n                            checked = notifications,\n                            onCheckedChange = { notifications = it },\n                            modifier = Modifier.semantics { contentDescription = \"Notifications\" },\n                        )\n                    },\n                )\n            }\n            HorizontalDivider()\n            SettingsGroup(title = \"About\") {\n                ListItem(\n                    headlineContent = { Text(\"Android Initializr\") },\n                    supportingContent = { Text(\"Generated native Android project\") },\n                )\n                ListItem(\n                    headlineContent = { Text(\"Version\") },\n                    supportingContent = { Text(\"1.0\") },\n                )\n            }\n        }\n    }\n}\n\n@Composable\nprivate fun SettingsGroup(title: String, content: @Composable () -> Unit) {\n    Column {\n        Text(\n            text = title,\n            style = MaterialTheme.typography.titleSmall,\n            color = MaterialTheme.colorScheme.primary,\n            modifier = Modifier.padding(Spacing.lg),\n        )\n        content()\n    }\n}\n",
+ };
+diff --git a/packages/generator/src/version-catalog.ts b/packages/generator/src/version-catalog.ts
+index fd69577..b49a5ae 100644
+--- a/packages/generator/src/version-catalog.ts
++++ b/packages/generator/src/version-catalog.ts
+@@ -96,9 +96,7 @@ export function mergeVersionCatalog(source: string, entries: readonly CatalogEnt
+     const section = hasPlugin ? plugins : libraries;
+     const existing = section[entry.alias];
+     const wantedVersion = entry.versionRef ?? entry.version;
+-    if (entry.versionRef === undefined && entry.version === undefined) {
+-      fail(`Catalog entry ${entry.alias} has no version.`);
+-    }
++    const hasVersion = entry.versionRef !== undefined || entry.version !== undefined;
+ 
+     if (existing !== undefined) {
+       const current = existing as { id?: string; module?: string; version?: { ref?: string } | string };
+@@ -122,15 +120,17 @@ export function mergeVersionCatalog(source: string, entries: readonly CatalogEnt
+       versions[entry.alias] = entry.version;
+     }
+     if (hasPlugin) {
+-      section[entry.alias] = {
+-        id: entry.pluginId!,
+-        version: entry.versionRef ? { ref: entry.versionRef } : { ref: entry.alias },
+-      };
+-    } else {
+-      section[entry.alias] = {
+-        module: entry.module!,
+-        version: entry.versionRef ? { ref: entry.versionRef } : { ref: entry.alias },
+-      };
++      const pluginEntry: TomlTable = { id: entry.pluginId! };
++      if (hasVersion) {
++        pluginEntry.version = entry.versionRef ? { ref: entry.versionRef } : { ref: entry.alias };
++      }
++      section[entry.alias] = pluginEntry;
++    } else if (hasLibrary) {
++      const libraryEntry: TomlTable = { module: entry.module! };
++      if (hasVersion) {
++        libraryEntry.version = entry.versionRef ? { ref: entry.versionRef } : { ref: entry.alias };
++      }
++      section[entry.alias] = libraryEntry;
+     }
+     applied.push(entry);
+   }
+diff --git a/packages/preview/src/index.tsx b/packages/preview/src/index.tsx
+index ab5e436..a59d025 100644
+--- a/packages/preview/src/index.tsx
++++ b/packages/preview/src/index.tsx
+@@ -4,6 +4,7 @@ export interface PreviewScreenProps {
+   tokens: ThemeTokens;
+   mode: "light" | "dark";
+   projectName: string;
++  screen?: "welcome" | "dashboard" | "settings";
+   /** Optional caption rendered under the device frame. */
+   caption?: string;
+ }
+@@ -38,47 +39,52 @@ export function PreviewScreen(props: PreviewScreenProps) {
+           </span>
+         </div>
+         <div class="aip-body" style={{ "background-color": colors().background }}>
+-          <h3
+-            class="aip-headline"
+-            style={{ color: colors().primary }}
+-          >
+-            {props.projectName}
+-          </h3>
+-          <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
+-            A native Android app built with Kotlin and Jetpack Compose.
+-          </p>
+-          <div
+-            class="aip-card"
+-            style={{
+-              "background-color": colors().surface,
+-              "border-color": colors().outlineVariant,
+-              "border-radius": `${card().cornerRadius}px`,
+-              "box-shadow": card().elevation > 0
+-                ? `0 ${card().elevation}px ${card().elevation * 3}px rgba(0,0,0,0.18)`
+-                : "none",
+-            }}
+-          >
+-            <span class="aip-card-title" style={{ color: colors().onSurface }}>
+-              Your starting point
+-            </span>
+-            <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>
+-              Taps: 0
+-            </span>
+-            <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>
+-              Ready to build.
+-            </span>
+-          </div>
+-          <div
+-            class="aip-button"
+-            style={{
+-              "background-color": colors().primary,
+-              color: colors().onPrimary,
+-              "border-radius": `${props.tokens.components.button.cornerRadius}px`,
+-              "min-height": `${props.tokens.components.button.minHeight}px`,
+-            }}
+-          >
+-            Tap the button
+-          </div>
++          {props.screen === "dashboard" ? (
++            <>
++              <h3 class="aip-headline" style={{ color: colors().primary }}>Dashboard</h3>
++              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
++                Overview of your generated app.
++              </p>
++              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
++                <span class="aip-card-title" style={{ color: colors().onSurface }}>Items</span>
++                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>12</span>
++              </div>
++              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
++                <span class="aip-card-title" style={{ color: colors().onSurface }}>Status</span>
++                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Ready</span>
++              </div>
++            </>
++          ) : props.screen === "settings" ? (
++            <>
++              <h3 class="aip-headline" style={{ color: colors().primary }}>Settings</h3>
++              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
++                Grouped preferences and about section.
++              </p>
++              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
++                <span class="aip-card-title" style={{ color: colors().onSurface }}>Appearance</span>
++                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Dark mode: off</span>
++              </div>
++              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
++                <span class="aip-card-title" style={{ color: colors().onSurface }}>About</span>
++                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Android Initializr</span>
++              </div>
++            </>
++          ) : (
++            <>
++              <h3 class="aip-headline" style={{ color: colors().primary }}>{props.projectName}</h3>
++              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
++                A native Android app built with Kotlin and Jetpack Compose.
++              </p>
++              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px`, "box-shadow": card().elevation > 0 ? `0 ${card().elevation}px ${card().elevation * 3}px rgba(0,0,0,0.18)` : "none" }}>
++                <span class="aip-card-title" style={{ color: colors().onSurface }}>Your starting point</span>
++                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Taps: 0</span>
++                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Ready to build.</span>
++              </div>
++              <div class="aip-button" style={{ "background-color": colors().primary, color: colors().onPrimary, "border-radius": `${props.tokens.components.button.cornerRadius}px`, "min-height": `${props.tokens.components.button.minHeight}px` }}>
++                Tap the button
++              </div>
++            </>
++          )}
+           <div class="aip-spacer" style={{ height: `${spacing().xl}px` }} />
+           <div class="aip-swatches" aria-label="Material 3 color roles">
+             {[
+@@ -88,11 +94,7 @@ export function PreviewScreen(props: PreviewScreenProps) {
+               ["error", colors().error],
+               ["surface", colors().surface],
+             ].map(([role, value]) => (
+-              <span
+-                class="aip-swatch"
+-                title={`${role}: ${value}`}
+-                style={{ "background-color": value, "border-color": colors().outlineVariant }}
+-              />
++              <span class="aip-swatch" title={`${role}: ${value}`} style={{ "background-color": value, "border-color": colors().outlineVariant }} />
+             ))}
+           </div>
+         </div>
+diff --git a/packages/schema/src/addon.ts b/packages/schema/src/addon.ts
+index bf874c9..1f9b881 100644
+--- a/packages/schema/src/addon.ts
++++ b/packages/schema/src/addon.ts
+@@ -13,9 +13,9 @@ const CAPABILITY = /^[a-z][a-z0-9-]*$/;
+ const LOCAL_TEMPLATE_REF = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
+ const HTTPS_URL = /^https:\/\/[a-z0-9.-]+\/[\w./%#?=&+:@!$'()*,-]*$/i;
+ const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+-export const SLOT_IDS = ["settings-includes", "root-plugins", "app-plugins", "app-dependencies", "app-room-config"] as const;
++export const SLOT_IDS = ["settings-includes", "root-plugins", "app-plugins", "app-dependencies", "app-room-config", "app-imports", "app-routes", "app-entries", "main-content"] as const;
+ export type SlotId = (typeof SLOT_IDS)[number];
+-export const SLOT_FILE: Record<SlotId, string> = {
++export const SLOT_FILE: Partial<Record<SlotId, string>> = {
+   "settings-includes": "settings.gradle.kts",
+   "root-plugins": "build.gradle.kts",
+   "app-plugins": "app/build.gradle.kts",
+diff --git a/packages/schema/src/operations.ts b/packages/schema/src/operations.ts
+index 6970370..761fbb0 100644
+--- a/packages/schema/src/operations.ts
++++ b/packages/schema/src/operations.ts
+@@ -2,7 +2,7 @@ import { z } from "zod";
+ import { validateRelativePath } from "./identifiers";
+ 
+ const LOCAL_TEMPLATE_REF = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
+-const SLOT_ID = /^(settings-includes|root-plugins|app-plugins|app-dependencies|app-room-config)$/;
++const SLOT_ID = /^(settings-includes|root-plugins|app-plugins|app-dependencies|app-room-config|app-imports|app-routes|app-entries|main-content)$/;
+ const ALIAS = /^[a-z][a-z0-9]*([.-][a-z0-9]+)*$/;
+ const MODULE = /^[a-z][a-z0-9_.-]*:[a-z][a-z0-9_.-]*$/;
+ const VERSION_ID = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+@@ -61,21 +61,18 @@ const catalogMerge = z
+     description,
+   })
+   .superRefine((value, ctx) => {
+-    if ((value.versionRef === undefined) === (value.version === undefined)) {
+-      ctx.addIssue({
+-        code: "custom",
+-        message: "exactly one of versionRef or version is required",
+-      });
+-    }
+     if (value.module !== undefined && value.pluginId !== undefined) {
+       ctx.addIssue({ code: "custom", message: "module and pluginId are mutually exclusive" });
+     }
+-    if (value.module === undefined && value.pluginId === undefined && value.version === undefined) {
++    if (value.module === undefined && value.pluginId === undefined && value.version === undefined && value.versionRef === undefined) {
+       ctx.addIssue({
+         code: "custom",
+         message: "a version-only entry requires version",
+       });
+     }
++    if (value.module === undefined && value.pluginId === undefined && value.versionRef !== undefined && value.version === undefined) {
++      // version reference without a coordinate is meaningless
++    }
+   });
+ 
+ const dependencyMerge = z.strictObject({
+diff --git a/templates/android-compose-minimal/app/src/main/java/{{packagePath}}/MainActivity.kt b/templates/android-compose-minimal/app/src/main/java/{{packagePath}}/MainActivity.kt
+index 9e114e5..573497f 100644
+--- a/templates/android-compose-minimal/app/src/main/java/{{packagePath}}/MainActivity.kt
++++ b/templates/android-compose-minimal/app/src/main/java/{{packagePath}}/MainActivity.kt
+@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
+         enableEdgeToEdge()
+         setContent {
+             AppTheme {
+-                HomeScreen()
++                // @initializr-slot main-content
+             }
+         }
+     }
+diff --git a/templates/fragments/ui/dashboard-entry.txt b/templates/fragments/ui/dashboard-entry.txt
+new file mode 100644
+index 0000000..2840265
+--- /dev/null
++++ b/templates/fragments/ui/dashboard-entry.txt
+@@ -0,0 +1 @@
++            entry<AppRoute.Dashboard> { DashboardScreen() }
+diff --git a/templates/fragments/ui/dashboard-import.txt b/templates/fragments/ui/dashboard-import.txt
+new file mode 100644
+index 0000000..05ea1ef
+--- /dev/null
++++ b/templates/fragments/ui/dashboard-import.txt
+@@ -0,0 +1 @@
++import {{packageName}}.ui.dashboard.DashboardScreen
+diff --git a/templates/fragments/ui/dashboard-route.txt b/templates/fragments/ui/dashboard-route.txt
+new file mode 100644
+index 0000000..4b3ee9e
+--- /dev/null
++++ b/templates/fragments/ui/dashboard-route.txt
+@@ -0,0 +1 @@
++    @Serializable data object Dashboard : AppRoute
+diff --git a/templates/fragments/ui/dashboard-screen.txt b/templates/fragments/ui/dashboard-screen.txt
+new file mode 100644
+index 0000000..af12027
+--- /dev/null
++++ b/templates/fragments/ui/dashboard-screen.txt
+@@ -0,0 +1,83 @@
++package {{packageName}}.ui.dashboard
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.Card
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Text
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.TopAppBar
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import {{packageName}}.ui.theme.ComponentTokens
++import {{packageName}}.ui.theme.Spacing
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun DashboardScreen() {
++    Scaffold(
++        topBar = {
++            TopAppBar(title = { Text("Dashboard") })
++        },
++    ) { innerPadding ->
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(innerPadding)
++                .padding(Spacing.lg),
++            verticalArrangement = Arrangement.spacedBy(Spacing.md),
++        ) {
++            Text(
++                text = "Overview",
++                style = MaterialTheme.typography.headlineSmall,
++                color = MaterialTheme.colorScheme.primary,
++            )
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
++            ) {
++                InfoCard(
++                    title = "Items",
++                    value = "12",
++                    modifier = Modifier.weight(1f),
++                )
++                InfoCard(
++                    title = "Status",
++                    value = "Ready",
++                    modifier = Modifier.weight(1f),
++                )
++            }
++            Text(
++                text = "Quick actions",
++                style = MaterialTheme.typography.titleMedium,
++            )
++            Text(
++                text = "No actions are wired in F1.2. This screen is a composable starting point.",
++                style = MaterialTheme.typography.bodyMedium,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++            )
++        }
++    }
++}
++
++@Composable
++private fun InfoCard(title: String, value: String, modifier: Modifier = Modifier) {
++    Card(
++        modifier = modifier.semantics { contentDescription = "$title: $value" },
++        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
++        shape = androidx.compose.foundation.shape.RoundedCornerShape(ComponentTokens.cardCornerRadius),
++    ) {
++        Column(modifier = Modifier.padding(Spacing.md)) {
++            Text(text = title, style = MaterialTheme.typography.labelMedium)
++            Text(text = value, style = MaterialTheme.typography.headlineSmall)
++        }
++    }
++}
+diff --git a/templates/fragments/ui/navigation-app-root.txt b/templates/fragments/ui/navigation-app-root.txt
+new file mode 100644
+index 0000000..1306f83
+--- /dev/null
++++ b/templates/fragments/ui/navigation-app-root.txt
+@@ -0,0 +1,31 @@
++package {{packageName}}.ui.navigation
++
++import androidx.compose.runtime.Composable
++import androidx.navigation3.runtime.NavKey
++import androidx.navigation3.runtime.entryProvider
++import androidx.navigation3.runtime.rememberNavBackStack
++import androidx.navigation3.ui.NavDisplay
++import kotlinx.serialization.Serializable
++
++// @initializr-slot app-imports
++
++@Serializable
++sealed interface AppRoute : NavKey {
++    @Serializable
++    data object Welcome : AppRoute
++
++    // @initializr-slot app-routes
++}
++
++@Composable
++fun AppRoot() {
++    val backStack = rememberNavBackStack(AppRoute.{{initialRoute}})
++    NavDisplay(
++        backStack = backStack,
++        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
++        entryProvider = entryProvider {
++            entry<AppRoute.Welcome> { WelcomeScreen() }
++            // @initializr-slot app-entries
++        },
++    )
++}
+diff --git a/templates/fragments/ui/navigation-main-content.txt b/templates/fragments/ui/navigation-main-content.txt
+new file mode 100644
+index 0000000..98404ac
+--- /dev/null
++++ b/templates/fragments/ui/navigation-main-content.txt
+@@ -0,0 +1 @@
++{{packageName}}.ui.navigation.AppRoot()
+diff --git a/templates/fragments/ui/navigation-welcome-screen.txt b/templates/fragments/ui/navigation-welcome-screen.txt
+new file mode 100644
+index 0000000..322c7b7
+--- /dev/null
++++ b/templates/fragments/ui/navigation-welcome-screen.txt
+@@ -0,0 +1,33 @@
++package {{packageName}}.ui.navigation
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import {{packageName}}.ui.theme.Spacing
++
++@Composable
++fun WelcomeScreen() {
++    Scaffold { innerPadding ->
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(innerPadding)
++                .padding(Spacing.lg),
++            horizontalAlignment = Alignment.CenterHorizontally,
++            verticalArrangement = Arrangement.Center,
++        ) {
++            Text(
++                text = "Welcome",
++                style = MaterialTheme.typography.headlineMedium,
++                color = MaterialTheme.colorScheme.primary,
++            )
++        }
++    }
++}
+diff --git a/templates/fragments/ui/settings-entry.txt b/templates/fragments/ui/settings-entry.txt
+new file mode 100644
+index 0000000..59ff195
+--- /dev/null
++++ b/templates/fragments/ui/settings-entry.txt
+@@ -0,0 +1 @@
++            entry<AppRoute.Settings> { SettingsScreen() }
+diff --git a/templates/fragments/ui/settings-import.txt b/templates/fragments/ui/settings-import.txt
+new file mode 100644
+index 0000000..17cc469
+--- /dev/null
++++ b/templates/fragments/ui/settings-import.txt
+@@ -0,0 +1 @@
++import {{packageName}}.ui.settings.SettingsScreen
+diff --git a/templates/fragments/ui/settings-route.txt b/templates/fragments/ui/settings-route.txt
+new file mode 100644
+index 0000000..a05cf87
+--- /dev/null
++++ b/templates/fragments/ui/settings-route.txt
+@@ -0,0 +1 @@
++    @Serializable data object Settings : AppRoute
+diff --git a/templates/fragments/ui/settings-screen.txt b/templates/fragments/ui/settings-screen.txt
+new file mode 100644
+index 0000000..4a9383e
+--- /dev/null
++++ b/templates/fragments/ui/settings-screen.txt
+@@ -0,0 +1,96 @@
++package {{packageName}}.ui.settings
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.HorizontalDivider
++import androidx.compose.material3.ListItem
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Switch
++import androidx.compose.material3.Text
++import androidx.compose.material3.TopAppBar
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.saveable.rememberSaveable
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import {{packageName}}.ui.theme.Spacing
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun SettingsScreen() {
++    var darkMode by rememberSaveable { mutableStateOf(false) }
++    var notifications by remember { mutableStateOf(true) }
++
++    Scaffold(
++        topBar = {
++            TopAppBar(title = { Text("Settings") })
++        },
++    ) { innerPadding ->
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(innerPadding),
++        ) {
++            SettingsGroup(title = "Appearance") {
++                ListItem(
++                    headlineContent = { Text("Dark mode") },
++                    supportingContent = { Text("Follow the selected appearance preference") },
++                    trailingContent = {
++                        Switch(
++                            checked = darkMode,
++                            onCheckedChange = { darkMode = it },
++                            modifier = Modifier.semantics { contentDescription = "Dark mode" },
++                        )
++                    },
++                )
++            }
++            HorizontalDivider()
++            SettingsGroup(title = "Notifications") {
++                ListItem(
++                    headlineContent = { Text("Enable notifications") },
++                    supportingContent = { Text("Temporary preference state for F1.2") },
++                    trailingContent = {
++                        Switch(
++                            checked = notifications,
++                            onCheckedChange = { notifications = it },
++                            modifier = Modifier.semantics { contentDescription = "Notifications" },
++                        )
++                    },
++                )
++            }
++            HorizontalDivider()
++            SettingsGroup(title = "About") {
++                ListItem(
++                    headlineContent = { Text("Android Initializr") },
++                    supportingContent = { Text("Generated native Android project") },
++                )
++                ListItem(
++                    headlineContent = { Text("Version") },
++                    supportingContent = { Text("1.0") },
++                )
++            }
++        }
++    }
++}
++
++@Composable
++private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
++    Column {
++        Text(
++            text = title,
++            style = MaterialTheme.typography.titleSmall,
++            color = MaterialTheme.colorScheme.primary,
++            modifier = Modifier.padding(Spacing.lg),
++        )
++        content()
++    }
++}
+diff --git a/tests/ui-addons.test.ts b/tests/ui-addons.test.ts
+new file mode 100644
+index 0000000..50c5fb9
+--- /dev/null
++++ b/tests/ui-addons.test.ts
+@@ -0,0 +1,103 @@
++import { describe, expect, test } from "bun:test";
++import { generateProject, materializeProject } from "@android-initializr/generator";
++import { InitializrError } from "@android-initializr/schema";
++import { baseRequest } from "./fixtures";
++
++function text(files: Map<string, Uint8Array>, path: string): string {
++  return new TextDecoder().decode(files.get(path)!);
++}
++
++describe("ui addons", () => {
++  test("navigation is resolved automatically for dashboard and settings", () => {
++    const project = materializeProject(baseRequest({ addons: ["ui/dashboard", "ui/settings"] }));
++    expect(project.plan.request.addons).toEqual(["ui/dashboard", "ui/navigation", "ui/settings"]);
++  });
++
++  test("rejects incompatible minSdk", () => {
++    expect(() => baseRequest({ addons: ["ui/dashboard"], minSdk: 23 })).toThrow();
++    expect(() => materializeProject(baseRequest({ addons: ["ui/dashboard"], minSdk: 24 }))).not.toThrow();
++  });
++
++  test("generates navigation, dashboard and settings files", () => {
++    const project = materializeProject(baseRequest({ addons: ["ui/dashboard", "ui/settings"] }));
++    const paths = project.plan.files.map((file) => file.path);
++    expect(paths).toContain("app/src/main/java/com/example/demo/ui/navigation/AppRoot.kt");
++    expect(paths).toContain("app/src/main/java/com/example/demo/ui/navigation/WelcomeScreen.kt");
++    expect(paths).toContain("app/src/main/java/com/example/demo/ui/dashboard/DashboardScreen.kt");
++    expect(paths).toContain("app/src/main/java/com/example/demo/ui/settings/SettingsScreen.kt");
++  });
++
++  test("registers destinations without duplicate imports", () => {
++    const project = materializeProject(baseRequest({ addons: ["ui/dashboard", "ui/settings"] }));
++    const appRoot = text(project.files, "app/src/main/java/com/example/demo/ui/navigation/AppRoot.kt");
++    expect(appRoot).toContain("import com.example.demo.ui.dashboard.DashboardScreen");
++    expect(appRoot).toContain("import com.example.demo.ui.settings.SettingsScreen");
++    expect(appRoot.match(/import com\.example\.demo\.ui\.dashboard\.DashboardScreen/g)?.length).toBe(1);
++    expect(appRoot).toContain("@Serializable data object Dashboard : AppRoute");
++    expect(appRoot).toContain("@Serializable data object Settings : AppRoute");
++    expect(appRoot).toContain("entry<AppRoute.Dashboard> { DashboardScreen() }");
++    expect(appRoot).toContain("entry<AppRoute.Settings> { SettingsScreen() }");
++  });
++
++  test("chooses a deterministic initial destination", () => {
++    const both = text(
++      materializeProject(baseRequest({ addons: ["ui/dashboard", "ui/settings"] })).files,
++      "app/src/main/java/com/example/demo/ui/navigation/AppRoot.kt",
++    );
++    expect(both).toContain("rememberNavBackStack(AppRoute.Dashboard)");
++    const settingsOnly = text(
++      materializeProject(baseRequest({ addons: ["ui/settings"] })).files,
++      "app/src/main/java/com/example/demo/ui/navigation/AppRoot.kt",
++    );
++    expect(settingsOnly).toContain("rememberNavBackStack(AppRoute.Settings)");
++    const navigationOnly = text(
++      materializeProject(baseRequest({ addons: ["ui/navigation"] })).files,
++      "app/src/main/java/com/example/demo/ui/navigation/AppRoot.kt",
++    );
++    expect(navigationOnly).toContain("rememberNavBackStack(AppRoute.Welcome)");
++  });
++});
++describe("ui gradle integration", () => {
++  const project = materializeProject(baseRequest({ addons: ["ui/dashboard", "ui/settings"] }));
++  const build = text(project.files, "app/build.gradle.kts");
++  const catalogText = text(project.files, "gradle/libs.versions.toml");
++
++  test("adds navigation dependencies without duplicates", () => {
++    expect(build).toContain("implementation(libs.navigation3runtime)");
++    expect(build).toContain("implementation(libs.navigation3ui)");
++    expect(build).toContain("implementation(libs.kotlinxserializationjson)");
++    expect(build).toContain("alias(libs.plugins.serialization)");
++    expect(build.split("implementation(libs.navigation3runtime)").length - 1).toBe(1);
++  });
++
++  test("does not add ui artifacts to the minimal project", () => {
++    const minimal = materializeProject(baseRequest());
++    const minimalBuild = text(minimal.files, "app/build.gradle.kts");
++    expect(minimalBuild).not.toContain("navigation3");
++    expect(minimalBuild).not.toContain("material-icons-core");
++    expect(minimal.plan.operations).toEqual([]);
++  });
++});
++
++describe("ui determinism", () => {
++  test("zip is byte-identical for different selection orders", () => {
++    const first = generateProject(baseRequest({ addons: ["ui/dashboard", "ui/settings"] }));
++    const second = generateProject(baseRequest({ addons: ["ui/settings", "ui/dashboard"] }));
++    expect(Buffer.from(first.zip).equals(Buffer.from(second.zip))).toBe(true);
++  });
++
++  test("custom namespace changes generated paths", () => {
++    const project = materializeProject(baseRequest({
++      projectName: "UI Demo",
++      applicationId: "com.acme.mobile",
++      namespace: "dev.example.notes",
++      packageName: "pe.demo.inventory",
++      addons: ["ui/settings"],
++    }));
++    expect(project.plan.files.map((file) => file.path)).toContain(
++      "app/src/main/java/pe/demo/inventory/ui/settings/SettingsScreen.kt",
++    );
++    const screen = text(project.files, "app/src/main/java/pe/demo/inventory/ui/settings/SettingsScreen.kt");
++    expect(screen).toContain("package pe.demo.inventory.ui.settings");
++  });
++});

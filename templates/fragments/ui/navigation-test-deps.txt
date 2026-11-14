@@ -1,0 +1,4 @@
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidxtestextjunit)
+    androidTestImplementation(libs.composeuitestjunit4)
+    debugImplementation(libs.composeuitestmanifest)

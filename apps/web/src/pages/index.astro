@@ -2,8 +2,10 @@
 import Layout from "../layouts/Layout.astro";
 import Configurator from "../components/Configurator";
 import { buildCatalog } from "@android-initializr/catalog";
+import { ALL_PRESETS } from "@android-initializr/catalog";
 
 const catalog = buildCatalog();
+const presets = ALL_PRESETS;
 ---
 
 <Layout title="Android Initializr — native Android, from a single request">
@@ -36,7 +38,7 @@ const catalog = buildCatalog();
   </section>
 
   <section id="configurator" aria-label="Project configurator">
-    <Configurator catalog={catalog} client:load />
+    <Configurator catalog={catalog} presets={presets} client:load />
   </section>
 
   <section class="facts" aria-labelledby="facts-title">

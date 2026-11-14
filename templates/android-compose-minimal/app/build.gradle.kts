@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
+    // @initializr-slot app-plugins
 }
 
 android {
@@ -13,15 +14,16 @@ android {
         targetSdk = {{targetSdk}}
         versionCode = 1
         versionName = "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+            // AGP 9.3+: enables R8 and optimized resource shrinking for release.
+            optimization {
+                enable = true
+            }
+            proguardFiles("proguard-rules.pro")
         }
     }
 
@@ -33,6 +35,7 @@ android {
     buildFeatures {
         compose = true
     }
+    // @initializr-slot app-room-config
 }
 
 dependencies {
@@ -48,4 +51,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    // @initializr-slot app-dependencies
 }

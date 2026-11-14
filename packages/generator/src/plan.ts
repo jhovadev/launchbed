@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import {
   ALL_ADDONS,
   buildCatalog,
+  findPreset,
+  isPresetGeneratable,
 } from "@android-initializr/catalog";
 import { resolveAddons } from "@android-initializr/resolver";
 import {
@@ -9,6 +11,7 @@ import {
   GENERATION_SCHEMA_VERSION,
   LIMITS,
   ProjectRequestSchema,
+  ThemeConfigSchema,
   TEMPLATE_ID,
   TEMPLATE_VERSION,
   issuesFromZod,
@@ -31,6 +34,7 @@ import { renderText, type TemplateVars } from "./render";
 import { FRAGMENT_FILES, TEMPLATE_FILES } from "./templates.generated";
 import { TOOLCHAIN, sdkPlatformPackage } from "./versions";
 import { createZip, readZip } from "./zip";
+import { applyComposition } from "./composition";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
@@ -103,7 +107,20 @@ function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens): Templa
         ? "true"
         : "false";
 
+  const hasNavigation = request.addons.includes("ui/navigation");
+  const initialRoute = request.addons.includes("ui/dashboard")
+    ? "Dashboard"
+    : request.addons.includes("ui/settings")
+      ? "Settings"
+      : request.addons.includes("ui/notes")
+        ? "Notes"
+        : request.addons.includes("ui/catalog")
+          ? "Catalog"
+          : "Welcome";
+
   return {
+    hasNavigation: String(hasNavigation),
+    initialRoute,
     projectName: request.projectName,
     applicationId: request.applicationId,
     namespace: request.namespace,
@@ -153,67 +170,37 @@ function decodeEmbedded(file: { encoding: "utf8" | "base64"; content: string }):
   if (file.encoding === "utf8") return encoder.encode(file.content);
   return new Uint8Array(Buffer.from(file.content, "base64"));
 }
-
-/**
- * Applies addon file operations. Only stable/beta addons reach this function
- * (the resolver rejects the rest). `modify` is intentionally not implemented
- * yet: failing loudly is safer than pretending to patch source files.
- */
-export function applyAddonOperations(
-  addons: readonly AddonManifest[],
-  files: Map<string, Uint8Array>,
-  origins: Map<string, "template" | "generated" | "addon">,
-  vars: TemplateVars,
-  fragments: Readonly<Record<string, string>> = FRAGMENT_FILES,
-): void {
-  for (const addon of addons) {
-    for (const operation of addon.fileOperations) {
-      const path = renderText(operation.path, vars, `${addon.id} file path`);
-      const fragmentKey = `${operation.template}.txt`;
-      const fragment = fragments[fragmentKey];
-      if (fragment === undefined) {
-        throw new InitializrError(
-          "TEMPLATE_ERROR",
-          `Addon ${addon.id} references missing local fragment "${operation.template}".`,
-        );
-      }
-      const rendered = renderText(fragment, vars, `${addon.id} fragment ${operation.template}`);
-
-      if (operation.type === "add") {
-        addFile(files, origins, path, encoder.encode(rendered), "addon");
-      } else if (operation.type === "append") {
-        const existing = files.get(path);
-        if (!existing) {
-          throw new InitializrError("TEMPLATE_ERROR", `Addon ${addon.id} appends to missing file ${path}.`);
-        }
-        const endsWithNewline = existing.length > 0 && existing[existing.length - 1] === 0x0a;
-        const addition = encoder.encode(`${endsWithNewline || rendered.startsWith("\n") ? "" : "\n"}${rendered}`);
-        const merged = new Uint8Array(existing.length + addition.length);
-        merged.set(existing, 0);
-        merged.set(addition, existing.length);
-        if (merged.length > MAX_FILE_BYTES) {
-          throw new InitializrError("LIMIT_EXCEEDED", `Addon ${addon.id} makes ${path} too large.`);
-        }
-        files.set(path, merged);
-      } else {
-        throw new InitializrError(
-          "TEMPLATE_ERROR",
-          `Addon ${addon.id} uses "${operation.type}", which is not implemented in F0.`,
-        );
-      }
-    }
-  }
+export interface EngineOptions {
+  addons?: readonly AddonManifest[];
+  fragments?: Readonly<Record<string, string>>;
 }
 
-/**
- * ProjectRequest -> validate -> resolve -> plan -> render.
- * No timestamps, no randomness, no environment-dependent ordering.
- */
-export function materializeProject(input: ProjectRequestInput | ProjectRequest): MaterializedProject {
+export function materializeProject(
+  input: ProjectRequestInput | ProjectRequest,
+  options: EngineOptions = {},
+): MaterializedProject {
   const request = parseRequest(input);
-  const resolution = resolveAddons(request, ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
-  const tokens = resolveThemeTokens(request.theme);
-  const vars = buildTemplateVars(request, tokens);
+  const preset = request.preset ? findPreset(request.preset) : undefined;
+  if (request.preset && !preset) {
+    throw new InitializrError("INVALID_REQUEST", `Unknown project preset "${request.preset}".`);
+  }
+  if (preset && !isPresetGeneratable(preset)) {
+    throw new InitializrError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
+  }
+  const defaultTheme = ThemeConfigSchema.parse({});
+  const resolvedRequest = preset
+    ? {
+        ...request,
+        addons: [...new Set([...preset.requiredAddons, ...request.addons])].sort(),
+        theme:
+          JSON.stringify(request.theme) === JSON.stringify(defaultTheme)
+            ? preset.defaultTheme
+            : request.theme,
+      }
+    : request;
+  const resolution = resolveAddons(resolvedRequest, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
+  const tokens = resolveThemeTokens(resolvedRequest.theme);
+  const vars = buildTemplateVars(resolvedRequest, tokens);
   const files = new Map<string, Uint8Array>();
   const origins = new Map<string, "template" | "generated" | "addon">();
 
@@ -244,7 +231,13 @@ export function materializeProject(input: ProjectRequestInput | ProjectRequest):
     "generated",
   );
 
-  applyAddonOperations(resolution.addons, files, origins, vars);
+  const composition = applyComposition(
+    resolution.addons,
+    files,
+    origins,
+    vars,
+    options.fragments,
+  );
 
   if (files.size > LIMITS.files) {
     throw new InitializrError("LIMIT_EXCEEDED", `Generated ${files.size} files; the limit is ${LIMITS.files}.`);
@@ -276,17 +269,19 @@ export function materializeProject(input: ProjectRequestInput | ProjectRequest):
     schemaVersion: GENERATION_SCHEMA_VERSION,
     template: { id: TEMPLATE_ID, version: TEMPLATE_VERSION },
     request: {
-      hash: requestHash(request),
-      projectName: request.projectName,
-      applicationId: request.applicationId,
-      namespace: request.namespace,
-      packageName: request.packageName!,
-      minSdk: request.minSdk,
-      compileSdk: request.compileSdk,
-      targetSdk: request.targetSdk,
+      hash: requestHash(resolvedRequest),
+      projectName: resolvedRequest.projectName,
+      applicationId: resolvedRequest.applicationId,
+      namespace: resolvedRequest.namespace,
+      packageName: resolvedRequest.packageName!,
+      minSdk: resolvedRequest.minSdk,
+      compileSdk: resolvedRequest.compileSdk,
+      targetSdk: resolvedRequest.targetSdk,
       addons: resolution.addons.map((addon) => addon.id),
+      preset: resolvedRequest.preset,
     },
     files: plannedFiles,
+    operations: composition.operations,
     totals: { files: plannedFiles.length, bytes: totalBytes },
     warnings,
   };
@@ -294,8 +289,11 @@ export function materializeProject(input: ProjectRequestInput | ProjectRequest):
   return { plan, files, warnings };
 }
 
-export function createPlan(input: ProjectRequestInput | ProjectRequest): GenerationPlan {
-  return materializeProject(input).plan;
+export function createPlan(
+  input: ProjectRequestInput | ProjectRequest,
+  options: EngineOptions = {},
+): GenerationPlan {
+  return materializeProject(input, options).plan;
 }
 
 export interface GeneratedProject {
@@ -335,8 +333,11 @@ export function verifyZipAgainstPlan(zip: Uint8Array, plan: GenerationPlan): voi
 }
 
 /** Request -> validate -> resolve -> plan -> render -> package. */
-export function generateProject(input: ProjectRequestInput | ProjectRequest): GeneratedProject {
-  const { plan, files } = materializeProject(input);
+export function generateProject(
+  input: ProjectRequestInput | ProjectRequest,
+  options: EngineOptions = {},
+): GeneratedProject {
+  const { plan, files } = materializeProject(input, options);
   const entries = [...files.entries()].map(([path, data]) => ({
     path,
     data,

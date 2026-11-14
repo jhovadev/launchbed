@@ -1,0 +1,739 @@
+diff --git a/addons/ui/notes.json b/addons/ui/notes.json
+new file mode 100644
+index 0000000..0e87a93
+--- /dev/null
++++ b/addons/ui/notes.json
+@@ -0,0 +1,101 @@
++{
++  "id": "ui/notes",
++  "version": "0.1.0",
++  "displayName": "Notes",
++  "description": "Reactive note list and editor backed by Room, with Navigation 3 and unidirectional state.",
++  "category": "ui",
++  "status": "beta",
++  "dependencies": [
++    "storage/room",
++    "ui/navigation"
++  ],
++  "conflicts": [],
++  "capabilities": [
++    "compose-ui",
++    "notes",
++    "room",
++    "navigation",
++    "material3"
++  ],
++  "requirements": {
++    "minSdk": 24,
++    "compileSdk": 34,
++    "jdk": 17
++  },
++  "fileOperations": [
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "lifecycleviewmodelcompose",
++      "module": "androidx.lifecycle:lifecycle-viewmodel-compose",
++      "version": "2.11.0"
++    },
++    {
++      "type": "merge",
++      "target": "version-catalog",
++      "alias": "lifecycleruntimecompose",
++      "module": "androidx.lifecycle:lifecycle-runtime-compose",
++      "version": "2.11.0"
++    },
++    {
++      "type": "merge",
++      "target": "app-dependencies",
++      "alias": "lifecycleviewmodelcompose"
++    },
++    {
++      "type": "merge",
++      "target": "app-dependencies",
++      "alias": "lifecycleruntimecompose"
++    },
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/feature/notes/NotesUiState.kt",
++      "template": "ui/notes-ui-state"
++    },
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/feature/notes/NotesViewModel.kt",
++      "template": "ui/notes-viewmodel"
++    },
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/feature/notes/NotesScreen.kt",
++      "template": "ui/notes-screen"
++    },
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/feature/notes/NoteEditorScreen.kt",
++      "template": "ui/notes-editor-screen"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-imports",
++      "template": "ui/notes-import"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-routes",
++      "template": "ui/notes-route"
++    },
++    {
++      "type": "insert",
++      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
++      "slot": "app-entries",
++      "template": "ui/notes-entry"
++    }
++  ],
++  "compatibility": {
++    "android": [
++      "7.0+"
++    ],
++    "notes": [
++      "Beta in F1.3: validated by generated-project compilation.",
++      "Requires storage/room and ui/navigation.",
++      "No Hilt/Koin, DataStore, auth or remote sync."
++    ]
++  },
++  "license": "MIT",
++  "docsUrl": "https://developer.android.com/topic/architecture"
++}
+diff --git a/docs/phases/F1.3-reactive-room-compose.md b/docs/phases/F1.3-reactive-room-compose.md
+new file mode 100644
+index 0000000..ac1f3f2
+--- /dev/null
++++ b/docs/phases/F1.3-reactive-room-compose.md
+@@ -0,0 +1,36 @@
++# F1.3 — Reactive Room + Compose
++
++Date: 2026-11-14 · Base commit: `a316f53`
++
++## Scope delivered
++
++- Addon `ui/notes` (beta, generatable) depends on `storage/room` and `ui/navigation`.
++- Generated `NotesUiState`, `NotesViewModel`, `NotesScreen`, `NoteEditorScreen`.
++- ViewModel with `StateFlow`, `viewModelScope`, validation, error handling and UDF.
++- Room DAO reactive `Flow`, no main-thread queries.
++- Navigation 3 integration with `Notes` and `NoteEditor` routes.
++- Web preview remains token-based.
++
++## Validation
++
++| Check | Result |
++| --- | --- |
++| `bun run typecheck` | PASS |
++| `bun test packages tests` | PASS: 94 tests, 570 assertions |
++| `bun run check:astro` | PASS |
++| `bun run templates:check` | PASS |
++| `bun run build` | PASS |
++| Notes project `assembleDebug` | PASS |
++| Notes `testDebugUnitTest` | PASS |
++| Notes `lintDebug` | PASS |
++| Notes `compileDebugAndroidTestKotlin` | PASS |
++| Room+Notes+UI combination | PASS |
++| Determinism API/CLI | PASS |
++
++## Known limitations
++
++- Instrumented UI/CRUD tests compiled but not executed (no device/emulator).
++- Room remains beta due to lack of runtime persistence evidence.
++- No ViewModel JVM tests yet; added only generated-code and composition tests.
++EOF
++wc -c docs/phases/F1.3-reactive-room-compose.md
+\ No newline at end of file
+diff --git a/packages/catalog/src/index.ts b/packages/catalog/src/index.ts
+index 8e303fd..991d0fe 100644
+--- a/packages/catalog/src/index.ts
++++ b/packages/catalog/src/index.ts
+@@ -17,6 +17,7 @@ import onboarding from "../../../addons/ui/onboarding.json";
+ import settings from "../../../addons/ui/settings.json";
+ import dashboard from "../../../addons/ui/dashboard.json";
+ import navigation from "../../../addons/ui/navigation.json";
++import notes from "../../../addons/ui/notes.json";
+ import rustFfi from "../../../addons/native/rust-ffi.json";
+ import zigFfi from "../../../addons/native/zig-ffi.json";
+ import jniBridge from "../../../addons/native/jni-bridge.json";
+@@ -37,6 +38,7 @@ const RAW_MANIFESTS = [
+   settings,
+   dashboard,
+   navigation,
++  notes,
+   rustFfi,
+   zigFfi,
+   jniBridge,
+diff --git a/packages/generator/src/composition.ts b/packages/generator/src/composition.ts
+index 529c2cf..dfa5d46 100644
+--- a/packages/generator/src/composition.ts
++++ b/packages/generator/src/composition.ts
+@@ -183,8 +183,20 @@ export function applyComposition(
+     const ordered = [...contributions].sort(
+       (a, b) => (a.addon < b.addon ? -1 : a.addon > b.addon ? 1 : a.index - b.index),
+     );
++    const seenContributions = new Set<string>();
++    const seenImports = new Set<string>();
++    const lines: string[] = [];
++    for (const contribution of ordered) {
++      const key = contribution.lines.join("\\n");
++      if (seenContributions.has(key)) continue;
++      seenContributions.add(key);
++      for (const line of contribution.lines) {
++        if (line.trim().startsWith("import ") && seenImports.has(line.trim())) continue;
++        if (line.trim().startsWith("import ")) seenImports.add(line.trim());
++        lines.push(line);
++      }
++    }
+     const path = ordered[0]!.path;
+-    const lines = [...new Set(ordered.flatMap((item) => item.lines))];
+     insertIntoSlot(files, path, slot, lines);
+   }
+ 
+diff --git a/packages/generator/src/templates.generated.ts b/packages/generator/src/templates.generated.ts
+index ac157c3..df9779e 100644
+--- a/packages/generator/src/templates.generated.ts
++++ b/packages/generator/src/templates.generated.ts
+@@ -67,6 +67,14 @@ export const FRAGMENT_FILES: Readonly<Record<string, string>> = {
+   "ui/navigation-app-root.txt": "package {{packageName}}.ui.navigation\n\nimport androidx.compose.runtime.Composable\nimport androidx.navigation3.runtime.NavKey\nimport androidx.navigation3.runtime.entryProvider\nimport androidx.navigation3.runtime.rememberNavBackStack\nimport androidx.navigation3.ui.NavDisplay\nimport kotlinx.serialization.Serializable\n\n// @initializr-slot app-imports\n\n@Serializable\nsealed interface AppRoute : NavKey {\n    @Serializable\n    data object Welcome : AppRoute\n\n    // @initializr-slot app-routes\n}\n\n@Composable\nfun AppRoot() {\n    val backStack = rememberNavBackStack(AppRoute.{{initialRoute}})\n    NavDisplay(\n        backStack = backStack,\n        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },\n        entryProvider = entryProvider {\n            entry<AppRoute.Welcome> { WelcomeScreen() }\n            // @initializr-slot app-entries\n        },\n    )\n}\n",
+   "ui/navigation-main-content.txt": "{{packageName}}.ui.navigation.AppRoot()\n",
+   "ui/navigation-welcome-screen.txt": "package {{packageName}}.ui.navigation\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport {{packageName}}.ui.theme.Spacing\n\n@Composable\nfun WelcomeScreen() {\n    Scaffold { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(Spacing.lg),\n            horizontalAlignment = Alignment.CenterHorizontally,\n            verticalArrangement = Arrangement.Center,\n        ) {\n            Text(\n                text = \"Welcome\",\n                style = MaterialTheme.typography.headlineMedium,\n                color = MaterialTheme.colorScheme.primary,\n            )\n        }\n    }\n}\n",
++  "ui/notes-app-root.txt": "package {{packageName}}.ui.navigation\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\nimport androidx.compose.runtime.remember\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\nimport androidx.lifecycle.viewmodel.compose.viewModel\nimport androidx.navigation3.runtime.NavKey\nimport androidx.navigation3.runtime.entryProvider\nimport androidx.navigation3.runtime.rememberNavBackStack\nimport androidx.navigation3.ui.NavDisplay\nimport kotlinx.serialization.Serializable\nimport {{packageName}}.data.repository.NoteRepository\nimport {{packageName}}.feature.notes.NotesScreen\nimport {{packageName}}.feature.notes.NoteEditorScreen\nimport {{packageName}}.feature.notes.NotesViewModel\nimport {{packageName}}.feature.notes.NotesViewModelFactory\nimport {{packageName}}.data.local.DatabaseProvider\n\n// @initializr-slot app-imports\n\n@Serializable\nsealed interface AppRoute : NavKey {\n    @Serializable\n    data object Welcome : AppRoute\n\n    // @initializr-slot app-routes\n}\n\n@Composable\nfun AppRoot() {\n    val backStack = rememberNavBackStack(AppRoute.{{initialRoute}})\n    val context = androidx.compose.ui.platform.LocalContext.current\n    val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }\n    val viewModel = viewModel(factory = NotesViewModelFactory(repository))\n    NavDisplay(\n        backStack = backStack,\n        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },\n        entryProvider = entryProvider {\n            entry<AppRoute.Welcome> { WelcomeScreen() }\n            // @initializr-slot app-entries\n        },\n    )\n}\n",
++  "ui/notes-editor-screen.txt": "package {{packageName}}.feature.notes\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.automirrored.filled.ArrowBack\nimport androidx.compose.material3.Button\nimport androidx.compose.material3.ExperimentalMaterial3Api\nimport androidx.compose.material3.Icon\nimport androidx.compose.material3.IconButton\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.OutlinedTextField\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.material3.TopAppBar\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.Modifier\nimport {{packageName}}.ui.theme.Spacing\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun NoteEditorScreen(\n    editor: NoteEditorState,\n    isSaving: Boolean,\n    onTitleChanged: (String) -> Unit,\n    onContentChanged: (String) -> Unit,\n    onSave: () -> Unit,\n    onBack: () -> Unit,\n) {\n    Scaffold(\n        topBar = {\n            TopAppBar(\n                title = { Text(if (editor.noteId == null) \"New note\" else \"Edit note\") },\n                navigationIcon = {\n                    IconButton(onClick = onBack) {\n                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = \"Back\")\n                    }\n                },\n            )\n        },\n    ) { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(Spacing.lg),\n            verticalArrangement = Arrangement.spacedBy(Spacing.md),\n        ) {\n            OutlinedTextField(\n                value = editor.title,\n                onValueChange = onTitleChanged,\n                label = { Text(\"Title\") },\n                isError = editor.titleError != null,\n                supportingText = { editor.titleError?.let { Text(it) } },\n                modifier = Modifier.fillMaxWidth(),\n                singleLine = true,\n            )\n            OutlinedTextField(\n                value = editor.content,\n                onValueChange = onContentChanged,\n                label = { Text(\"Content\") },\n                modifier = Modifier.fillMaxWidth(),\n                minLines = 4,\n            )\n            Button(onClick = onSave, enabled = !isSaving) {\n                Text(if (isSaving) \"Saving...\" else \"Save\")\n            }\n        }\n    }\n}\n",
++  "ui/notes-entry.txt": "            entry<AppRoute.Notes> {\n                val context = androidx.compose.ui.platform.LocalContext.current\n                val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }\n                val viewModel = viewModel<NotesViewModel>(factory = NotesViewModelFactory(repository))\n                NotesScreen(\n                    uiState = viewModel.uiState.collectAsStateWithLifecycle().value,\n                    onAdd = { backStack.add(AppRoute.NoteEditor(null)) },\n                    onEdit = { note -> backStack.add(AppRoute.NoteEditor(note.id)) },\n                    onDelete = viewModel::delete,\n                    onDismissError = viewModel::clearError,\n                )\n            }\n            entry<AppRoute.NoteEditor> { route ->\n                val context = androidx.compose.ui.platform.LocalContext.current\n                val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }\n                val viewModel = viewModel<NotesViewModel>(factory = NotesViewModelFactory(repository))\n                LaunchedEffect(route.noteId) { viewModel.openNoteById(route.noteId) }\n                val uiState by viewModel.uiState.collectAsStateWithLifecycle()\n                NoteEditorScreen(\n                    editor = uiState.editor,\n                    isSaving = uiState.isSaving,\n                    onTitleChanged = viewModel::updateTitle,\n                    onContentChanged = viewModel::updateContent,\n                    onSave = viewModel::save,\n                    onBack = { backStack.removeLastOrNull() },\n                )\n            }\n",
++  "ui/notes-import.txt": "import {{packageName}}.data.local.DatabaseProvider\nimport {{packageName}}.data.repository.NoteRepository\nimport {{packageName}}.feature.notes.NoteEditorScreen\nimport {{packageName}}.feature.notes.NotesScreen\nimport {{packageName}}.feature.notes.NotesViewModel\nimport {{packageName}}.feature.notes.NotesViewModelFactory\nimport androidx.compose.runtime.LaunchedEffect\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.remember\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\nimport androidx.lifecycle.viewmodel.compose.viewModel\n",
++  "ui/notes-route.txt": "    @Serializable data class NoteEditor(val noteId: Long? = null) : AppRoute\n    @Serializable data object Notes : AppRoute\n",
++  "ui/notes-screen.txt": "package {{packageName}}.feature.notes\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.foundation.lazy.LazyColumn\nimport androidx.compose.foundation.lazy.items\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.Delete\nimport androidx.compose.material.icons.filled.Edit\nimport androidx.compose.material3.AlertDialog\nimport androidx.compose.material3.Card\nimport androidx.compose.material3.CardDefaults\nimport androidx.compose.material3.ExperimentalMaterial3Api\nimport androidx.compose.material3.FloatingActionButton\nimport androidx.compose.material3.Icon\nimport androidx.compose.material3.IconButton\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.material3.TextButton\nimport androidx.compose.material3.TopAppBar\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.semantics.contentDescription\nimport androidx.compose.ui.semantics.semantics\nimport androidx.compose.ui.text.style.TextOverflow\nimport {{packageName}}.data.local.NoteEntity\nimport {{packageName}}.ui.theme.Spacing\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun NotesScreen(\n    uiState: NotesUiState,\n    onAdd: () -> Unit,\n    onEdit: (NoteEntity) -> Unit,\n    onDelete: (NoteEntity) -> Unit,\n    onDismissError: () -> Unit,\n) {\n    Scaffold(\n        topBar = { TopAppBar(title = { Text(\"Notes\") }) },\n        floatingActionButton = {\n            FloatingActionButton(onClick = onAdd) {\n                Icon(Icons.Filled.Add, contentDescription = \"Add note\")\n            }\n        },\n    ) { innerPadding ->\n        if (uiState.isLoading) {\n            Column(\n                modifier = Modifier\n                    .fillMaxSize()\n                    .padding(innerPadding),\n                horizontalAlignment = Alignment.CenterHorizontally,\n                verticalArrangement = Arrangement.Center,\n            ) {\n                Text(\"Loading notes...\")\n            }\n            return@Scaffold\n        }\n        if (uiState.notes.isEmpty()) {\n            Column(\n                modifier = Modifier\n                    .fillMaxSize()\n                    .padding(innerPadding)\n                    .padding(Spacing.lg),\n                horizontalAlignment = Alignment.CenterHorizontally,\n                verticalArrangement = Arrangement.Center,\n            ) {\n                Text(\"No notes yet\", style = MaterialTheme.typography.headlineSmall)\n                Text(\"Tap + to create your first note\", color = MaterialTheme.colorScheme.onSurfaceVariant)\n            }\n            return@Scaffold\n        }\n        LazyColumn(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(horizontal = Spacing.lg),\n            verticalArrangement = Arrangement.spacedBy(Spacing.sm),\n        ) {\n            items(uiState.notes, key = { it.id }, contentType = { \"note\" }) { note ->\n                NoteRow(note = note, onEdit = onEdit, onDelete = onDelete)\n            }\n        }\n        if (uiState.errorMessage != null) {\n            AlertDialog(\n                onDismissRequest = onDismissError,\n                confirmButton = { TextButton(onClick = onDismissError) { Text(\"OK\") } },\n                title = { Text(\"Error\") },\n                text = { Text(uiState.errorMessage) },\n            )\n        }\n    }\n}\n\n@Composable\nprivate fun NoteRow(note: NoteEntity, onEdit: (NoteEntity) -> Unit, onDelete: (NoteEntity) -> Unit) {\n    Card {\n        Row(\n            modifier = Modifier\n                .fillMaxWidth()\n                .padding(Spacing.md),\n            verticalAlignment = Alignment.CenterVertically,\n        ) {\n            Column(modifier = Modifier.weight(1f)) {\n                Text(text = note.title, style = MaterialTheme.typography.titleMedium)\n                Text(\n                    text = note.content,\n                    style = MaterialTheme.typography.bodyMedium,\n                    color = MaterialTheme.colorScheme.onSurfaceVariant,\n                    maxLines = 2,\n                    overflow = TextOverflow.Ellipsis,\n                )\n            }\n            IconButton(onClick = { onEdit(note) }) {\n                Icon(Icons.Filled.Edit, contentDescription = \"Edit note\")\n            }\n            IconButton(onClick = { onDelete(note) }) {\n                Icon(Icons.Filled.Delete, contentDescription = \"Delete note\")\n            }\n        }\n    }\n}\n",
++  "ui/notes-ui-state.txt": "package {{packageName}}.feature.notes\n\nimport {{packageName}}.data.local.NoteEntity\n\ndata class NoteEditorState(\n    val noteId: Long? = null,\n    val title: String = \"\",\n    val content: String = \"\",\n    val titleError: String? = null,\n)\n\ndata class NotesUiState(\n    val notes: List<NoteEntity> = emptyList(),\n    val isLoading: Boolean = true,\n    val errorMessage: String? = null,\n    val editor: NoteEditorState = NoteEditorState(),\n    val isSaving: Boolean = false,\n)\n",
++  "ui/notes-viewmodel.txt": "package {{packageName}}.feature.notes\n\nimport {{packageName}}.data.local.NoteEntity\nimport {{packageName}}.data.repository.NoteRepository\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.ViewModelProvider\nimport androidx.lifecycle.viewModelScope\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutines.flow.StateFlow\nimport kotlinx.coroutines.flow.asStateFlow\nimport kotlinx.coroutines.flow.catch\nimport kotlinx.coroutines.flow.update\nimport kotlinx.coroutines.launch\n\nclass NotesViewModel(\n    private val repository: NoteRepository,\n) : ViewModel() {\n\n    private val _uiState = MutableStateFlow(NotesUiState())\n    val uiState: StateFlow<NotesUiState> = _uiState.asStateFlow()\n\n    init {\n        viewModelScope.launch {\n            repository.observeAll()\n                .catch { error ->\n                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: \"Unable to load notes\") }\n                }\n                .collect { notes ->\n                    _uiState.update { it.copy(notes = notes, isLoading = false, errorMessage = null) }\n                }\n        }\n    }\n\n    fun openNoteById(noteId: Long?) {\n        if (noteId == null) {\n            openNewNote()\n        } else {\n            viewModelScope.launch {\n                repository.get(noteId)?.let { openNote(it) } ?: openNewNote()\n            }\n        }\n    }\n\n    fun openNewNote() {\n        _uiState.update { it.copy(editor = NoteEditorState()) }\n    }\n\n    fun openNote(note: NoteEntity) {\n        _uiState.update {\n            it.copy(editor = NoteEditorState(noteId = note.id, title = note.title, content = note.content))\n        }\n    }\n\n    fun updateTitle(value: String) {\n        _uiState.update { state ->\n            state.copy(editor = state.editor.copy(title = value, titleError = null))\n        }\n    }\n\n    fun updateContent(value: String) {\n        _uiState.update { state ->\n            state.copy(editor = state.editor.copy(content = value))\n        }\n    }\n\n    fun dismissEditor() {\n        _uiState.update { it.copy(editor = NoteEditorState(), isSaving = false) }\n    }\n\n    fun save() {\n        val editor = _uiState.value.editor\n        if (editor.title.isBlank()) {\n            _uiState.update { state ->\n                state.copy(editor = state.editor.copy(titleError = \"Title is required\"))\n            }\n            return\n        }\n        _uiState.update { it.copy(isSaving = true) }\n        viewModelScope.launch {\n            try {\n                repository.save(\n                    NoteEntity(\n                        id = editor.noteId ?: 0L,\n                        title = editor.title.trim(),\n                        content = editor.content.trim(),\n                        updatedAt = System.currentTimeMillis(),\n                    ),\n                )\n                dismissEditor()\n            } catch (error: Throwable) {\n                _uiState.update { it.copy(isSaving = false, errorMessage = error.message ?: \"Unable to save note\") }\n            }\n        }\n    }\n\n    fun delete(note: NoteEntity) {\n        viewModelScope.launch {\n            try {\n                repository.delete(note)\n            } catch (error: Throwable) {\n                _uiState.update { it.copy(errorMessage = error.message ?: \"Unable to delete note\") }\n            }\n        }\n    }\n\n    fun clearError() {\n        _uiState.update { it.copy(errorMessage = null) }\n    }\n}\n\nclass NotesViewModelFactory(\n    private val repository: {{packageName}}.data.repository.NoteRepository,\n) : ViewModelProvider.Factory {\n    @Suppress(\"UNCHECKED_CAST\")\n    override fun <T : ViewModel> create(modelClass: Class<T>): T {\n        if (modelClass.isAssignableFrom(NotesViewModel::class.java)) {\n            return NotesViewModel(repository) as T\n        }\n        throw IllegalArgumentException(\"Unknown ViewModel class: ${modelClass.name}\")\n    }\n}\n",
+   "ui/settings-entry.txt": "            entry<AppRoute.Settings> { SettingsScreen() }\n",
+   "ui/settings-import.txt": "import {{packageName}}.ui.settings.SettingsScreen\n",
+   "ui/settings-route.txt": "    @Serializable data object Settings : AppRoute\n",
+diff --git a/templates/fragments/ui/notes-app-root.txt b/templates/fragments/ui/notes-app-root.txt
+new file mode 100644
+index 0000000..fa8415d
+--- /dev/null
++++ b/templates/fragments/ui/notes-app-root.txt
+@@ -0,0 +1,44 @@
++package {{packageName}}.ui.navigation
++
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.remember
++import androidx.lifecycle.compose.collectAsStateWithLifecycle
++import androidx.lifecycle.viewmodel.compose.viewModel
++import androidx.navigation3.runtime.NavKey
++import androidx.navigation3.runtime.entryProvider
++import androidx.navigation3.runtime.rememberNavBackStack
++import androidx.navigation3.ui.NavDisplay
++import kotlinx.serialization.Serializable
++import {{packageName}}.data.repository.NoteRepository
++import {{packageName}}.feature.notes.NotesScreen
++import {{packageName}}.feature.notes.NoteEditorScreen
++import {{packageName}}.feature.notes.NotesViewModel
++import {{packageName}}.feature.notes.NotesViewModelFactory
++import {{packageName}}.data.local.DatabaseProvider
++
++// @initializr-slot app-imports
++
++@Serializable
++sealed interface AppRoute : NavKey {
++    @Serializable
++    data object Welcome : AppRoute
++
++    // @initializr-slot app-routes
++}
++
++@Composable
++fun AppRoot() {
++    val backStack = rememberNavBackStack(AppRoute.{{initialRoute}})
++    val context = androidx.compose.ui.platform.LocalContext.current
++    val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }
++    val viewModel = viewModel(factory = NotesViewModelFactory(repository))
++    NavDisplay(
++        backStack = backStack,
++        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
++        entryProvider = entryProvider {
++            entry<AppRoute.Welcome> { WelcomeScreen() }
++            // @initializr-slot app-entries
++        },
++    )
++}
+diff --git a/templates/fragments/ui/notes-editor-screen.txt b/templates/fragments/ui/notes-editor-screen.txt
+new file mode 100644
+index 0000000..1b5ebf0
+--- /dev/null
++++ b/templates/fragments/ui/notes-editor-screen.txt
+@@ -0,0 +1,73 @@
++package {{packageName}}.feature.notes
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.automirrored.filled.ArrowBack
++import androidx.compose.material3.Button
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.OutlinedTextField
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Text
++import androidx.compose.material3.TopAppBar
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import {{packageName}}.ui.theme.Spacing
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun NoteEditorScreen(
++    editor: NoteEditorState,
++    isSaving: Boolean,
++    onTitleChanged: (String) -> Unit,
++    onContentChanged: (String) -> Unit,
++    onSave: () -> Unit,
++    onBack: () -> Unit,
++) {
++    Scaffold(
++        topBar = {
++            TopAppBar(
++                title = { Text(if (editor.noteId == null) "New note" else "Edit note") },
++                navigationIcon = {
++                    IconButton(onClick = onBack) {
++                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
++                    }
++                },
++            )
++        },
++    ) { innerPadding ->
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(innerPadding)
++                .padding(Spacing.lg),
++            verticalArrangement = Arrangement.spacedBy(Spacing.md),
++        ) {
++            OutlinedTextField(
++                value = editor.title,
++                onValueChange = onTitleChanged,
++                label = { Text("Title") },
++                isError = editor.titleError != null,
++                supportingText = { editor.titleError?.let { Text(it) } },
++                modifier = Modifier.fillMaxWidth(),
++                singleLine = true,
++            )
++            OutlinedTextField(
++                value = editor.content,
++                onValueChange = onContentChanged,
++                label = { Text("Content") },
++                modifier = Modifier.fillMaxWidth(),
++                minLines = 4,
++            )
++            Button(onClick = onSave, enabled = !isSaving) {
++                Text(if (isSaving) "Saving..." else "Save")
++            }
++        }
++    }
++}
+diff --git a/templates/fragments/ui/notes-entry.txt b/templates/fragments/ui/notes-entry.txt
+new file mode 100644
+index 0000000..bf6b67d
+--- /dev/null
++++ b/templates/fragments/ui/notes-entry.txt
+@@ -0,0 +1,27 @@
++            entry<AppRoute.Notes> {
++                val context = androidx.compose.ui.platform.LocalContext.current
++                val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }
++                val viewModel = viewModel<NotesViewModel>(factory = NotesViewModelFactory(repository))
++                NotesScreen(
++                    uiState = viewModel.uiState.collectAsStateWithLifecycle().value,
++                    onAdd = { backStack.add(AppRoute.NoteEditor(null)) },
++                    onEdit = { note -> backStack.add(AppRoute.NoteEditor(note.id)) },
++                    onDelete = viewModel::delete,
++                    onDismissError = viewModel::clearError,
++                )
++            }
++            entry<AppRoute.NoteEditor> { route ->
++                val context = androidx.compose.ui.platform.LocalContext.current
++                val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }
++                val viewModel = viewModel<NotesViewModel>(factory = NotesViewModelFactory(repository))
++                LaunchedEffect(route.noteId) { viewModel.openNoteById(route.noteId) }
++                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
++                NoteEditorScreen(
++                    editor = uiState.editor,
++                    isSaving = uiState.isSaving,
++                    onTitleChanged = viewModel::updateTitle,
++                    onContentChanged = viewModel::updateContent,
++                    onSave = viewModel::save,
++                    onBack = { backStack.removeLastOrNull() },
++                )
++            }
+diff --git a/templates/fragments/ui/notes-import.txt b/templates/fragments/ui/notes-import.txt
+new file mode 100644
+index 0000000..400c90e
+--- /dev/null
++++ b/templates/fragments/ui/notes-import.txt
+@@ -0,0 +1,11 @@
++import {{packageName}}.data.local.DatabaseProvider
++import {{packageName}}.data.repository.NoteRepository
++import {{packageName}}.feature.notes.NoteEditorScreen
++import {{packageName}}.feature.notes.NotesScreen
++import {{packageName}}.feature.notes.NotesViewModel
++import {{packageName}}.feature.notes.NotesViewModelFactory
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.remember
++import androidx.lifecycle.compose.collectAsStateWithLifecycle
++import androidx.lifecycle.viewmodel.compose.viewModel
+diff --git a/templates/fragments/ui/notes-route.txt b/templates/fragments/ui/notes-route.txt
+new file mode 100644
+index 0000000..6afa161
+--- /dev/null
++++ b/templates/fragments/ui/notes-route.txt
+@@ -0,0 +1,2 @@
++    @Serializable data class NoteEditor(val noteId: Long? = null) : AppRoute
++    @Serializable data object Notes : AppRoute
+diff --git a/templates/fragments/ui/notes-screen.txt b/templates/fragments/ui/notes-screen.txt
+new file mode 100644
+index 0000000..5f00382
+--- /dev/null
++++ b/templates/fragments/ui/notes-screen.txt
+@@ -0,0 +1,128 @@
++package {{packageName}}.feature.notes
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.Delete
++import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material3.AlertDialog
++import androidx.compose.material3.Card
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.FloatingActionButton
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.material3.TopAppBar
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.style.TextOverflow
++import {{packageName}}.data.local.NoteEntity
++import {{packageName}}.ui.theme.Spacing
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun NotesScreen(
++    uiState: NotesUiState,
++    onAdd: () -> Unit,
++    onEdit: (NoteEntity) -> Unit,
++    onDelete: (NoteEntity) -> Unit,
++    onDismissError: () -> Unit,
++) {
++    Scaffold(
++        topBar = { TopAppBar(title = { Text("Notes") }) },
++        floatingActionButton = {
++            FloatingActionButton(onClick = onAdd) {
++                Icon(Icons.Filled.Add, contentDescription = "Add note")
++            }
++        },
++    ) { innerPadding ->
++        if (uiState.isLoading) {
++            Column(
++                modifier = Modifier
++                    .fillMaxSize()
++                    .padding(innerPadding),
++                horizontalAlignment = Alignment.CenterHorizontally,
++                verticalArrangement = Arrangement.Center,
++            ) {
++                Text("Loading notes...")
++            }
++            return@Scaffold
++        }
++        if (uiState.notes.isEmpty()) {
++            Column(
++                modifier = Modifier
++                    .fillMaxSize()
++                    .padding(innerPadding)
++                    .padding(Spacing.lg),
++                horizontalAlignment = Alignment.CenterHorizontally,
++                verticalArrangement = Arrangement.Center,
++            ) {
++                Text("No notes yet", style = MaterialTheme.typography.headlineSmall)
++                Text("Tap + to create your first note", color = MaterialTheme.colorScheme.onSurfaceVariant)
++            }
++            return@Scaffold
++        }
++        LazyColumn(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(innerPadding)
++                .padding(horizontal = Spacing.lg),
++            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
++        ) {
++            items(uiState.notes, key = { it.id }, contentType = { "note" }) { note ->
++                NoteRow(note = note, onEdit = onEdit, onDelete = onDelete)
++            }
++        }
++        if (uiState.errorMessage != null) {
++            AlertDialog(
++                onDismissRequest = onDismissError,
++                confirmButton = { TextButton(onClick = onDismissError) { Text("OK") } },
++                title = { Text("Error") },
++                text = { Text(uiState.errorMessage) },
++            )
++        }
++    }
++}
++
++@Composable
++private fun NoteRow(note: NoteEntity, onEdit: (NoteEntity) -> Unit, onDelete: (NoteEntity) -> Unit) {
++    Card {
++        Row(
++            modifier = Modifier
++                .fillMaxWidth()
++                .padding(Spacing.md),
++            verticalAlignment = Alignment.CenterVertically,
++        ) {
++            Column(modifier = Modifier.weight(1f)) {
++                Text(text = note.title, style = MaterialTheme.typography.titleMedium)
++                Text(
++                    text = note.content,
++                    style = MaterialTheme.typography.bodyMedium,
++                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    maxLines = 2,
++                    overflow = TextOverflow.Ellipsis,
++                )
++            }
++            IconButton(onClick = { onEdit(note) }) {
++                Icon(Icons.Filled.Edit, contentDescription = "Edit note")
++            }
++            IconButton(onClick = { onDelete(note) }) {
++                Icon(Icons.Filled.Delete, contentDescription = "Delete note")
++            }
++        }
++    }
++}
+diff --git a/templates/fragments/ui/notes-ui-state.txt b/templates/fragments/ui/notes-ui-state.txt
+new file mode 100644
+index 0000000..1bc3c48
+--- /dev/null
++++ b/templates/fragments/ui/notes-ui-state.txt
+@@ -0,0 +1,18 @@
++package {{packageName}}.feature.notes
++
++import {{packageName}}.data.local.NoteEntity
++
++data class NoteEditorState(
++    val noteId: Long? = null,
++    val title: String = "",
++    val content: String = "",
++    val titleError: String? = null,
++)
++
++data class NotesUiState(
++    val notes: List<NoteEntity> = emptyList(),
++    val isLoading: Boolean = true,
++    val errorMessage: String? = null,
++    val editor: NoteEditorState = NoteEditorState(),
++    val isSaving: Boolean = false,
++)
+diff --git a/templates/fragments/ui/notes-viewmodel.txt b/templates/fragments/ui/notes-viewmodel.txt
+new file mode 100644
+index 0000000..65cc626
+--- /dev/null
++++ b/templates/fragments/ui/notes-viewmodel.txt
+@@ -0,0 +1,121 @@
++package {{packageName}}.feature.notes
++
++import {{packageName}}.data.local.NoteEntity
++import {{packageName}}.data.repository.NoteRepository
++import androidx.lifecycle.ViewModel
++import androidx.lifecycle.ViewModelProvider
++import androidx.lifecycle.viewModelScope
++import kotlinx.coroutines.flow.MutableStateFlow
++import kotlinx.coroutines.flow.StateFlow
++import kotlinx.coroutines.flow.asStateFlow
++import kotlinx.coroutines.flow.catch
++import kotlinx.coroutines.flow.update
++import kotlinx.coroutines.launch
++
++class NotesViewModel(
++    private val repository: NoteRepository,
++) : ViewModel() {
++
++    private val _uiState = MutableStateFlow(NotesUiState())
++    val uiState: StateFlow<NotesUiState> = _uiState.asStateFlow()
++
++    init {
++        viewModelScope.launch {
++            repository.observeAll()
++                .catch { error ->
++                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to load notes") }
++                }
++                .collect { notes ->
++                    _uiState.update { it.copy(notes = notes, isLoading = false, errorMessage = null) }
++                }
++        }
++    }
++
++    fun openNoteById(noteId: Long?) {
++        if (noteId == null) {
++            openNewNote()
++        } else {
++            viewModelScope.launch {
++                repository.get(noteId)?.let { openNote(it) } ?: openNewNote()
++            }
++        }
++    }
++
++    fun openNewNote() {
++        _uiState.update { it.copy(editor = NoteEditorState()) }
++    }
++
++    fun openNote(note: NoteEntity) {
++        _uiState.update {
++            it.copy(editor = NoteEditorState(noteId = note.id, title = note.title, content = note.content))
++        }
++    }
++
++    fun updateTitle(value: String) {
++        _uiState.update { state ->
++            state.copy(editor = state.editor.copy(title = value, titleError = null))
++        }
++    }
++
++    fun updateContent(value: String) {
++        _uiState.update { state ->
++            state.copy(editor = state.editor.copy(content = value))
++        }
++    }
++
++    fun dismissEditor() {
++        _uiState.update { it.copy(editor = NoteEditorState(), isSaving = false) }
++    }
++
++    fun save() {
++        val editor = _uiState.value.editor
++        if (editor.title.isBlank()) {
++            _uiState.update { state ->
++                state.copy(editor = state.editor.copy(titleError = "Title is required"))
++            }
++            return
++        }
++        _uiState.update { it.copy(isSaving = true) }
++        viewModelScope.launch {
++            try {
++                repository.save(
++                    NoteEntity(
++                        id = editor.noteId ?: 0L,
++                        title = editor.title.trim(),
++                        content = editor.content.trim(),
++                        updatedAt = System.currentTimeMillis(),
++                    ),
++                )
++                dismissEditor()
++            } catch (error: Throwable) {
++                _uiState.update { it.copy(isSaving = false, errorMessage = error.message ?: "Unable to save note") }
++            }
++        }
++    }
++
++    fun delete(note: NoteEntity) {
++        viewModelScope.launch {
++            try {
++                repository.delete(note)
++            } catch (error: Throwable) {
++                _uiState.update { it.copy(errorMessage = error.message ?: "Unable to delete note") }
++            }
++        }
++    }
++
++    fun clearError() {
++        _uiState.update { it.copy(errorMessage = null) }
++    }
++}
++
++class NotesViewModelFactory(
++    private val repository: {{packageName}}.data.repository.NoteRepository,
++) : ViewModelProvider.Factory {
++    @Suppress("UNCHECKED_CAST")
++    override fun <T : ViewModel> create(modelClass: Class<T>): T {
++        if (modelClass.isAssignableFrom(NotesViewModel::class.java)) {
++            return NotesViewModel(repository) as T
++        }
++        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
++    }
++}
+diff --git a/tests/notes-addon.test.ts b/tests/notes-addon.test.ts
+new file mode 100644
+index 0000000..20201ff
+--- /dev/null
++++ b/tests/notes-addon.test.ts
+@@ -0,0 +1,46 @@
++import { describe, expect, test } from "bun:test";
++import { generateProject, materializeProject } from "@android-initializr/generator";
++import { baseRequest } from "./fixtures";
++
++function text(files: Map<string, Uint8Array>, path: string): string {
++  return new TextDecoder().decode(files.get(path)!);
++}
++
++describe("ui/notes addon", () => {
++  test("resolves room and navigation automatically", () => {
++    const project = materializeProject(baseRequest({ addons: ["ui/notes"] }));
++    expect(project.plan.request.addons).toEqual(["storage/room", "ui/navigation", "ui/notes"]);
++  });
++
++  test("generates reactive note files and navigation registration", () => {
++    const project = materializeProject(baseRequest({ addons: ["ui/notes"] }));
++    const paths = project.plan.files.map((file) => file.path);
++    expect(paths).toContain("app/src/main/java/com/example/demo/feature/notes/NotesViewModel.kt");
++    expect(paths).toContain("app/src/main/java/com/example/demo/feature/notes/NotesScreen.kt");
++    expect(paths).toContain("app/src/main/java/com/example/demo/feature/notes/NoteEditorScreen.kt");
++    const appRoot = text(project.files, "app/src/main/java/com/example/demo/ui/navigation/AppRoot.kt");
++    expect(appRoot).toContain("entry<AppRoute.Notes>");
++    expect(appRoot).toContain("entry<AppRoute.NoteEditor>");
++  });
++
++  test("adds lifecycle dependencies without duplicates", () => {
++    const project = materializeProject(baseRequest({ addons: ["ui/notes"] }));
++    const build = text(project.files, "app/build.gradle.kts");
++    expect(build).toContain("implementation(libs.lifecycleviewmodelcompose)");
++    expect(build).toContain("implementation(libs.lifecycleruntimecompose)");
++    expect(build.split("implementation(libs.lifecycleviewmodelcompose)").length - 1).toBe(1);
++  });
++
++  test("minimal project has no notes artifacts", () => {
++    const minimal = materializeProject(baseRequest());
++    const paths = minimal.plan.files.map((file) => file.path);
++    expect(paths.some((path) => path.includes("feature/notes"))).toBe(false);
++    expect(minimal.plan.operations).toEqual([]);
++  });
++
++  test("zip is deterministic", () => {
++    const first = generateProject(baseRequest({ addons: ["ui/notes"] }));
++    const second = generateProject(baseRequest({ addons: ["ui/notes"] }));
++    expect(Buffer.from(first.zip).equals(Buffer.from(second.zip))).toBe(true);
++  });
++});

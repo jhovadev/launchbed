@@ -1,0 +1,106 @@
+{
+  "id": "ui/notes",
+  "version": "0.1.0",
+  "displayName": "Notes",
+  "description": "Reactive note list and editor backed by Room, with Navigation 3 and unidirectional state.",
+  "category": "ui",
+  "status": "beta",
+  "dependencies": [
+    "storage/room",
+    "ui/navigation"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "compose-ui",
+    "notes",
+    "room",
+    "navigation",
+    "material3"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "lifecycleviewmodelcompose",
+      "module": "androidx.lifecycle:lifecycle-viewmodel-compose",
+      "version": "2.11.0"
+    },
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "lifecycleruntimecompose",
+      "module": "androidx.lifecycle:lifecycle-runtime-compose",
+      "version": "2.11.0"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "lifecycleviewmodelcompose"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "lifecycleruntimecompose"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/feature/notes/NotesUiState.kt",
+      "template": "ui/notes-ui-state"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/feature/notes/NotesViewModel.kt",
+      "template": "ui/notes-viewmodel"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/feature/notes/NotesScreen.kt",
+      "template": "ui/notes-screen"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/feature/notes/NoteEditorScreen.kt",
+      "template": "ui/notes-editor-screen"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-imports",
+      "template": "ui/notes-import"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-routes",
+      "template": "ui/notes-route"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-entries",
+      "template": "ui/notes-entry"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/feature/notes/NotesScreenTest.kt",
+      "template": "ui/notes-test"
+    }
+  ],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Beta in F1.3: validated by generated-project compilation.",
+      "Requires storage/room and ui/navigation.",
+      "No Hilt/Koin, DataStore, auth or remote sync."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/topic/architecture"
+}

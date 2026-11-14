@@ -36,6 +36,7 @@ export const ProjectRequestSchema = z
     compileSdk: sdkLevel(SDK_LIMITS.compileSdk, "compileSdk").default(DEFAULT_SDK.compile),
     targetSdk: sdkLevel(SDK_LIMITS.targetSdk, "targetSdk").default(DEFAULT_SDK.target),
     theme: ThemeConfigSchema,
+    preset: z.string().regex(/^[a-z][a-z0-9-]*$/).optional(),
     addons: z
       .array(z.string().regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/, "must be an addon id such as storage/room"))
       .max(LIMITS.addons, `at most ${LIMITS.addons} addons may be selected`)

@@ -6,7 +6,7 @@ export const TOOLCHAIN = {
   agp: "9.5.1",
   gradle: "9.6.0",
   gradleSha256: "bbaeb2fef8710818cf0e261201dab964c572f92b942812df0c3620d62a529a01",
-  kotlin: "2.4.10",
+  kotlin: "2.3.10",
   composeBom: "2026.09.00",
   activityCompose: "1.13.0",
   junit: "4.13.2",

@@ -1,0 +1,15 @@
+{
+  "baseCommit": "a316f53",
+  "stages": [
+    {"name":"F1.0", "file":"patches/F1.0-safe-addon-composition.patch", "sha256":"f9fb56027835f85cff148fb6c2eb053593ed1ea52e65e0318bba88a63e00103b"},
+    {"name":"F1.1", "file":"patches/F1.1-room-storage-addon.patch", "sha256":"a8bcd143ea8dc597e91f8f4081d14dff788425394400bbef472991e331aa8160"},
+    {"name":"F1.1.1", "file":"patches/F1.1.1-room-hardening.patch", "sha256":"ce9fe5242585c2ace40409d10a3a8383854ee4e424b5245c420adb8ab33d2479"},
+    {"name":"F1.2", "file":"patches/F1.2-compose-ui-addons.patch", "sha256":"171c79ec67e302f96d914ac95b01f8bca3dee3f7943af6af985cb5cd6046187a"},
+    {"name":"F1.3", "file":"patches/F1.3-reactive-room-compose.patch", "sha256":"5ce7c4aea937a30d8a99b8f7c368053c3eb2b36e9e494b45153988baed368f59"},
+    {"name":"F1.4", "file":"patches/F1.4-foundation-kit.patch", "sha256":"8f0be774b8478d4d7008f829c9a54ff82cacf5666e3560f31c7d69937a4ea54f"},
+    {"name":"F1.5", "file":"patches/F1.5-project-templates.patch", "sha256":"1e039486c78d0d4690e93295d2e7ee3f8e33dfbed3d6a40cfe84d0c6f559c22b"},
+    {"name":"F1.6A", "file":"F1.6A-runtime-verification/F1.6A-runtime-verification.patch", "sha256":"cb8ab21dd0321414fa4069136e6303544215d248439e6cee0b8180f33510ff7d", "external":true},
+    {"name":"F1.6A.1", "file":"F1.6A.1-astro-compose-hotfix/F1.6A.1-astro-compose-hotfix.patch", "sha256":"f57a79d88bb4b56c5097bbfc5376203538d0e97792d081d1c760e2db0025cb8d", "external":true},
+    {"name":"F1.6B", "file":"F1.6B-performance-baseline/F1.6B-performance-baseline.patch", "sha256":"e47c2dbb2d29cbfd7e550b5e67db5e0e15a5313a9aa55fc9b2a187469e47ecc0", "external":true}
+  ]
+}

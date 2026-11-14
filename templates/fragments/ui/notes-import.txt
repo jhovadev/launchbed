@@ -1,0 +1,11 @@
+import {{packageName}}.data.local.DatabaseProvider
+import {{packageName}}.data.repository.NoteRepository
+import {{packageName}}.feature.notes.NoteEditorScreen
+import {{packageName}}.feature.notes.NotesScreen
+import {{packageName}}.feature.notes.NotesViewModel
+import {{packageName}}.feature.notes.NotesViewModelFactory
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel

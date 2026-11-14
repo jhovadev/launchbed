@@ -120,3 +120,39 @@ docs/                      Architecture, compatibility, addon spec, ADRs, phases
 
 MIT. See [LICENSE](LICENSE). External dependency licenses are listed in
 [docs/compatibility.md](docs/compatibility.md).
+
+## Runtime verification (F1.6A)
+
+Use `just runtime-parser-test` without Android tools. With JDK 21 and a configured
+Android SDK, `just android-runtime-compile` independently generates and compiles
+all four implemented presets, runs JVM tests and compiles instrumented test APKs.
+**This does not execute Android device tests.**
+
+For explicit on-device verification, choose an authorized ADB serial and run:
+
+```bash
+ANDROID_SERIAL=emulator-5554 just android-test
+```
+
+The harness installs test apps on that specific device, runs the instrumented
+JUnit suites, and emits a JSON report under `build/runtime-verification/`.
+See [runtime testing](docs/runtime-testing.md) for setup, safety and statuses.
+
+## Integrity and release evidence (F1.6C)
+
+`just integrity-check` verifies all four presets as real ZIPs (determinism,
+plan/ZIP parity, path and size limits, sensitive paths, Gradle Wrapper checksum)
+without Android SDK or device access. Results are saved to
+`build/integrity/report.json` and do not claim Android release readiness.
+
+`just release-check` additionally reads opt-in runtime and benchmark reports.
+Without executed instrumented tests on a device it reports **BLOCKED** (exit 78),
+not PASS. `just patch-replay` reconstructs historical F0→F1.6B patches in a
+throwaway local clone. Extract F1.6A, F1.6A.1, F1.6B ZIPs into `~/Downloads`
+first; use `node scripts/integrity/patch-replay.mjs --downloads PATH` otherwise.
+See `docs/integrity.md` for caveats, particularly R8 release settings, local
+backup policy, transitive native dependencies, and the deferred i18n addon.
+
+## Pruebas Android sin Android Studio
+
+Con un SDK CLI instalado, consulta `just emulator-list` y `just emulator-images`. Si no hay AVD, `AVD_NAME=Initializr_API36 AVD_IMAGE='system-images;android-36;google_apis;x86_64' just emulator-create` crea uno **solo** si esa imagen ya está instalada; cambia el ID por uno que aparezca en tu equipo. Luego usa `AVD_NAME=Initializr_API36 just emulator-start`, `just runtime-devices`, `ANDROID_SERIAL=<serial-real> just android-test`. Detalles y requisitos en [F1.6F](docs/phases/F1.6F-cli-avd-provisioning.md).

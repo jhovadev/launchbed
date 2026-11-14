@@ -8,11 +8,23 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $scriptDir "..")
 
 function Select-Serial {
-    if ($env:ANDROID_SERIAL) { return $env:ANDROID_SERIAL }
-
+    $listing = @(& adb devices -l)
+    if ($LASTEXITCODE -ne 0) { Write-Error "adb devices failed"; exit 2 }
     $devices = @()
-    foreach ($line in (& adb devices)) {
-        if ($line -match "^(\S+)\s+device\b") { $devices += $Matches[1] }
+    $states = @{}
+    foreach ($line in $listing) {
+        if ($line -match "^(\S+)\s+(device|offline|unauthorized|recovery|sideload)\b") {
+            $states[$Matches[1]] = $Matches[2]
+            if ($Matches[2] -eq 'device') { $devices += $Matches[1] }
+        }
+    }
+    if ($env:ANDROID_SERIAL) {
+        if ($env:ANDROID_SERIAL -notmatch '^[A-Za-z0-9._:-]+$') { Write-Error "Invalid ANDROID_SERIAL"; exit 2 }
+        if (-not $states.ContainsKey($env:ANDROID_SERIAL) -or $states[$env:ANDROID_SERIAL] -ne 'device') {
+            Write-Error "ANDROID_SERIAL is not an authorized online device. Check adb devices -l"
+            exit 2
+        }
+        return $env:ANDROID_SERIAL
     }
 
     if ($devices.Count -eq 0) {

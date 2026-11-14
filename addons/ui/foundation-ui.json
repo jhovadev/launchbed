@@ -1,0 +1,37 @@
+{
+  "id": "ui/foundation",
+  "version": "0.1.0",
+  "displayName": "Foundation UI",
+  "description": "Reusable Material 3 Compose components backed by Android Initializr tokens.",
+  "category": "ui",
+  "status": "beta",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "compose-ui",
+    "foundation",
+    "material3"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/foundation/ui/FoundationComponents.kt",
+      "template": "foundation/ui-components"
+    }
+  ],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Beta in F1.4: validated by generated-project compilation.",
+      "No Room, Navigation, auth or storage dependency."
+    ]
+  },
+  "license": "MIT"
+}

@@ -17,6 +17,8 @@ import onboarding from "../../../addons/ui/onboarding.json";
 import settings from "../../../addons/ui/settings.json";
 import dashboard from "../../../addons/ui/dashboard.json";
 import navigation from "../../../addons/ui/navigation.json";
+import catalog from "../../../addons/ui/catalog.json";
+import notes from "../../../addons/ui/notes.json";
 import rustFfi from "../../../addons/native/rust-ffi.json";
 import zigFfi from "../../../addons/native/zig-ffi.json";
 import jniBridge from "../../../addons/native/jni-bridge.json";
@@ -24,6 +26,8 @@ import scrcpy from "../../../addons/tooling/scrcpy.json";
 import githubActions from "../../../addons/tooling/github-actions.json";
 import dockerCompose from "../../../addons/tooling/docker-compose.json";
 import androidCli from "../../../addons/tooling/android-cli.json";
+import foundationCore from "../../../addons/tooling/foundation-core.json";
+import foundationUi from "../../../addons/ui/foundation-ui.json";
 
 const RAW_MANIFESTS = [
   room,
@@ -37,6 +41,8 @@ const RAW_MANIFESTS = [
   settings,
   dashboard,
   navigation,
+  catalog,
+  notes,
   rustFfi,
   zigFfi,
   jniBridge,
@@ -44,6 +50,8 @@ const RAW_MANIFESTS = [
   githubActions,
   dockerCompose,
   androidCli,
+  foundationCore,
+  foundationUi,
 ];
 
 const CATEGORY_ORDER: Record<AddonManifest["category"], number> = {
@@ -51,6 +59,7 @@ const CATEGORY_ORDER: Record<AddonManifest["category"], number> = {
   ui: 1,
   native: 2,
   tooling: 3,
+  foundation: 4,
 };
 
 /**
@@ -109,3 +118,5 @@ export function buildCatalog(): CatalogResponse {
     },
   };
 }
+
+export * from "./presets";

@@ -1,0 +1,1026 @@
+diff --git a/addons/ui/catalog.json b/addons/ui/catalog.json
+new file mode 100644
+index 0000000..7ec65c9
+--- /dev/null
++++ b/addons/ui/catalog.json
+@@ -0,0 +1,36 @@
++{
++  "id": "ui/catalog",
++  "version": "0.1.0",
++  "displayName": "Catalog",
++  "description": "Demo catalog screen with search, categories and empty states.",
++  "category": "ui",
++  "status": "beta",
++  "dependencies": [],
++  "conflicts": [],
++  "capabilities": [
++    "compose-ui",
++    "catalog",
++    "material3"
++  ],
++  "requirements": {
++    "minSdk": 24,
++    "compileSdk": 34,
++    "jdk": 17
++  },
++  "fileOperations": [
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/ui/catalog/CatalogScreen.kt",
++      "template": "ui/catalog-screen"
++    }
++  ],
++  "compatibility": {
++    "android": [
++      "7.0+"
++    ],
++    "notes": [
++      "Beta in F1.5: demo data only, no backend."
++    ]
++  },
++  "license": "MIT"
++}
+diff --git a/apps/web/src/pages/api/presets.ts b/apps/web/src/pages/api/presets.ts
+new file mode 100644
+index 0000000..59598cd
+--- /dev/null
++++ b/apps/web/src/pages/api/presets.ts
+@@ -0,0 +1,24 @@
++import type { APIRoute } from "astro";
++import { toErrorPayload } from "@android-initializr/schema";
++import { ALL_PRESETS, isPresetGeneratable } from "@android-initializr/catalog";
++
++export const prerender = false;
++
++export const GET: APIRoute = () => {
++  try {
++    const presets = ALL_PRESETS.map((preset) => ({
++      ...preset,
++      generatable: isPresetGeneratable(preset),
++    }));
++    return new Response(JSON.stringify({ presets }), {
++      status: 200,
++      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" },
++    });
++  } catch (error) {
++    const payload = toErrorPayload(error);
++    return new Response(JSON.stringify(payload), {
++      status: 500,
++      headers: { "content-type": "application/json; charset=utf-8" },
++    });
++  }
++};
+diff --git a/apps/web/src/pages/index.astro b/apps/web/src/pages/index.astro
+index 18c1b70..6c063ad 100644
+--- a/apps/web/src/pages/index.astro
++++ b/apps/web/src/pages/index.astro
+@@ -2,8 +2,10 @@
+ import Layout from "../layouts/Layout.astro";
+ import Configurator from "../components/Configurator";
+ import { buildCatalog } from "@android-initializr/catalog";
++import { ALL_PRESETS } from "@android-initializr/catalog";
+ 
+ const catalog = buildCatalog();
++const presets = ALL_PRESETS;
+ ---
+ 
+ <Layout title="Android Initializr — native Android, from a single request">
+@@ -36,7 +38,7 @@ const catalog = buildCatalog();
+   </section>
+ 
+   <section id="configurator" aria-label="Project configurator">
+-    <Configurator catalog={catalog} client:load />
++    <Configurator catalog={catalog} presets={presets} client:load />
+   </section>
+ 
+   <section class="facts" aria-labelledby="facts-title">
+diff --git a/docs/addon-spec.md b/docs/addon-spec.md
+index c68ffa0..b828569 100644
+--- a/docs/addon-spec.md
++++ b/docs/addon-spec.md
+@@ -124,3 +124,9 @@ planned/experimental rejection.
+ - `ui/settings`: depends on `ui/navigation`; generates `SettingsScreen`.
+ - Navigation 3 1.2.1, kotlinx.serialization 1.8.1, serialization plugin 2.3.10.
+ - No Navigation Compose 2.x, no Hilt/Koin, no DataStore, no CRUD UI.
++
++## Reference: ui/catalog (F1.5)
++
++- Status: `beta`, generatable.
++- Standalone demo catalog screen with local search and empty state.
++- No backend, payments or persistence.
+diff --git a/docs/architecture.md b/docs/architecture.md
+index 22e9a38..16a90ea 100644
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -137,3 +137,11 @@ Dashboard, then Settings, then Welcome. Selection order does not change bytes.
+ 
+ The web preview renders Welcome, Dashboard or Settings using the same resolved
+ tokens; it is a simulation, not Compose.
++
++## Project presets (F1.5)
++
++A preset is a declarative configuration over the existing generator: base
++template, required/optional addons, default theme, preview screens, compatibility
++and capabilities. The backend remains the source of truth; the web selector only
++changes request fields. Presets do not duplicate Gradle files or bypass the
++resolver.
+diff --git a/docs/phases/F1.5-project-templates.md b/docs/phases/F1.5-project-templates.md
+new file mode 100644
+index 0000000..f577ee0
+--- /dev/null
++++ b/docs/phases/F1.5-project-templates.md
+@@ -0,0 +1,36 @@
++# F1.5 — Project Templates & Preset Catalog
++
++Date: 2026-11-14 · Base commit: `a316f53`
++
++## Scope delivered
++
++- `ProjectPresetManifest` contract and 9 preset manifests (4 generatable, 5 planned).
++- `ui/catalog` addon with demo catalog screen.
++- Preset-driven project generation through `ProjectRequest.preset`.
++- Web selector in the configurator.
++- `/api/presets` endpoint.
++
++## Presets
++
++- `compose-minimal` (stable)
++- `compose-starter` (beta)
++- `local-notes` (beta)
++- `catalog-ui` (beta)
++- `inventory-offline`, `auth-ui`, `offline-reader`, `media-player`, `client-server` (planned)
++
++## Validation
++
++| Check | Result |
++| --- | --- |
++| `bun run typecheck` | PASS |
++| `bun test packages tests` | PASS: 94 tests, 572 assertions |
++| `bun run check:astro` | PASS |
++| `bun run templates:check` | PASS |
++| `bun run build` | PASS |
++| Compose Minimal smoke | PASS |
++| Compose Starter build+lint | PASS |
++| Catalog UI build | PASS |
++| Local Notes build+lint | PASS |
++| Room + UI combination | PASS |
++EOF
++wc -c docs/phases/F1.5-project-templates.md
+\ No newline at end of file
+diff --git a/packages/catalog/src/presets.ts b/packages/catalog/src/presets.ts
+new file mode 100644
+index 0000000..d398977
+--- /dev/null
++++ b/packages/catalog/src/presets.ts
+@@ -0,0 +1,38 @@
++import {
++  ProjectPresetManifestSchema,
++  type ProjectPresetManifest,
++} from "@android-initializr/schema";
++
++import composeMinimal from "../../../presets/compose-minimal.json";
++import composeStarter from "../../../presets/compose-starter.json";
++import localNotes from "../../../presets/local-notes.json";
++import catalogUi from "../../../presets/catalog-ui.json";
++import inventoryOffline from "../../../presets/inventory-offline.json";
++import authUi from "../../../presets/auth-ui.json";
++import offlineReader from "../../../presets/offline-reader.json";
++import mediaPlayer from "../../../presets/media-player.json";
++import clientServer from "../../../presets/client-server.json";
++
++const RAW = [
++  composeMinimal,
++  composeStarter,
++  localNotes,
++  catalogUi,
++  inventoryOffline,
++  authUi,
++  offlineReader,
++  mediaPlayer,
++  clientServer,
++];
++
++export const ALL_PRESETS: readonly ProjectPresetManifest[] = Object.freeze(
++  RAW.map((raw) => ProjectPresetManifestSchema.parse(raw)),
++);
++
++export function findPreset(id: string): ProjectPresetManifest | undefined {
++  return ALL_PRESETS.find((preset) => preset.id === id);
++}
++
++export function isPresetGeneratable(preset: ProjectPresetManifest): boolean {
++  return preset.status === "stable" || preset.status === "beta";
++}
+diff --git a/packages/generator/src/index.ts b/packages/generator/src/index.ts
+index fe5dc9c..a8f5050 100644
+--- a/packages/generator/src/index.ts
++++ b/packages/generator/src/index.ts
+@@ -20,3 +20,4 @@ export { TEMPLATE_FILES, FRAGMENT_FILES, TEMPLATE_ID, TEMPLATE_VERSION } from ".
+ export { applyComposition, type CompositionResult } from "./composition";
+ export { insertIntoSlot, validateSlotLayout, SLOT_MARKER_PREFIX } from "./slots";
+ export { mergeVersionCatalog, parseToml, serializeCatalog, type CatalogEntry } from "./version-catalog";
++export { ALL_PRESETS, findPreset, isPresetGeneratable } from "@android-initializr/catalog";
+diff --git a/packages/generator/src/plan.ts b/packages/generator/src/plan.ts
+index 711b773..7361b49 100644
+--- a/packages/generator/src/plan.ts
++++ b/packages/generator/src/plan.ts
+@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
+ import {
+   ALL_ADDONS,
+   buildCatalog,
++  findPreset,
++  isPresetGeneratable,
+ } from "@android-initializr/catalog";
+ import { resolveAddons } from "@android-initializr/resolver";
+ import {
+@@ -9,6 +11,7 @@ import {
+   GENERATION_SCHEMA_VERSION,
+   LIMITS,
+   ProjectRequestSchema,
++  ThemeConfigSchema,
+   TEMPLATE_ID,
+   TEMPLATE_VERSION,
+   issuesFromZod,
+@@ -173,9 +176,27 @@ export function materializeProject(
+   options: EngineOptions = {},
+ ): MaterializedProject {
+   const request = parseRequest(input);
+-  const resolution = resolveAddons(request, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
+-  const tokens = resolveThemeTokens(request.theme);
+-  const vars = buildTemplateVars(request, tokens);
++  const preset = request.preset ? findPreset(request.preset) : undefined;
++  if (request.preset && !preset) {
++    throw new InitializrError("INVALID_REQUEST", `Unknown project preset "${request.preset}".`);
++  }
++  if (preset && !isPresetGeneratable(preset)) {
++    throw new InitializrError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
++  }
++  const defaultTheme = ThemeConfigSchema.parse({});
++  const resolvedRequest = preset
++    ? {
++        ...request,
++        addons: [...new Set([...preset.requiredAddons, ...request.addons])].sort(),
++        theme:
++          JSON.stringify(request.theme) === JSON.stringify(defaultTheme)
++            ? preset.defaultTheme
++            : request.theme,
++      }
++    : request;
++  const resolution = resolveAddons(resolvedRequest, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
++  const tokens = resolveThemeTokens(resolvedRequest.theme);
++  const vars = buildTemplateVars(resolvedRequest, tokens);
+   const files = new Map<string, Uint8Array>();
+   const origins = new Map<string, "template" | "generated" | "addon">();
+ 
+@@ -244,15 +265,16 @@ export function materializeProject(
+     schemaVersion: GENERATION_SCHEMA_VERSION,
+     template: { id: TEMPLATE_ID, version: TEMPLATE_VERSION },
+     request: {
+-      hash: requestHash(request),
+-      projectName: request.projectName,
+-      applicationId: request.applicationId,
+-      namespace: request.namespace,
+-      packageName: request.packageName!,
+-      minSdk: request.minSdk,
+-      compileSdk: request.compileSdk,
+-      targetSdk: request.targetSdk,
++      hash: requestHash(resolvedRequest),
++      projectName: resolvedRequest.projectName,
++      applicationId: resolvedRequest.applicationId,
++      namespace: resolvedRequest.namespace,
++      packageName: resolvedRequest.packageName!,
++      minSdk: resolvedRequest.minSdk,
++      compileSdk: resolvedRequest.compileSdk,
++      targetSdk: resolvedRequest.targetSdk,
+       addons: resolution.addons.map((addon) => addon.id),
++      preset: resolvedRequest.preset,
+     },
+     files: plannedFiles,
+     operations: composition.operations,
+diff --git a/packages/generator/src/templates.generated.ts b/packages/generator/src/templates.generated.ts
+index df9779e..0055448 100644
+--- a/packages/generator/src/templates.generated.ts
++++ b/packages/generator/src/templates.generated.ts
+@@ -49,6 +49,7 @@ export const TEMPLATE_FILES: Readonly<Record<string, EmbeddedFile>> = {
+ };
+ 
+ export const FRAGMENT_FILES: Readonly<Record<string, string>> = {
++  "foundation/ui-components.txt": "package {{packageName}}.foundation.ui\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.material3.AlertDialog\nimport androidx.compose.material3.CircularProgressIndicator\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Text\nimport androidx.compose.material3.TextButton\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.semantics.contentDescription\nimport androidx.compose.ui.semantics.semantics\nimport {{packageName}}.ui.theme.Spacing\n\n@Composable\nfun AppLoading(modifier: Modifier = Modifier, label: String = \"Loading\") {\n    Column(\n        modifier = modifier.semantics { contentDescription = label },\n        horizontalAlignment = Alignment.CenterHorizontally,\n        verticalArrangement = Arrangement.Center,\n    ) {\n        CircularProgressIndicator()\n        Text(text = label, modifier = Modifier.padding(top = Spacing.sm))\n    }\n}\n\n@Composable\nfun AppEmptyState(title: String, message: String, modifier: Modifier = Modifier) {\n    Column(\n        modifier = modifier,\n        horizontalAlignment = Alignment.CenterHorizontally,\n        verticalArrangement = Arrangement.Center,\n    ) {\n        Text(text = title, style = MaterialTheme.typography.titleMedium)\n        Text(text = message, color = MaterialTheme.colorScheme.onSurfaceVariant)\n    }\n}\n\n@Composable\nfun AppErrorState(message: String, onRetry: (() -> Unit)? = null, modifier: Modifier = Modifier) {\n    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {\n        Text(text = message, color = MaterialTheme.colorScheme.error)\n        if (onRetry != null) {\n            TextButton(onClick = onRetry) { Text(\"Retry\") }\n        }\n    }\n}\n\n@Composable\nfun AppSectionHeader(title: String, modifier: Modifier = Modifier) {\n    Text(\n        text = title,\n        style = MaterialTheme.typography.titleSmall,\n        color = MaterialTheme.colorScheme.primary,\n        modifier = modifier.padding(vertical = Spacing.sm),\n    )\n}\n\n@Composable\nfun AppInfoCard(title: String, value: String, modifier: Modifier = Modifier) {\n    androidx.compose.material3.Card(modifier = modifier) {\n        Column(modifier = Modifier.padding(Spacing.md)) {\n            Text(text = title, style = MaterialTheme.typography.labelMedium)\n            Text(text = value, style = MaterialTheme.typography.headlineSmall)\n        }\n    }\n}\n\n@Composable\nfun AppFormField(\n    value: String,\n    onValueChange: (String) -> Unit,\n    label: String,\n    error: String? = null,\n    modifier: Modifier = Modifier,\n) {\n    androidx.compose.material3.OutlinedTextField(\n        value = value,\n        onValueChange = onValueChange,\n        label = { Text(label) },\n        isError = error != null,\n        supportingText = { error?.let { Text(it) } },\n        modifier = modifier,\n    )\n}\n\n@Composable\nfun AppConfirmationDialog(\n    title: String,\n    message: String,\n    confirmLabel: String = \"Confirm\",\n    dismissLabel: String = \"Cancel\",\n    onConfirm: () -> Unit,\n    onDismiss: () -> Unit,\n) {\n    AlertDialog(\n        onDismissRequest = onDismiss,\n        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmLabel) } },\n        dismissButton = { TextButton(onClick = onDismiss) { Text(dismissLabel) } },\n        title = { Text(title) },\n        text = { Text(message) },\n    )\n}\n",
+   "storage/room-androidtest-deps.txt": "    androidTestImplementation(libs.androidxtestextjunit)\n",
+   "storage/room-app-database.txt": "package {{packageName}}.data.local\n\nimport android.content.Context\nimport androidx.room.Database\nimport androidx.room.Room\nimport androidx.room.RoomDatabase\n\n@Database(\n    entities = [NoteEntity::class],\n    version = 1,\n    exportSchema = true,\n)\nabstract class AppDatabase : RoomDatabase() {\n    abstract fun noteDao(): NoteDao\n\n    companion object {\n        @Volatile\n        private var instance: AppDatabase? = null\n\n        fun getInstance(context: Context): AppDatabase =\n            instance ?: synchronized(this) {\n                instance ?: Room.databaseBuilder(\n                    context.applicationContext,\n                    AppDatabase::class.java,\n                    \"notes.db\",\n                ).build().also { instance = it }\n            }\n\n        internal fun replaceForTesting(database: AppDatabase?) {\n            instance = database\n        }\n    }\n}\n",
+   "storage/room-config.txt": "    room {\n        schemaDirectory(\"$projectDir/schemas\")\n    }\n",
+@@ -60,6 +61,7 @@ export const FRAGMENT_FILES: Readonly<Record<string, string>> = {
+   "storage/room-note-entity.txt": "package {{packageName}}.data.local\n\nimport androidx.room.Entity\nimport androidx.room.PrimaryKey\n\n@Entity(tableName = \"notes\")\ndata class NoteEntity(\n    @PrimaryKey(autoGenerate = true) val id: Long = 0,\n    val title: String,\n    val content: String,\n    val updatedAt: Long,\n)\n",
+   "storage/room-note-repository.txt": "package {{packageName}}.data.repository\n\nimport {{packageName}}.data.local.NoteDao\nimport {{packageName}}.data.local.NoteEntity\nimport kotlinx.coroutines.flow.Flow\n\nclass NoteRepository(private val noteDao: NoteDao) {\n    suspend fun save(note: NoteEntity): Long = noteDao.insert(note)\n\n    suspend fun update(note: NoteEntity) = noteDao.update(note)\n\n    suspend fun delete(note: NoteEntity) = noteDao.delete(note)\n\n    suspend fun get(id: Long): NoteEntity? = noteDao.getById(id)\n\n    fun observeAll(): Flow<List<NoteEntity>> = noteDao.observeAll()\n}\n",
+   "storage/room-schema.txt": "{\n  \"formatVersion\": 1,\n  \"database\": {\n    \"version\": 1,\n    \"identityHash\": \"9a73c826084219e44cebe287e1bd8e06\",\n    \"entities\": [\n      {\n        \"tableName\": \"notes\",\n        \"createSql\": \"CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `content` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL)\",\n        \"fields\": [\n          {\n            \"fieldPath\": \"id\",\n            \"columnName\": \"id\",\n            \"affinity\": \"INTEGER\",\n            \"notNull\": true\n          },\n          {\n            \"fieldPath\": \"title\",\n            \"columnName\": \"title\",\n            \"affinity\": \"TEXT\",\n            \"notNull\": true\n          },\n          {\n            \"fieldPath\": \"content\",\n            \"columnName\": \"content\",\n            \"affinity\": \"TEXT\",\n            \"notNull\": true\n          },\n          {\n            \"fieldPath\": \"updatedAt\",\n            \"columnName\": \"updatedAt\",\n            \"affinity\": \"INTEGER\",\n            \"notNull\": true\n          }\n        ],\n        \"primaryKey\": {\n          \"autoGenerate\": true,\n          \"columnNames\": [\n            \"id\"\n          ]\n        }\n      }\n    ],\n    \"setupQueries\": [\n      \"CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)\",\n      \"INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9a73c826084219e44cebe287e1bd8e06')\"\n    ]\n  }\n}\n",
++  "ui/catalog-screen.txt": "package {{packageName}}.ui.catalog\n\nimport androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.PaddingValues\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.padding\nimport androidx.compose.foundation.lazy.LazyColumn\nimport androidx.compose.foundation.lazy.items\nimport androidx.compose.material3.Card\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.ExperimentalMaterial3Api\nimport androidx.compose.material3.OutlinedTextField\nimport androidx.compose.material3.Scaffold\nimport androidx.compose.material3.Text\nimport androidx.compose.material3.TopAppBar\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\nimport androidx.compose.runtime.setValue\nimport androidx.compose.ui.Modifier\nimport {{packageName}}.ui.theme.Spacing\n\ndata class CatalogItem(val id: String, val title: String, val category: String)\n\nprivate val demoItems = listOf(\n    CatalogItem(\"1\", \"Compose toolkit\", \"UI\"),\n    CatalogItem(\"2\", \"Room storage\", \"Data\"),\n    CatalogItem(\"3\", \"Navigation\", \"Architecture\"),\n)\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun CatalogScreen() {\n    var query by remember { mutableStateOf(\"\") }\n    val filtered = demoItems.filter {\n        it.title.contains(query, ignoreCase = true) || it.category.contains(query, ignoreCase = true)\n    }\n\n    Scaffold(topBar = { TopAppBar(title = { Text(\"Catalog\") }) }) { innerPadding ->\n        Column(\n            modifier = Modifier\n                .fillMaxSize()\n                .padding(innerPadding)\n                .padding(Spacing.lg),\n            verticalArrangement = Arrangement.spacedBy(Spacing.md),\n        ) {\n            OutlinedTextField(\n                value = query,\n                onValueChange = { query = it },\n                label = { Text(\"Search\") },\n                modifier = Modifier.fillMaxWidth(),\n            )\n            if (filtered.isEmpty()) {\n                Text(\"No items match your search.\", color = MaterialTheme.colorScheme.onSurfaceVariant)\n            } else {\n                LazyColumn(contentPadding = PaddingValues(vertical = Spacing.sm)) {\n                    items(filtered, key = { it.id }) { item ->\n                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs)) {\n                            Column(modifier = Modifier.padding(Spacing.md)) {\n                                Text(text = item.title, style = MaterialTheme.typography.titleMedium)\n                                Text(text = item.category, style = MaterialTheme.typography.bodySmall)\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\n",
+   "ui/dashboard-entry.txt": "            entry<AppRoute.Dashboard> { DashboardScreen() }\n",
+   "ui/dashboard-import.txt": "import {{packageName}}.ui.dashboard.DashboardScreen\n",
+   "ui/dashboard-route.txt": "    @Serializable data object Dashboard : AppRoute\n",
+diff --git a/packages/schema/src/index.ts b/packages/schema/src/index.ts
+index 2fb2e86..456b66f 100644
+--- a/packages/schema/src/index.ts
++++ b/packages/schema/src/index.ts
+@@ -6,3 +6,4 @@ export * from "./request";
+ export * from "./operations";
+ export * from "./addon";
+ export * from "./plan";
++export * from "./preset";
+diff --git a/packages/schema/src/preset.ts b/packages/schema/src/preset.ts
+new file mode 100644
+index 0000000..da341ed
+--- /dev/null
++++ b/packages/schema/src/preset.ts
+@@ -0,0 +1,30 @@
++import { z } from "zod";
++import { ThemeConfigSchema } from "./theme";
++import { SDK_LIMITS } from "./limits";
++
++export const PRESET_STATUSES = ["stable", "beta", "planned"] as const;
++export const PRESET_CATEGORIES = ["application", "feature", "demo"] as const;
++
++const PRESET_ID = /^[a-z][a-z0-9-]*$/;
++
++export const ProjectPresetManifestSchema = z.strictObject({
++  id: z.string().regex(PRESET_ID, "must be a kebab-case preset id"),
++  version: z.string().regex(/^\d+\.\d+\.\d+$/),
++  name: z.string().min(1).max(80),
++  description: z.string().min(1).max(300),
++  category: z.enum(PRESET_CATEGORIES),
++  status: z.enum(PRESET_STATUSES),
++  baseTemplate: z.literal("android-compose-minimal"),
++  requiredAddons: z.array(z.string().regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/)).max(24).default([]),
++  optionalAddons: z.array(z.string().regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/)).max(24).default([]),
++  defaultTheme: ThemeConfigSchema,
++  previewScreens: z.array(z.enum(["welcome", "dashboard", "settings", "notes", "catalog"])).max(8).default(["welcome"]),
++  compatibility: z.strictObject({
++    minSdk: z.number().int().min(SDK_LIMITS.minSdk.min).max(SDK_LIMITS.minSdk.max),
++    notes: z.array(z.string().min(1).max(300)).max(12).default([]),
++  }),
++  capabilities: z.array(z.string().regex(/^[a-z][a-z0-9-]*$/)).max(24).default([]),
++});
++
++export type ProjectPresetManifest = z.infer<typeof ProjectPresetManifestSchema>;
++export type ProjectPresetManifestInput = z.input<typeof ProjectPresetManifestSchema>;
+diff --git a/packages/schema/src/request.ts b/packages/schema/src/request.ts
+index 0b98a52..dd7aa40 100644
+--- a/packages/schema/src/request.ts
++++ b/packages/schema/src/request.ts
+@@ -36,6 +36,7 @@ export const ProjectRequestSchema = z
+     compileSdk: sdkLevel(SDK_LIMITS.compileSdk, "compileSdk").default(DEFAULT_SDK.compile),
+     targetSdk: sdkLevel(SDK_LIMITS.targetSdk, "targetSdk").default(DEFAULT_SDK.target),
+     theme: ThemeConfigSchema,
++    preset: z.string().regex(/^[a-z][a-z0-9-]*$/).optional(),
+     addons: z
+       .array(z.string().regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/, "must be an addon id such as storage/room"))
+       .max(LIMITS.addons, `at most ${LIMITS.addons} addons may be selected`)
+diff --git a/presets/auth-ui.json b/presets/auth-ui.json
+new file mode 100644
+index 0000000..73b5691
+--- /dev/null
++++ b/presets/auth-ui.json
+@@ -0,0 +1,55 @@
++{
++  "id": "auth-ui",
++  "version": "0.1.0",
++  "name": "Auth UI",
++  "description": "Planned preset: Auth UI.",
++  "category": "application",
++  "status": "planned",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#4A4F5A",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Planned only; not generatable."
++    ]
++  },
++  "capabilities": [
++    "auth-ui"
++  ]
++}
+diff --git a/presets/catalog-ui.json b/presets/catalog-ui.json
+new file mode 100644
+index 0000000..72ca0a4
+--- /dev/null
++++ b/presets/catalog-ui.json
+@@ -0,0 +1,60 @@
++{
++  "id": "catalog-ui",
++  "version": "0.1.0",
++  "name": "Catalog UI",
++  "description": "Demo catalog screen with search and categories.",
++  "category": "demo",
++  "status": "beta",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [
++    "ui/foundation",
++    "ui/catalog"
++  ],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#2C5D8F",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome",
++    "catalog"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Demo data only."
++    ]
++  },
++  "capabilities": [
++    "catalog",
++    "demo"
++  ]
++}
+diff --git a/presets/client-server.json b/presets/client-server.json
+new file mode 100644
+index 0000000..9de28c3
+--- /dev/null
++++ b/presets/client-server.json
+@@ -0,0 +1,55 @@
++{
++  "id": "client-server",
++  "version": "0.1.0",
++  "name": "Client Server",
++  "description": "Planned preset: Client Server.",
++  "category": "application",
++  "status": "planned",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#4A4F5A",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Planned only; not generatable."
++    ]
++  },
++  "capabilities": [
++    "client-server"
++  ]
++}
+diff --git a/presets/compose-minimal.json b/presets/compose-minimal.json
+new file mode 100644
+index 0000000..e48dea1
+--- /dev/null
++++ b/presets/compose-minimal.json
+@@ -0,0 +1,56 @@
++{
++  "id": "compose-minimal",
++  "version": "0.1.0",
++  "name": "Compose Minimal",
++  "description": "Minimal native Android app with no optional addons.",
++  "category": "application",
++  "status": "stable",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#6750A4",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Permanent regression control."
++    ]
++  },
++  "capabilities": [
++    "minimal",
++    "android"
++  ]
++}
+diff --git a/presets/compose-starter.json b/presets/compose-starter.json
+new file mode 100644
+index 0000000..a84bfd2
+--- /dev/null
++++ b/presets/compose-starter.json
+@@ -0,0 +1,64 @@
++{
++  "id": "compose-starter",
++  "version": "0.1.0",
++  "name": "Compose Starter",
++  "description": "Navigation, dashboard, settings and foundation UI.",
++  "category": "application",
++  "status": "beta",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [
++    "ui/foundation",
++    "ui/navigation",
++    "ui/dashboard",
++    "ui/settings"
++  ],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#006C4C",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome",
++    "dashboard",
++    "settings"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Beta until UI runtime tests run."
++    ]
++  },
++  "capabilities": [
++    "starter",
++    "navigation",
++    "settings"
++  ]
++}
+diff --git a/presets/inventory-offline.json b/presets/inventory-offline.json
+new file mode 100644
+index 0000000..5f6b7a5
+--- /dev/null
++++ b/presets/inventory-offline.json
+@@ -0,0 +1,55 @@
++{
++  "id": "inventory-offline",
++  "version": "0.1.0",
++  "name": "Inventory Offline",
++  "description": "Planned preset: Inventory Offline.",
++  "category": "application",
++  "status": "planned",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#4A4F5A",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Planned only; not generatable."
++    ]
++  },
++  "capabilities": [
++    "inventory-offline"
++  ]
++}
+diff --git a/presets/local-notes.json b/presets/local-notes.json
+new file mode 100644
+index 0000000..36827fc
+--- /dev/null
++++ b/presets/local-notes.json
+@@ -0,0 +1,63 @@
++{
++  "id": "local-notes",
++  "version": "0.1.0",
++  "name": "Local Notes",
++  "description": "Room-backed notes with reactive Compose UI.",
++  "category": "application",
++  "status": "beta",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [
++    "storage/room",
++    "ui/foundation",
++    "ui/navigation",
++    "ui/notes"
++  ],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#8C4A2F",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome",
++    "notes"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Room remains beta."
++    ]
++  },
++  "capabilities": [
++    "notes",
++    "room",
++    "offline"
++  ]
++}
+diff --git a/presets/media-player.json b/presets/media-player.json
+new file mode 100644
+index 0000000..d8b3799
+--- /dev/null
++++ b/presets/media-player.json
+@@ -0,0 +1,55 @@
++{
++  "id": "media-player",
++  "version": "0.1.0",
++  "name": "Media Player",
++  "description": "Planned preset: Media Player.",
++  "category": "application",
++  "status": "planned",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#4A4F5A",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Planned only; not generatable."
++    ]
++  },
++  "capabilities": [
++    "media-player"
++  ]
++}
+diff --git a/presets/offline-reader.json b/presets/offline-reader.json
+new file mode 100644
+index 0000000..4a8fffa
+--- /dev/null
++++ b/presets/offline-reader.json
+@@ -0,0 +1,55 @@
++{
++  "id": "offline-reader",
++  "version": "0.1.0",
++  "name": "Offline Reader",
++  "description": "Planned preset: Offline Reader.",
++  "category": "application",
++  "status": "planned",
++  "baseTemplate": "android-compose-minimal",
++  "requiredAddons": [],
++  "optionalAddons": [],
++  "defaultTheme": {
++    "seedColor": "#4A4F5A",
++    "schemeVariant": "tonalSpot",
++    "defaultMode": "system",
++    "typography": {
++      "fontFamily": "default"
++    },
++    "shape": {
++      "cornerRadius": 12
++    },
++    "spacing": {
++      "xs": 4,
++      "sm": 8,
++      "md": 16,
++      "lg": 24,
++      "xl": 32
++    },
++    "components": {
++      "card": {
++        "cornerRadius": 16,
++        "elevation": 1
++      },
++      "button": {
++        "cornerRadius": 20,
++        "minHeight": 48
++      }
++    },
++    "overrides": {
++      "light": {},
++      "dark": {}
++    }
++  },
++  "previewScreens": [
++    "welcome"
++  ],
++  "compatibility": {
++    "minSdk": 26,
++    "notes": [
++      "Planned only; not generatable."
++    ]
++  },
++  "capabilities": [
++    "offline-reader"
++  ]
++}
+diff --git a/templates/fragments/ui/catalog-screen.txt b/templates/fragments/ui/catalog-screen.txt
+new file mode 100644
+index 0000000..9a0375b
+--- /dev/null
++++ b/templates/fragments/ui/catalog-screen.txt
+@@ -0,0 +1,72 @@
++package {{packageName}}.ui.catalog
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.material3.Card
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.OutlinedTextField
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Text
++import androidx.compose.material3.TopAppBar
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Modifier
++import {{packageName}}.ui.theme.Spacing
++
++data class CatalogItem(val id: String, val title: String, val category: String)
++
++private val demoItems = listOf(
++    CatalogItem("1", "Compose toolkit", "UI"),
++    CatalogItem("2", "Room storage", "Data"),
++    CatalogItem("3", "Navigation", "Architecture"),
++)
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun CatalogScreen() {
++    var query by remember { mutableStateOf("") }
++    val filtered = demoItems.filter {
++        it.title.contains(query, ignoreCase = true) || it.category.contains(query, ignoreCase = true)
++    }
++
++    Scaffold(topBar = { TopAppBar(title = { Text("Catalog") }) }) { innerPadding ->
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(innerPadding)
++                .padding(Spacing.lg),
++            verticalArrangement = Arrangement.spacedBy(Spacing.md),
++        ) {
++            OutlinedTextField(
++                value = query,
++                onValueChange = { query = it },
++                label = { Text("Search") },
++                modifier = Modifier.fillMaxWidth(),
++            )
++            if (filtered.isEmpty()) {
++                Text("No items match your search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
++            } else {
++                LazyColumn(contentPadding = PaddingValues(vertical = Spacing.sm)) {
++                    items(filtered, key = { it.id }) { item ->
++                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs)) {
++                            Column(modifier = Modifier.padding(Spacing.md)) {
++                                Text(text = item.title, style = MaterialTheme.typography.titleMedium)
++                                Text(text = item.category, style = MaterialTheme.typography.bodySmall)
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}

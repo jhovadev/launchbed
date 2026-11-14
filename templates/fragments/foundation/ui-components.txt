@@ -1,0 +1,108 @@
+package {{packageName}}.foundation.ui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import {{packageName}}.ui.theme.Spacing
+
+@Composable
+fun AppLoading(modifier: Modifier = Modifier, label: String = "Loading") {
+    Column(
+        modifier = modifier.semantics { contentDescription = label },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        CircularProgressIndicator()
+        Text(text = label, modifier = Modifier.padding(top = Spacing.sm))
+    }
+}
+
+@Composable
+fun AppEmptyState(title: String, message: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium)
+        Text(text = message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+fun AppErrorState(message: String, onRetry: (() -> Unit)? = null, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = message, color = MaterialTheme.colorScheme.error)
+        if (onRetry != null) {
+            TextButton(onClick = onRetry) { Text("Retry") }
+        }
+    }
+}
+
+@Composable
+fun AppSectionHeader(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.padding(vertical = Spacing.sm),
+    )
+}
+
+@Composable
+fun AppInfoCard(title: String, value: String, modifier: Modifier = Modifier) {
+    androidx.compose.material3.Card(modifier = modifier) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            Text(text = title, style = MaterialTheme.typography.labelMedium)
+            Text(text = value, style = MaterialTheme.typography.headlineSmall)
+        }
+    }
+}
+
+@Composable
+fun AppFormField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    error: String? = null,
+    modifier: Modifier = Modifier,
+) {
+    androidx.compose.material3.OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        isError = error != null,
+        supportingText = { error?.let { Text(it) } },
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun AppConfirmationDialog(
+    title: String,
+    message: String,
+    confirmLabel: String = "Confirm",
+    dismissLabel: String = "Cancel",
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmLabel) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(dismissLabel) } },
+        title = { Text(title) },
+        text = { Text(message) },
+    )
+}

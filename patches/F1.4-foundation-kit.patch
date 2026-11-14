@@ -1,0 +1,425 @@
+diff --git a/addons/tooling/foundation-core.json b/addons/tooling/foundation-core.json
+new file mode 100644
+index 0000000..7c7ed48
+--- /dev/null
++++ b/addons/tooling/foundation-core.json
+@@ -0,0 +1,28 @@
++{
++  "id": "foundation/core",
++  "version": "0.1.0",
++  "displayName": "Foundation Core",
++  "description": "Reserved for shared Kotlin contracts once multiple addons need them.",
++  "category": "foundation",
++  "status": "planned",
++  "dependencies": [],
++  "conflicts": [],
++  "capabilities": [
++    "foundation"
++  ],
++  "requirements": {
++    "minSdk": 24,
++    "compileSdk": 34,
++    "jdk": 17
++  },
++  "fileOperations": [],
++  "compatibility": {
++    "android": [
++      "7.0+"
++    ],
++    "notes": [
++      "Planned only; no code is generated in F1.4."
++    ]
++  },
++  "license": "MIT"
++}
+diff --git a/addons/ui/foundation-ui.json b/addons/ui/foundation-ui.json
+new file mode 100644
+index 0000000..f61e4bd
+--- /dev/null
++++ b/addons/ui/foundation-ui.json
+@@ -0,0 +1,37 @@
++{
++  "id": "ui/foundation",
++  "version": "0.1.0",
++  "displayName": "Foundation UI",
++  "description": "Reusable Material 3 Compose components backed by Android Initializr tokens.",
++  "category": "ui",
++  "status": "beta",
++  "dependencies": [],
++  "conflicts": [],
++  "capabilities": [
++    "compose-ui",
++    "foundation",
++    "material3"
++  ],
++  "requirements": {
++    "minSdk": 24,
++    "compileSdk": 34,
++    "jdk": 17
++  },
++  "fileOperations": [
++    {
++      "type": "add",
++      "path": "app/src/main/java/{{packagePath}}/foundation/ui/FoundationComponents.kt",
++      "template": "foundation/ui-components"
++    }
++  ],
++  "compatibility": {
++    "android": [
++      "7.0+"
++    ],
++    "notes": [
++      "Beta in F1.4: validated by generated-project compilation.",
++      "No Room, Navigation, auth or storage dependency."
++    ]
++  },
++  "license": "MIT"
++}
+diff --git a/apps/web/src/components/Configurator.tsx b/apps/web/src/components/Configurator.tsx
+index c6325c6..d1ba95f 100644
+--- a/apps/web/src/components/Configurator.tsx
++++ b/apps/web/src/components/Configurator.tsx
+@@ -1,10 +1,11 @@
+ import { For, Show, createMemo, createSignal } from "solid-js";
+-import type { CatalogResponse, ProjectRequest, ThemeConfig } from "@android-initializr/schema";
++import type { CatalogResponse, ProjectPresetManifest, ProjectRequest, ThemeConfig } from "@android-initializr/schema";
+ import { resolveThemeTokens } from "@android-initializr/design-tokens";
+ import { PreviewScreen } from "@android-initializr/preview";
+ 
+ interface Props {
+   catalog: CatalogResponse;
++  presets?: ProjectPresetManifest[];
+ }
+ 
+ interface FormState {
+@@ -56,6 +57,7 @@ const CATEGORY_LABELS: Record<string, string> = {
+   ui: "UI",
+   native: "Native",
+   tooling: "Tooling",
++  foundation: "Foundation",
+ };
+ 
+ function themeConfig(form: FormState): ThemeConfig {
+@@ -106,6 +108,7 @@ export default function Configurator(props: Props) {
+     availableScreens().includes(previewScreen()) ? previewScreen() : "welcome",
+   );
+   const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
++  const [presetId, setPresetId] = createSignal<string>("");
+   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string[]>>({});
+   const [formError, setFormError] = createSignal("");
+   const [status, setStatus] = createSignal("");
+@@ -124,6 +127,21 @@ export default function Configurator(props: Props) {
+     });
+   }
+ 
++  function applyPreset(id: string): void {
++    setPresetId(id);
++    const preset = (props.presets ?? []).find((entry) => entry.id === id);
++    if (!preset || !(preset.status === "stable" || preset.status === "beta")) return;
++    setSelectedAddons([...preset.requiredAddons].sort());
++    const theme = preset.defaultTheme;
++    setForm((previous) => ({
++      ...previous,
++      seedColor: theme.seedColor,
++      fontFamily: theme.typography.fontFamily,
++      cornerRadius: theme.shape.cornerRadius,
++      defaultMode: theme.defaultMode,
++    }));
++  }
++
+   function toggleAddon(id: string, checked: boolean): void {
+     setSelectedAddons((previous) =>
+       checked ? [...new Set([...previous, id])].sort() : previous.filter((value) => value !== id),
+@@ -143,6 +161,7 @@ export default function Configurator(props: Props) {
+       targetSdk: current.targetSdk,
+       theme: themeConfig(current),
+       addons: selectedAddons(),
++      ...(presetId() ? { preset: presetId() } : {}),
+     };
+   }
+ 
+@@ -277,6 +296,44 @@ export default function Configurator(props: Props) {
+           </div>
+         </Show>
+ 
++        <section aria-labelledby="section-preset">
++          <h2 id="section-preset">
++            <span class="step">00</span> Project template
++          </h2>
++          <p class="section-help">
++            Presets are declarative configurations over the same generator. The backend resolves and
++            validates every dependency.
++          </p>
++          <div class="field">
++            <label for="preset">Preset</label>
++            <select
++              id="preset"
++              value={presetId()}
++              onChange={(event) => applyPreset(event.currentTarget.value)}
++            >
++              <option value="">Custom (manual selection)</option>
++              <For each={(props.presets ?? [])}>
++                {(preset) => (
++                  <option value={preset.id} disabled={!(preset.status === "stable" || preset.status === "beta")}>
++                    {preset.name} ({preset.status})
++                  </option>
++                )}
++              </For>
++            </select>
++          </div>
++          <Show when={presetId()}>
++            {(id) => {
++              const preset = (props.presets ?? []).find((entry) => entry.id === id());
++              return preset ? (
++                <p class="section-help">
++                  {preset.description} Required addons:{" "}
++                  {preset.requiredAddons.length === 0 ? "none" : preset.requiredAddons.join(", ")}.
++                </p>
++              ) : null;
++            }}
++          </Show>
++        </section>
++
+         <section aria-labelledby="section-identity">
+           <h2 id="section-identity">
+             <span class="step">01</span> Identity
+@@ -493,7 +550,7 @@ export default function Configurator(props: Props) {
+               is the minimal Android template.
+             </p>
+           </Show>
+-          <For each={["storage", "ui", "native", "tooling"]}>
++          <For each={["storage", "ui", "native", "tooling", "foundation"]}>
+             {(category) => (
+               <fieldset class="addon-group">
+                 <legend>{CATEGORY_LABELS[category]}</legend>
+diff --git a/docs/phases/F1.4-foundation.md b/docs/phases/F1.4-foundation.md
+new file mode 100644
+index 0000000..d1d3db6
+--- /dev/null
++++ b/docs/phases/F1.4-foundation.md
+@@ -0,0 +1,24 @@
++# F1.4 — Modular Foundation Kit
++
++Date: 2026-11-14 · Base commit: `a316f53`
++
++## Scope delivered
++
++- `foundation/core` planned manifest for future shared contracts.
++- `foundation/ui` beta addon with reusable Material 3 Compose components:
++  `AppLoading`, `AppEmptyState`, `AppErrorState`, `AppSectionHeader`,
++  `AppInfoCard`, `AppFormField`, `AppConfirmationDialog`.
++- Foundation components use existing design tokens and are independent of Room,
++  Navigation and storage.
++- Web catalog grouping includes Foundation.
++
++## Validation
++
++| Check | Result |
++| --- | --- |
++| `bun run typecheck` | PASS |
++| `bun test packages tests` | PASS |
++| `bun run templates:check` | PASS |
++| Foundation UI project `assembleDebug` + lint | PASS |
++EOF
++wc -c docs/phases/F1.4-foundation.md
+\ No newline at end of file
+diff --git a/packages/catalog/src/index.ts b/packages/catalog/src/index.ts
+index 991d0fe..19d5b9e 100644
+--- a/packages/catalog/src/index.ts
++++ b/packages/catalog/src/index.ts
+@@ -17,6 +17,7 @@ import onboarding from "../../../addons/ui/onboarding.json";
+ import settings from "../../../addons/ui/settings.json";
+ import dashboard from "../../../addons/ui/dashboard.json";
+ import navigation from "../../../addons/ui/navigation.json";
++import catalog from "../../../addons/ui/catalog.json";
+ import notes from "../../../addons/ui/notes.json";
+ import rustFfi from "../../../addons/native/rust-ffi.json";
+ import zigFfi from "../../../addons/native/zig-ffi.json";
+@@ -25,6 +26,8 @@ import scrcpy from "../../../addons/tooling/scrcpy.json";
+ import githubActions from "../../../addons/tooling/github-actions.json";
+ import dockerCompose from "../../../addons/tooling/docker-compose.json";
+ import androidCli from "../../../addons/tooling/android-cli.json";
++import foundationCore from "../../../addons/tooling/foundation-core.json";
++import foundationUi from "../../../addons/ui/foundation-ui.json";
+ 
+ const RAW_MANIFESTS = [
+   room,
+@@ -38,6 +41,7 @@ const RAW_MANIFESTS = [
+   settings,
+   dashboard,
+   navigation,
++  catalog,
+   notes,
+   rustFfi,
+   zigFfi,
+@@ -46,6 +50,8 @@ const RAW_MANIFESTS = [
+   githubActions,
+   dockerCompose,
+   androidCli,
++  foundationCore,
++  foundationUi,
+ ];
+ 
+ const CATEGORY_ORDER: Record<AddonManifest["category"], number> = {
+@@ -53,6 +59,7 @@ const CATEGORY_ORDER: Record<AddonManifest["category"], number> = {
+   ui: 1,
+   native: 2,
+   tooling: 3,
++  foundation: 4,
+ };
+ 
+ /**
+@@ -111,3 +118,5 @@ export function buildCatalog(): CatalogResponse {
+     },
+   };
+ }
++
++export * from "./presets";
+diff --git a/packages/schema/src/addon.ts b/packages/schema/src/addon.ts
+index 1f9b881..4951e15 100644
+--- a/packages/schema/src/addon.ts
++++ b/packages/schema/src/addon.ts
+@@ -2,7 +2,7 @@ import { z } from "zod";
+ import { FileOperationSchema } from "./operations";
+ import { SDK_LIMITS } from "./limits";
+ 
+-export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling"] as const;
++export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling", "foundation"] as const;
+ export const ADDON_STATUSES = ["stable", "beta", "experimental", "planned"] as const;
+ 
+ export type AddonCategory = (typeof ADDON_CATEGORIES)[number];
+diff --git a/packages/schema/src/plan.ts b/packages/schema/src/plan.ts
+index f9612b8..4cabc4b 100644
+--- a/packages/schema/src/plan.ts
++++ b/packages/schema/src/plan.ts
+@@ -51,6 +51,7 @@ export const GenerationPlanSchema = z.strictObject({
+     compileSdk: z.number().int(),
+     targetSdk: z.number().int(),
+     addons: z.array(z.string()),
++    preset: z.string().optional(),
+   }),
+   files: z.array(PlannedFileSchema),
+   operations: z.array(PlannedOperationSchema),
+@@ -69,7 +70,7 @@ export const CatalogEntrySchema = z.strictObject({
+   version: z.string(),
+   displayName: z.string(),
+   description: z.string(),
+-  category: z.enum(["storage", "ui", "native", "tooling"]),
++  category: z.enum(["storage", "ui", "native", "tooling", "foundation"]),
+   status: z.enum(["stable", "beta", "experimental", "planned"]),
+   generatable: z.boolean(),
+   capabilities: z.array(z.string()),
+diff --git a/templates/fragments/foundation/ui-components.txt b/templates/fragments/foundation/ui-components.txt
+new file mode 100644
+index 0000000..eeaf355
+--- /dev/null
++++ b/templates/fragments/foundation/ui-components.txt
+@@ -0,0 +1,108 @@
++package {{packageName}}.foundation.ui
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.AlertDialog
++import androidx.compose.material3.CircularProgressIndicator
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import {{packageName}}.ui.theme.Spacing
++
++@Composable
++fun AppLoading(modifier: Modifier = Modifier, label: String = "Loading") {
++    Column(
++        modifier = modifier.semantics { contentDescription = label },
++        horizontalAlignment = Alignment.CenterHorizontally,
++        verticalArrangement = Arrangement.Center,
++    ) {
++        CircularProgressIndicator()
++        Text(text = label, modifier = Modifier.padding(top = Spacing.sm))
++    }
++}
++
++@Composable
++fun AppEmptyState(title: String, message: String, modifier: Modifier = Modifier) {
++    Column(
++        modifier = modifier,
++        horizontalAlignment = Alignment.CenterHorizontally,
++        verticalArrangement = Arrangement.Center,
++    ) {
++        Text(text = title, style = MaterialTheme.typography.titleMedium)
++        Text(text = message, color = MaterialTheme.colorScheme.onSurfaceVariant)
++    }
++}
++
++@Composable
++fun AppErrorState(message: String, onRetry: (() -> Unit)? = null, modifier: Modifier = Modifier) {
++    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
++        Text(text = message, color = MaterialTheme.colorScheme.error)
++        if (onRetry != null) {
++            TextButton(onClick = onRetry) { Text("Retry") }
++        }
++    }
++}
++
++@Composable
++fun AppSectionHeader(title: String, modifier: Modifier = Modifier) {
++    Text(
++        text = title,
++        style = MaterialTheme.typography.titleSmall,
++        color = MaterialTheme.colorScheme.primary,
++        modifier = modifier.padding(vertical = Spacing.sm),
++    )
++}
++
++@Composable
++fun AppInfoCard(title: String, value: String, modifier: Modifier = Modifier) {
++    androidx.compose.material3.Card(modifier = modifier) {
++        Column(modifier = Modifier.padding(Spacing.md)) {
++            Text(text = title, style = MaterialTheme.typography.labelMedium)
++            Text(text = value, style = MaterialTheme.typography.headlineSmall)
++        }
++    }
++}
++
++@Composable
++fun AppFormField(
++    value: String,
++    onValueChange: (String) -> Unit,
++    label: String,
++    error: String? = null,
++    modifier: Modifier = Modifier,
++) {
++    androidx.compose.material3.OutlinedTextField(
++        value = value,
++        onValueChange = onValueChange,
++        label = { Text(label) },
++        isError = error != null,
++        supportingText = { error?.let { Text(it) } },
++        modifier = modifier,
++    )
++}
++
++@Composable
++fun AppConfirmationDialog(
++    title: String,
++    message: String,
++    confirmLabel: String = "Confirm",
++    dismissLabel: String = "Cancel",
++    onConfirm: () -> Unit,
++    onDismiss: () -> Unit,
++) {
++    AlertDialog(
++        onDismissRequest = onDismiss,
++        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmLabel) } },
++        dismissButton = { TextButton(onClick = onDismiss) { Text(dismissLabel) } },
++        title = { Text(title) },
++        text = { Text(message) },
++    )
++}

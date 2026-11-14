@@ -1,29 +1,64 @@
 {
   "id": "ui/settings",
   "version": "0.1.0",
-  "displayName": "Settings screen",
-  "description": "Material 3 settings list with switches, theme selection and an about section.",
+  "displayName": "Settings",
+  "description": "Material 3 settings screen with grouped preferences and about section.",
   "category": "ui",
-  "status": "planned",
-  "dependencies": [],
+  "status": "beta",
+  "dependencies": [
+    "ui/navigation"
+  ],
   "conflicts": [],
   "capabilities": [
-    "settings"
+    "compose-ui",
+    "settings",
+    "material3"
   ],
   "requirements": {
     "minSdk": 24,
     "compileSdk": 34,
     "jdk": 17
   },
-  "fileOperations": [],
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/settings/SettingsScreen.kt",
+      "template": "ui/settings-screen"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-imports",
+      "template": "ui/settings-import"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-routes",
+      "template": "ui/settings-route"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-entries",
+      "template": "ui/settings-entry"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/ui/settings/SettingsScreenTest.kt",
+      "template": "ui/settings-test"
+    }
+  ],
   "compatibility": {
     "android": [
       "7.0+"
     ],
     "notes": [
-      "Declarative entry for F0; not generatable yet.",
-      "Planned for a later patch."
+      "Beta in F1.2: validated by generated-project compilation.",
+      "Depends on ui/navigation.",
+      "No Room, DataStore, auth or CRUD UI."
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/develop/ui/compose"
 }

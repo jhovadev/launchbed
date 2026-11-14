@@ -26,10 +26,24 @@ function runDevice(args: string[], env: Record<string, string | undefined>) {
 }
 
 describe("device selection script", () => {
-  test("uses ANDROID_SERIAL without touching adb", () => {
-    const result = runDevice(["serial"], { ANDROID_SERIAL: "emulator-5554", PATH: "/usr/bin:/bin" });
+  test("validates ANDROID_SERIAL against authorized online ADB devices", () => {
+    const adb = stubAdb(["emulator-5554"]);
+    const result = runDevice(["serial"], { ANDROID_SERIAL: "emulator-5554", PATH: adb.path });
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe("emulator-5554");
+  });
+
+  test("rejects a stale ANDROID_SERIAL instead of using another device", () => {
+    const adb = stubAdb(["online-device"]);
+    const result = runDevice(["serial"], { ANDROID_SERIAL: "missing-device", PATH: adb.path });
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("not connected");
+  });
+
+  test("rejects malicious or invalid ANDROID_SERIAL", () => {
+    const adb = stubAdb(["device-a"]);
+    const result = runDevice(["serial"], { ANDROID_SERIAL: "device-a;rm", PATH: adb.path });
+    expect(result.status).toBe(2);
   });
 
   test("uses the only connected device", () => {

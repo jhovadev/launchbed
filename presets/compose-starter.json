@@ -1,0 +1,64 @@
+{
+  "id": "compose-starter",
+  "version": "0.1.0",
+  "name": "Compose Starter",
+  "description": "Navigation, dashboard, settings and foundation UI.",
+  "category": "application",
+  "status": "beta",
+  "baseTemplate": "android-compose-minimal",
+  "requiredAddons": [
+    "ui/foundation",
+    "ui/navigation",
+    "ui/dashboard",
+    "ui/settings"
+  ],
+  "optionalAddons": [],
+  "defaultTheme": {
+    "seedColor": "#006C4C",
+    "schemeVariant": "tonalSpot",
+    "defaultMode": "system",
+    "typography": {
+      "fontFamily": "default"
+    },
+    "shape": {
+      "cornerRadius": 12
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "components": {
+      "card": {
+        "cornerRadius": 16,
+        "elevation": 1
+      },
+      "button": {
+        "cornerRadius": 20,
+        "minHeight": 48
+      }
+    },
+    "overrides": {
+      "light": {},
+      "dark": {}
+    }
+  },
+  "previewScreens": [
+    "welcome",
+    "dashboard",
+    "settings"
+  ],
+  "compatibility": {
+    "minSdk": 26,
+    "notes": [
+      "Beta until UI runtime tests run."
+    ]
+  },
+  "capabilities": [
+    "starter",
+    "navigation",
+    "settings"
+  ]
+}

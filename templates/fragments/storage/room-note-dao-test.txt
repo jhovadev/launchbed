@@ -1,0 +1,98 @@
+package {{packageName}}.data.local
+
+import android.content.Context
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class NoteDaoTest {
+    private lateinit var database: AppDatabase
+    private lateinit var dao: NoteDao
+
+    @Before
+    fun createDatabase() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        dao = database.noteDao()
+    }
+
+    @After
+    fun closeDatabase() {
+        database.close()
+    }
+
+    @Test
+    fun insertAndRetrieve() = runBlocking {
+        val id = dao.insert(NoteEntity(title = "title", content = "content", updatedAt = 1L))
+        val note = dao.getById(id)
+        assertEquals("title", note?.title)
+        assertEquals("content", note?.content)
+    }
+
+    @Test
+    fun updateNote() = runBlocking {
+        val id = dao.insert(NoteEntity(title = "before", content = "before", updatedAt = 1L))
+        dao.update(NoteEntity(id = id, title = "after", content = "after", updatedAt = 2L))
+        assertEquals("after", dao.getById(id)?.title)
+    }
+
+    @Test
+    fun deleteNote() = runBlocking {
+        val id = dao.insert(NoteEntity(title = "title", content = "content", updatedAt = 1L))
+        dao.delete(NoteEntity(id = id, title = "title", content = "content", updatedAt = 1L))
+        assertEquals(null, dao.getById(id))
+    }
+    @Test
+    fun observesInsertedNotes() = runBlocking {
+        val initialObserved = CompletableDeferred<Unit>()
+        val observations = async {
+            withTimeout(10_000L) {
+                dao.observeAll()
+                    .onEach { if (it.isEmpty()) initialObserved.complete(Unit) }
+                    .take(2)
+                    .toList()
+            }
+        }
+        withTimeout(10_000L) { initialObserved.await() }
+        dao.insert(NoteEntity(title = "live", content = "value", updatedAt = 1L))
+        val values = observations.await()
+        assertTrue(values.first().isEmpty())
+        assertEquals("live", values.last().single().title)
+    }
+
+    @Test
+    fun fileDatabasePersistsAcrossCloseAndReopen() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "initializr-test-${java.util.UUID.randomUUID()}.db"
+        var fileDatabase: AppDatabase? = null
+        try {
+            fileDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name).build()
+            val id = fileDatabase.noteDao().insert(
+                NoteEntity(title = "persistent", content = "saved", updatedAt = 1L),
+            )
+            fileDatabase.close()
+            fileDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name).build()
+            assertEquals("persistent", fileDatabase.noteDao().getById(id)?.title)
+        } finally {
+            fileDatabase?.close()
+            context.deleteDatabase(name)
+        }
+    }
+
+}

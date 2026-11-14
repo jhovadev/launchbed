@@ -7,6 +7,16 @@ const ROOT = join(import.meta.dir, "..");
 const TEMPLATE_DIR = join(ROOT, "templates", "android-compose-minimal");
 const FRAGMENTS_DIR = join(ROOT, "templates", "fragments");
 
+function walkFragments(directory: string, base = directory): string[] {
+  const found: string[] = [];
+  for (const name of readdirSync(directory).sort()) {
+    const absolute = join(directory, name);
+    if (statSync(absolute).isDirectory()) found.push(...walkFragments(absolute, base));
+    else found.push(relative(base, absolute).split(sep).join("/"));
+  }
+  return found.sort();
+}
+
 const BINARY = new Set([".jar", ".png"]);
 
 function walk(directory: string): string[] {
@@ -52,8 +62,8 @@ describe("embedded template bundle", () => {
   });
 
   test("keeps fragment bundle in sync", () => {
-    const disk = readdirSync(FRAGMENTS_DIR)
-      .filter((name) => !name.endsWith("README.md") && !name.startsWith("."))
+    const disk = walkFragments(FRAGMENTS_DIR)
+      .filter((name) => !name.endsWith("README.md"))
       .sort();
     expect(Object.keys(FRAGMENT_FILES).sort()).toEqual(disk);
     for (const name of disk) {

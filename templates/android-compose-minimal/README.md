@@ -65,3 +65,17 @@ app/src/main/java/{{packagePath}}/
   ui/theme/GeneratedTokens.kt
 app/src/test/java/{{packagePath}}/GreetingTest.kt
 ```
+
+## Instrumented tests (optional addons)
+
+Addons such as Room and Navigation include Android instrumented tests. These
+are compiled with `./gradlew :app:assembleDebugAndroidTest` and run on a
+connected device or emulator with `./gradlew :app:connectedDebugAndroidTest`.
+Compiling tests alone does not execute them. Select a device explicitly when
+more than one is connected, and never point tests at an unintended phone.
+
+## Release and backup privacy
+
+`./gradlew :app:assembleRelease` produces an **unsigned**, R8-optimized release APK by default with AGP 9.5's optimization DSL. It is not ready to upload until signed and tested.
+
+The generated template intentionally disables automatic cloud and device-to-device backup (including separate Android 12+ extraction rules). This avoids silently exporting user data, but **uninstalling or resetting the device may permanently delete locally stored data such as notes**. Before shipping, design and document a recovery/export policy and review OEM/platform behavior; you can then adjust `app/src/main/AndroidManifest.xml` and its `res/xml` rules intentionally.

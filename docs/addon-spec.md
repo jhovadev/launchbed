@@ -51,18 +51,51 @@ The resolver rejects planned and experimental addons with an explicit message.
 The catalog API exposes `generatable`, and the web UI disables those checkboxes.
 F0 has no generatable addon; the generated project is the minimal template.
 
-## File operations
+## Operations (F1.0)
+
+All operations are strict Zod objects. Fragments are local trusted files; no
+user regex, `eval`, remote download or text replacement is involved.
+
+### add
 
 ```json
 { "type": "add", "path": "app/src/main/.../Database.kt", "template": "storage/room-database" }
-{ "type": "append", "path": "app/build.gradle.kts", "template": "storage/room-dependency" }
 ```
 
-- `add` fails if the target already exists.
-- `append` fails if the target is missing or binary.
-- `modify` is parsed but **not implemented** in F0 and fails closed.
-- Fragments live in `templates/fragments/<template>.txt`, are local and are
-  rendered with the same trusted template variables as the base template.
+Creates a file. Fails if it exists or targets a protected template path
+(Gradle files, wrapper, `local.properties`, ...).
+
+### insert
+
+```json
+{ "type": "insert", "path": "app/build.gradle.kts", "slot": "app-dependencies", "template": "storage/room-dependency" }
+```
+
+Slots are declared in trusted templates as `// @initializr-slot <id>`. All four
+slots must exist exactly once; a missing, duplicated or moved marker is a
+`TEMPLATE_ERROR`. Contributions are ordered by addon id, so selection order does
+not change bytes.
+
+### merge
+
+```json
+{ "type": "merge", "target": "version-catalog", "alias": "androidx-room", "module": "androidx.room:room-runtime", "versionRef": "room" }
+{ "type": "merge", "target": "app-dependencies", "alias": "androidx-room" }
+{ "type": "merge", "target": "app-plugins", "alias": "ksp" }
+{ "type": "merge", "target": "root-plugins", "alias": "ksp" }
+{ "type": "merge", "target": "settings-includes", "module": ":feature:home" }
+```
+
+Catalog merges are parsed with a TOML parser and serialized deterministically
+(sorted sections and keys, quoted keys only when required). Existing entries are
+preserved. `versionRef` must exist; `version` creates a version alias named after
+the library alias. Identical aliases are deduplicated; incompatible modules or
+versions are rejected before generation.
+
+### modify / append
+
+Accepted by the schema for backward compatibility and always rejected at
+execution with a typed error. They must not be used by new addons.
 
 ## Resolution
 
@@ -71,3 +104,29 @@ closure with cycle/depth detection → pairwise conflict detection → requireme
 merge (max minSdk/compileSdk/jdk) → request compatibility check → warnings for
 beta addons. Tests cover conflicts, cycles, missing dependencies, SDK floors and
 planned/experimental rejection.
+
+## Reference: storage/room (F1.1)
+
+- Status: `stable`, generatable.
+- Slots used: `root-plugins`, `app-plugins`, `app-dependencies`, `app-room-config`.
+- Catalog aliases: `room`, `ksp`, `roomruntime`, `roomcompiler`, `androidxtestextjunit`.
+- Generated files: `NoteEntity`, `NoteDao`, `AppDatabase`, `DatabaseProvider`,
+  `NoteRepository`, plus JVM and instrumented tests.
+- Schema export: `app/schemas/<db>/<version>.json` during build.
+- No KAPT, Hilt, Koin, remote sync, CRUD UI or destructive migrations.
+
+## Reference: UI addons (F1.2)
+
+- `ui/navigation`: stable beta, generates `AppRoot`, `WelcomeScreen`, typed
+  `AppRoute`, and Navigation 3 dependencies. Uses slots `app-imports`,
+  `app-routes`, `app-entries`, `main-content`.
+- `ui/dashboard`: depends on `ui/navigation`; generates `DashboardScreen`.
+- `ui/settings`: depends on `ui/navigation`; generates `SettingsScreen`.
+- Navigation 3 1.2.1, kotlinx.serialization 1.8.1, serialization plugin 2.3.10.
+- No Navigation Compose 2.x, no Hilt/Koin, no DataStore, no CRUD UI.
+
+## Reference: ui/catalog (F1.5)
+
+- Status: `beta`, generatable.
+- Standalone demo catalog screen with local search and empty state.
+- No backend, payments or persistence.

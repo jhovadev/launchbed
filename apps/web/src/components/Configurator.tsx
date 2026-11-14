@@ -1,10 +1,11 @@
 import { For, Show, createMemo, createSignal } from "solid-js";
-import type { CatalogResponse, ProjectRequest, ThemeConfig } from "@android-initializr/schema";
+import type { CatalogResponse, ProjectPresetManifest, ProjectRequest, ThemeConfig } from "@android-initializr/schema";
 import { resolveThemeTokens } from "@android-initializr/design-tokens";
 import { PreviewScreen } from "@android-initializr/preview";
 
 interface Props {
   catalog: CatalogResponse;
+  presets?: readonly ProjectPresetManifest[];
 }
 
 interface FormState {
@@ -56,6 +57,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   ui: "UI",
   native: "Native",
   tooling: "Tooling",
+  foundation: "Foundation",
 };
 
 function themeConfig(form: FormState): ThemeConfig {
@@ -95,7 +97,18 @@ export default function Configurator(props: Props) {
     defaultMode: "system",
   });
   const [previewMode, setPreviewMode] = createSignal<"light" | "dark">("light");
+  const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings">("welcome");
+  const availableScreens = createMemo(() => {
+    const screens: ("welcome" | "dashboard" | "settings")[] = ["welcome"];
+    if (selectedAddons().includes("ui/dashboard")) screens.push("dashboard");
+    if (selectedAddons().includes("ui/settings")) screens.push("settings");
+    return screens;
+  });
+  const activePreviewScreen = createMemo(() =>
+    availableScreens().includes(previewScreen()) ? previewScreen() : "welcome",
+  );
   const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
+  const [presetId, setPresetId] = createSignal<string>("");
   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string[]>>({});
   const [formError, setFormError] = createSignal("");
   const [status, setStatus] = createSignal("");
@@ -112,6 +125,21 @@ export default function Configurator(props: Props) {
       if (key === "minSdk" && next.targetSdk < (value as number)) next.targetSdk = value as number;
       return next;
     });
+  }
+
+  function applyPreset(id: string): void {
+    setPresetId(id);
+    const preset = (props.presets ?? []).find((entry) => entry.id === id);
+    if (!preset || !(preset.status === "stable" || preset.status === "beta")) return;
+    setSelectedAddons([...preset.requiredAddons].sort());
+    const theme = preset.defaultTheme;
+    setForm((previous) => ({
+      ...previous,
+      seedColor: theme.seedColor,
+      fontFamily: theme.typography.fontFamily,
+      cornerRadius: theme.shape.cornerRadius,
+      defaultMode: theme.defaultMode,
+    }));
   }
 
   function toggleAddon(id: string, checked: boolean): void {
@@ -133,6 +161,7 @@ export default function Configurator(props: Props) {
       targetSdk: current.targetSdk,
       theme: themeConfig(current),
       addons: selectedAddons(),
+      ...(presetId() ? { preset: presetId() } : {}),
     };
   }
 
@@ -266,6 +295,44 @@ export default function Configurator(props: Props) {
             </Show>
           </div>
         </Show>
+
+        <section aria-labelledby="section-preset">
+          <h2 id="section-preset">
+            <span class="step">00</span> Project template
+          </h2>
+          <p class="section-help">
+            Presets are declarative configurations over the same generator. The backend resolves and
+            validates every dependency.
+          </p>
+          <div class="field">
+            <label for="preset">Preset</label>
+            <select
+              id="preset"
+              value={presetId()}
+              onChange={(event) => applyPreset(event.currentTarget.value)}
+            >
+              <option value="">Custom (manual selection)</option>
+              <For each={(props.presets ?? [])}>
+                {(preset) => (
+                  <option value={preset.id} disabled={!(preset.status === "stable" || preset.status === "beta")}>
+                    {preset.name} ({preset.status})
+                  </option>
+                )}
+              </For>
+            </select>
+          </div>
+          <Show when={presetId()}>
+            {(id) => {
+              const preset = (props.presets ?? []).find((entry) => entry.id === id());
+              return preset ? (
+                <p class="section-help">
+                  {preset.description} Required addons:{" "}
+                  {preset.requiredAddons.length === 0 ? "none" : preset.requiredAddons.join(", ")}.
+                </p>
+              ) : null;
+            }}
+          </Show>
+        </section>
 
         <section aria-labelledby="section-identity">
           <h2 id="section-identity">
@@ -483,7 +550,7 @@ export default function Configurator(props: Props) {
               is the minimal Android template.
             </p>
           </Show>
-          <For each={["storage", "ui", "native", "tooling"]}>
+          <For each={["storage", "ui", "native", "tooling", "foundation"]}>
             {(category) => (
               <fieldset class="addon-group">
                 <legend>{CATEGORY_LABELS[category]}</legend>
@@ -554,6 +621,24 @@ export default function Configurator(props: Props) {
       <aside class="panel preview-panel" aria-labelledby="preview-title">
         <div class="preview-header">
           <h2 id="preview-title">Preview</h2>
+          <Show when={availableScreens().length > 1}>
+            <div class="segmented small" role="group" aria-label="Preview screen">
+              <For each={availableScreens()}>
+                {(screen) => (
+                  <label classList={{ selected: activePreviewScreen() === screen }}>
+                    <input
+                      type="radio"
+                      name="previewScreen"
+                      value={screen}
+                      checked={activePreviewScreen() === screen}
+                      onChange={() => setPreviewScreen(screen)}
+                    />
+                    {screen}
+                  </label>
+                )}
+              </For>
+            </div>
+          </Show>
           <div class="segmented small" role="group" aria-label="Preview mode">
             <For each={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const}>
               {(option) => (
@@ -574,6 +659,7 @@ export default function Configurator(props: Props) {
         <PreviewScreen
           tokens={tokens()}
           mode={previewMode()}
+          screen={activePreviewScreen()}
           projectName={form().projectName || "Android App"}
           caption="Web simulation of the generated Compose screen using the same Material 3 tokens. It is not a Compose runtime."
         />

@@ -34,6 +34,19 @@
     "templates:embed": "bun run scripts/embed-templates.ts",
     "templates:check": "bun run scripts/embed-templates.ts --check",
     "cli": "bun run packages/cli/src/index.ts",
-    "generate:example": "bun run packages/cli/src/index.ts generate --config examples/basic.json --out build/example.zip"
+    "generate:example": "bun run packages/cli/src/index.ts generate --config examples/basic.json --out build/example.zip",
+    "check:astro": "bun run --cwd apps/web check",
+    "runtime:parser-test": "node --test scripts/runtime/devices.node.test.mjs",
+    "android:runtime-compile": "bun run scripts/android-runtime.ts test --all",
+    "android:runtime-test": "bun run scripts/android-runtime.ts test --all --run",
+    "benchmark:generator": "bun run scripts/performance-baseline.ts generator",
+    "benchmark:android": "bun run scripts/performance-baseline.ts android",
+    "benchmark:parser-test": "node --test scripts/performance/metrics.node.test.mjs",
+    "integrity:check": "bun run scripts/integrity-check.ts",
+    "integrity:release": "bun run scripts/integrity-check.ts --release",
+    "integrity:patch-replay": "node scripts/integrity/patch-replay.mjs",
+    "integrity:parser-test": "node --test scripts/integrity/gates.node.test.mjs",
+    "release:parser-test": "node --test scripts/release/native-apk.node.test.mjs",
+    "release:audit": "bun run scripts/release-audit.ts build --all"
   }
 }

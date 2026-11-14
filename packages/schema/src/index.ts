@@ -3,5 +3,7 @@ export * from "./errors";
 export * from "./identifiers";
 export * from "./theme";
 export * from "./request";
+export * from "./operations";
 export * from "./addon";
 export * from "./plan";
+export * from "./preset";

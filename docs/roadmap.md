@@ -45,3 +45,11 @@ F0 is intentionally small. Each later phase is a reviewable patch series.
 ## Explicitly deferred
 
 Accounts, marketplace, remote builds, browser emulator, drag-and-drop editor.
+
+## F1.6C — Integrity / release evidence
+
+Source-only generator checks, patch chain replay and classification of runtime/benchmark evidence. Release readiness remains BLOCKED without instrumented tests and native/release audits. No new addons or i18n.
+
+## F1.6D — Optimized release and local-first backup policy
+
+Enables AGP 9.5 release `optimization { enable = true }`, explicit default backup exclusions for privacy, and opt-in unsigned release APK audits. Release checks remain blocked without actual optimized APK evidence and device instrumentation. A default backup exclusion can sacrifice restoration of user-created local data; publish only after reviewing that trade-off.

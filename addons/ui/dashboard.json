@@ -1,31 +1,64 @@
 {
   "id": "ui/dashboard",
   "version": "0.1.0",
-  "displayName": "Dashboard screen",
-  "description": "Responsive dashboard scaffold with summary cards and empty states.",
+  "displayName": "Dashboard",
+  "description": "Reusable Material 3 dashboard screen with summary cards and quick actions.",
   "category": "ui",
-  "status": "planned",
+  "status": "beta",
   "dependencies": [
     "ui/navigation"
   ],
   "conflicts": [],
   "capabilities": [
-    "dashboard"
+    "compose-ui",
+    "dashboard",
+    "material3"
   ],
   "requirements": {
     "minSdk": 24,
     "compileSdk": 34,
     "jdk": 17
   },
-  "fileOperations": [],
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/dashboard/DashboardScreen.kt",
+      "template": "ui/dashboard-screen"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-imports",
+      "template": "ui/dashboard-import"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-routes",
+      "template": "ui/dashboard-route"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-entries",
+      "template": "ui/dashboard-entry"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/ui/dashboard/DashboardScreenTest.kt",
+      "template": "ui/dashboard-test"
+    }
+  ],
   "compatibility": {
     "android": [
       "7.0+"
     ],
     "notes": [
-      "Declarative entry for F0; not generatable yet.",
-      "Planned for a later patch."
+      "Beta in F1.2: validated by generated-project compilation.",
+      "Depends on ui/navigation.",
+      "No Room, DataStore, auth or CRUD UI."
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/develop/ui/compose"
 }

@@ -1,0 +1,62 @@
+{
+  "id": "ui/catalog",
+  "version": "0.1.0",
+  "displayName": "Catalog",
+  "description": "Demo catalog screen with search, categories and empty states.",
+  "category": "ui",
+  "status": "beta",
+  "dependencies": [
+    "ui/navigation"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "compose-ui",
+    "catalog",
+    "material3"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/catalog/CatalogScreen.kt",
+      "template": "ui/catalog-screen"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-imports",
+      "template": "ui/catalog-import"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-routes",
+      "template": "ui/catalog-route"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-entries",
+      "template": "ui/catalog-entry"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/ui/catalog/CatalogScreenTest.kt",
+      "template": "ui/catalog-test"
+    }
+  ],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Beta in F1.5: demo data only, no backend.",
+      "Registered as a Navigation 3 destination and selected as the initial route for catalog-only projects."
+    ]
+  },
+  "license": "MIT"
+}

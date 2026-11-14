@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import {
-  applyAddonOperations,
   generateProject,
   materializeProject,
   parseRequestJson,
@@ -14,7 +13,7 @@ import {
   normalizeRequest,
   toErrorPayload,
 } from "@android-initializr/schema";
-import { baseRequest, stableAddon } from "./fixtures";
+import { baseRequest } from "./fixtures";
 
 function expectInitializrError(fn: () => unknown, code: "INVALID_REQUEST" | "LIMIT_EXCEEDED" | "RESOLUTION_ERROR" | "TEMPLATE_ERROR" | "SECURITY_ERROR" | "ZIP_ERROR" | "IO_ERROR" | "UNKNOWN_ADDON" | "INTERNAL_ERROR"): void {
   try {
@@ -43,7 +42,7 @@ describe("request validation and limits", () => {
   });
 
   test("rejects planned catalog addons with a clear message", () => {
-    const request = baseRequest({ addons: ["storage/room"] });
+    const request = baseRequest({ addons: ["storage/turso"] });
     try {
       materializeProject(request);
       throw new Error("expected failure");
@@ -81,70 +80,6 @@ describe("template rendering", () => {
 
   test("fails on unresolved placeholders", () => {
     expectInitializrError(() => renderText("{{ a b }}", {}, "test"), "TEMPLATE_ERROR");
-  });
-});
-
-describe("addon file operations", () => {
-  const vars = { packagePath: "com/example/demo", projectName: "Demo" };
-
-  test("adds and appends files from local fragments", () => {
-    const addon = stableAddon("storage/alpha", {
-      fileOperations: [
-        { type: "add", path: "app/{{packagePath}}/Added.kt", template: "test/add" },
-        { type: "append", path: "gradle.properties", template: "test/append" },
-      ],
-    });
-    const files = new Map<string, Uint8Array>([
-      ["gradle.properties", new TextEncoder().encode("first=true\n")],
-    ]);
-    const origins = new Map<string, "template" | "generated" | "addon">([
-      ["gradle.properties", "template"],
-    ]);
-
-    applyAddonOperations([addon], files, origins, vars, {
-      "test/add.txt": "package {{packagePath}}\n",
-      "test/append.txt": "second=true",
-    });
-
-    const decoder = new TextDecoder();
-    expect(decoder.decode(files.get("app/com/example/demo/Added.kt")!)).toBe("package com/example/demo\n");
-    expect(decoder.decode(files.get("gradle.properties")!)).toBe("first=true\nsecond=true");
-    expect(origins.get("app/com/example/demo/Added.kt")).toBe("addon");
-  });
-
-  test("rejects missing fragments", () => {
-    const addon = stableAddon("storage/alpha");
-    expectInitializrError(
-      () => applyAddonOperations([addon], new Map(), new Map(), vars, {}),
-      "TEMPLATE_ERROR",
-    );
-  });
-
-  test("rejects modify operations instead of faking them", () => {
-    const addon = stableAddon("storage/alpha", {
-      fileOperations: [{ type: "modify", path: "settings.gradle.kts", template: "test/add" }],
-    });
-    expectInitializrError(
-      () => applyAddonOperations([addon], new Map(), new Map(), vars, { "test/add.txt": "x" }),
-      "TEMPLATE_ERROR",
-    );
-  });
-
-  test("rejects add operations that collide with template files", () => {
-    const addon = stableAddon("storage/alpha", {
-      fileOperations: [{ type: "add", path: "settings.gradle.kts", template: "test/add" }],
-    });
-    expectInitializrError(
-      () =>
-        applyAddonOperations(
-          [addon],
-          new Map([["settings.gradle.kts", new TextEncoder().encode("existing")]]),
-          new Map(),
-          vars,
-          { "test/add.txt": "x" },
-        ),
-      "TEMPLATE_ERROR",
-    );
   });
 });
 

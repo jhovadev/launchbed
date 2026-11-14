@@ -1,0 +1,2 @@
+    @Serializable data class NoteEditor(val noteId: Long? = null) : AppRoute
+    @Serializable data object Notes : AppRoute

@@ -1,0 +1,121 @@
+package {{packageName}}.feature.notes
+
+import {{packageName}}.data.local.NoteEntity
+import {{packageName}}.data.repository.NoteRepository
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+class NotesViewModel(
+    private val repository: NoteRepository,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(NotesUiState())
+    val uiState: StateFlow<NotesUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.observeAll()
+                .catch { error ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to load notes") }
+                }
+                .collect { notes ->
+                    _uiState.update { it.copy(notes = notes, isLoading = false, errorMessage = null) }
+                }
+        }
+    }
+
+    fun openNoteById(noteId: Long?) {
+        if (noteId == null) {
+            openNewNote()
+        } else {
+            viewModelScope.launch {
+                repository.get(noteId)?.let { openNote(it) } ?: openNewNote()
+            }
+        }
+    }
+
+    fun openNewNote() {
+        _uiState.update { it.copy(editor = NoteEditorState()) }
+    }
+
+    fun openNote(note: NoteEntity) {
+        _uiState.update {
+            it.copy(editor = NoteEditorState(noteId = note.id, title = note.title, content = note.content))
+        }
+    }
+
+    fun updateTitle(value: String) {
+        _uiState.update { state ->
+            state.copy(editor = state.editor.copy(title = value, titleError = null))
+        }
+    }
+
+    fun updateContent(value: String) {
+        _uiState.update { state ->
+            state.copy(editor = state.editor.copy(content = value))
+        }
+    }
+
+    fun dismissEditor() {
+        _uiState.update { it.copy(editor = NoteEditorState(), isSaving = false) }
+    }
+
+    fun save() {
+        val editor = _uiState.value.editor
+        if (editor.title.isBlank()) {
+            _uiState.update { state ->
+                state.copy(editor = state.editor.copy(titleError = "Title is required"))
+            }
+            return
+        }
+        _uiState.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            try {
+                repository.save(
+                    NoteEntity(
+                        id = editor.noteId ?: 0L,
+                        title = editor.title.trim(),
+                        content = editor.content.trim(),
+                        updatedAt = System.currentTimeMillis(),
+                    ),
+                )
+                dismissEditor()
+            } catch (error: Throwable) {
+                _uiState.update { it.copy(isSaving = false, errorMessage = error.message ?: "Unable to save note") }
+            }
+        }
+    }
+
+    fun delete(note: NoteEntity) {
+        viewModelScope.launch {
+            try {
+                repository.delete(note)
+            } catch (error: Throwable) {
+                _uiState.update { it.copy(errorMessage = error.message ?: "Unable to delete note") }
+            }
+        }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+}
+
+class NotesViewModelFactory(
+    private val repository: {{packageName}}.data.repository.NoteRepository,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(NotesViewModel::class.java)) {
+            return NotesViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    }
+}

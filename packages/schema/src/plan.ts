@@ -23,6 +23,17 @@ export const PlannedFileSchema = z
     }
   });
 
+export const PlannedOperationSchema = z.strictObject({
+  addon: z.string(),
+  type: z.enum(["add", "append", "insert", "merge", "modify"]),
+  target: z.string().optional(),
+  path: z.string(),
+  slot: z.string().optional(),
+  alias: z.string().optional(),
+});
+
+export type PlannedOperation = z.infer<typeof PlannedOperationSchema>;
+
 export const GenerationPlanSchema = z.strictObject({
   schemaVersion: z.literal(GENERATION_SCHEMA_VERSION),
   template: z.strictObject({
@@ -40,8 +51,10 @@ export const GenerationPlanSchema = z.strictObject({
     compileSdk: z.number().int(),
     targetSdk: z.number().int(),
     addons: z.array(z.string()),
+    preset: z.string().optional(),
   }),
   files: z.array(PlannedFileSchema),
+  operations: z.array(PlannedOperationSchema),
   totals: z.strictObject({
     files: z.number().int().nonnegative(),
     bytes: z.number().int().nonnegative(),
@@ -57,7 +70,7 @@ export const CatalogEntrySchema = z.strictObject({
   version: z.string(),
   displayName: z.string(),
   description: z.string(),
-  category: z.enum(["storage", "ui", "native", "tooling"]),
+  category: z.enum(["storage", "ui", "native", "tooling", "foundation"]),
   status: z.enum(["stable", "beta", "experimental", "planned"]),
   generatable: z.boolean(),
   capabilities: z.array(z.string()),

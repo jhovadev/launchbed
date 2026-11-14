@@ -1,0 +1,55 @@
+{
+  "id": "client-server",
+  "version": "0.1.0",
+  "name": "Client Server",
+  "description": "Planned preset: Client Server.",
+  "category": "application",
+  "status": "planned",
+  "baseTemplate": "android-compose-minimal",
+  "requiredAddons": [],
+  "optionalAddons": [],
+  "defaultTheme": {
+    "seedColor": "#4A4F5A",
+    "schemeVariant": "tonalSpot",
+    "defaultMode": "system",
+    "typography": {
+      "fontFamily": "default"
+    },
+    "shape": {
+      "cornerRadius": 12
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "components": {
+      "card": {
+        "cornerRadius": 16,
+        "elevation": 1
+      },
+      "button": {
+        "cornerRadius": 20,
+        "minHeight": 48
+      }
+    },
+    "overrides": {
+      "light": {},
+      "dark": {}
+    }
+  },
+  "previewScreens": [
+    "welcome"
+  ],
+  "compatibility": {
+    "minSdk": 26,
+    "notes": [
+      "Planned only; not generatable."
+    ]
+  },
+  "capabilities": [
+    "client-server"
+  ]
+}

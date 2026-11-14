@@ -1,0 +1,18 @@
+package {{packageName}}.feature.notes
+
+import {{packageName}}.data.local.NoteEntity
+
+data class NoteEditorState(
+    val noteId: Long? = null,
+    val title: String = "",
+    val content: String = "",
+    val titleError: String? = null,
+)
+
+data class NotesUiState(
+    val notes: List<NoteEntity> = emptyList(),
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+    val editor: NoteEditorState = NoteEditorState(),
+    val isSaving: Boolean = false,
+)

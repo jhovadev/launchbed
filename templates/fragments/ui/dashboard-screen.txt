@@ -1,0 +1,83 @@
+package {{packageName}}.ui.dashboard
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import {{packageName}}.ui.theme.ComponentTokens
+import {{packageName}}.ui.theme.Spacing
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DashboardScreen() {
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Dashboard") })
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Text(
+                text = "Overview",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                InfoCard(
+                    title = "Items",
+                    value = "12",
+                    modifier = Modifier.weight(1f),
+                )
+                InfoCard(
+                    title = "Status",
+                    value = "Ready",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Text(
+                text = "Quick actions",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = "No actions are wired in F1.2. This screen is a composable starting point.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoCard(title: String, value: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.semantics { contentDescription = "$title: $value" },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(ComponentTokens.cardCornerRadius),
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            Text(text = title, style = MaterialTheme.typography.labelMedium)
+            Text(text = value, style = MaterialTheme.typography.headlineSmall)
+        }
+    }
+}

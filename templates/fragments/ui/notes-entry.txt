@@ -1,0 +1,27 @@
+            entry<AppRoute.Notes> {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }
+                val viewModel = viewModel<NotesViewModel>(factory = NotesViewModelFactory(repository))
+                NotesScreen(
+                    uiState = viewModel.uiState.collectAsStateWithLifecycle().value,
+                    onAdd = { backStack.add(AppRoute.NoteEditor(null)) },
+                    onEdit = { note -> backStack.add(AppRoute.NoteEditor(note.id)) },
+                    onDelete = viewModel::delete,
+                    onDismissError = viewModel::clearError,
+                )
+            }
+            entry<AppRoute.NoteEditor> { route ->
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }
+                val viewModel = viewModel<NotesViewModel>(factory = NotesViewModelFactory(repository))
+                LaunchedEffect(route.noteId) { viewModel.openNoteById(route.noteId) }
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                NoteEditorScreen(
+                    editor = uiState.editor,
+                    isSaving = uiState.isSaving,
+                    onTitleChanged = viewModel::updateTitle,
+                    onContentChanged = viewModel::updateContent,
+                    onSave = viewModel::save,
+                    onBack = { backStack.removeLastOrNull() },
+                )
+            }

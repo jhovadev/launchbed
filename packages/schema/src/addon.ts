@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { validateRelativePath } from "./identifiers";
+import { FileOperationSchema } from "./operations";
 import { SDK_LIMITS } from "./limits";
 
-export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling"] as const;
+export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling", "foundation"] as const;
 export const ADDON_STATUSES = ["stable", "beta", "experimental", "planned"] as const;
 
 export type AddonCategory = (typeof ADDON_CATEGORIES)[number];
@@ -13,31 +13,16 @@ const CAPABILITY = /^[a-z][a-z0-9-]*$/;
 const LOCAL_TEMPLATE_REF = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
 const HTTPS_URL = /^https:\/\/[a-z0-9.-]+\/[\w./%#?=&+:@!$'()*,-]*$/i;
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+export const SLOT_IDS = ["settings-includes", "root-plugins", "app-plugins", "app-dependencies", "app-room-config", "app-imports", "app-routes", "app-entries", "main-content"] as const;
+export type SlotId = (typeof SLOT_IDS)[number];
+export const SLOT_FILE: Partial<Record<SlotId, string>> = {
+  "settings-includes": "settings.gradle.kts",
+  "root-plugins": "build.gradle.kts",
+  "app-plugins": "app/build.gradle.kts",
+  "app-dependencies": "app/build.gradle.kts",
+  "app-room-config": "app/build.gradle.kts",
+};
 
-export const FileOperationSchema = z
-  .strictObject({
-    type: z.enum(["add", "append", "modify"]),
-    /** Path inside the generated project. Must be relative and safe. */
-    path: z.string().superRefine((value, ctx) => {
-      for (const problem of validateRelativePath(value)) {
-        ctx.addIssue({ code: "custom", message: problem });
-      }
-    }),
-    /** Identifier of a local fragment under templates/fragments. Never a URL. */
-    template: z
-      .string()
-      .regex(LOCAL_TEMPLATE_REF, "must reference a local fragment, not a remote template"),
-    description: z.string().min(1).max(200).optional(),
-  })
-  .superRefine((operation, ctx) => {
-    if (operation.type === "add" && operation.path.endsWith("/")) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["path"],
-        message: "an add operation must target a file, not a directory",
-      });
-    }
-  });
 
 export const AddonRequirementsSchema = z
   .strictObject({
@@ -122,7 +107,7 @@ export const AddonManifestSchema = z
 
 export type AddonManifest = z.infer<typeof AddonManifestSchema>;
 export type AddonManifestInput = z.input<typeof AddonManifestSchema>;
-export type FileOperation = z.infer<typeof FileOperationSchema>;
+
 
 /** Whether the generator may emit code for this addon. Planned and experimental addons are never emitted. */
 export function isGeneratable(addon: AddonManifest): boolean {

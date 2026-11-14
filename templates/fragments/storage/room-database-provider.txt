@@ -1,0 +1,15 @@
+package {{packageName}}.data.local
+
+import android.content.Context
+
+object DatabaseProvider {
+    @Volatile
+    private var override: AppDatabase? = null
+
+    fun database(context: Context): AppDatabase =
+        override ?: AppDatabase.getInstance(context)
+
+    fun overrideForTesting(database: AppDatabase?) {
+        override = database
+    }
+}

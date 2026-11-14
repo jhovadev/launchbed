@@ -1,0 +1,44 @@
+package {{packageName}}.ui.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
+import kotlinx.serialization.Serializable
+import {{packageName}}.data.repository.NoteRepository
+import {{packageName}}.feature.notes.NotesScreen
+import {{packageName}}.feature.notes.NoteEditorScreen
+import {{packageName}}.feature.notes.NotesViewModel
+import {{packageName}}.feature.notes.NotesViewModelFactory
+import {{packageName}}.data.local.DatabaseProvider
+
+// @initializr-slot app-imports
+
+@Serializable
+sealed interface AppRoute : NavKey {
+    @Serializable
+    data object Welcome : AppRoute
+
+    // @initializr-slot app-routes
+}
+
+@Composable
+fun AppRoot() {
+    val backStack = rememberNavBackStack(AppRoute.{{initialRoute}})
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val repository = remember { NoteRepository(DatabaseProvider.database(context).noteDao()) }
+    val viewModel = viewModel(factory = NotesViewModelFactory(repository))
+    NavDisplay(
+        backStack = backStack,
+        onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<AppRoute.Welcome> { WelcomeScreen() }
+            // @initializr-slot app-entries
+        },
+    )
+}

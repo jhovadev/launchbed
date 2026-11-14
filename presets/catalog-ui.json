@@ -1,0 +1,60 @@
+{
+  "id": "catalog-ui",
+  "version": "0.1.0",
+  "name": "Catalog UI",
+  "description": "Demo catalog screen with search and categories.",
+  "category": "demo",
+  "status": "beta",
+  "baseTemplate": "android-compose-minimal",
+  "requiredAddons": [
+    "ui/foundation",
+    "ui/catalog"
+  ],
+  "optionalAddons": [],
+  "defaultTheme": {
+    "seedColor": "#2C5D8F",
+    "schemeVariant": "tonalSpot",
+    "defaultMode": "system",
+    "typography": {
+      "fontFamily": "default"
+    },
+    "shape": {
+      "cornerRadius": 12
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "components": {
+      "card": {
+        "cornerRadius": 16,
+        "elevation": 1
+      },
+      "button": {
+        "cornerRadius": 20,
+        "minHeight": 48
+      }
+    },
+    "overrides": {
+      "light": {},
+      "dark": {}
+    }
+  },
+  "previewScreens": [
+    "welcome",
+    "catalog"
+  ],
+  "compatibility": {
+    "minSdk": 26,
+    "notes": [
+      "Demo data only."
+    ]
+  },
+  "capabilities": [
+    "catalog",
+    "demo"
+  ]
+}

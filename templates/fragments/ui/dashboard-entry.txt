@@ -1,0 +1,1 @@
+            entry<AppRoute.Dashboard> { DashboardScreen() }

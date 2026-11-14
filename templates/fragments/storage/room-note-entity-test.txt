@@ -1,0 +1,12 @@
+package {{packageName}}.data.local
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class NoteEntityTest {
+    @Test
+    fun `new note has a zero id until Room assigns one`() {
+        val note = NoteEntity(title = "title", content = "content", updatedAt = 1L)
+        assertEquals(0L, note.id)
+    }
+}

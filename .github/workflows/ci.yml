@@ -25,6 +25,14 @@ jobs:
         run: bun run typecheck
       - name: Tests (schema, resolver, generator, security, scripts, drift)
         run: bun test packages tests
+      - name: Device parser / safety tests (no device required)
+        run: node --test scripts/runtime/*.node.test.mjs
+      - name: Integrity classifier tests (no SDK)
+        run: node --test scripts/integrity/gates.node.test.mjs
+      - name: Release APK parser regression tests (no SDK)
+        run: node --test scripts/release/native-apk.node.test.mjs
+      - name: Deterministic artifact integrity (no SDK)
+        run: bun run integrity:check
       - name: Template drift check
         run: bun run templates:check
       - name: Build web app
