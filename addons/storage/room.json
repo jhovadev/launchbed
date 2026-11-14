@@ -1,0 +1,35 @@
+{
+  "id": "storage/room",
+  "version": "0.1.0",
+  "displayName": "Room (SQLite)",
+  "description": "Type-safe local persistence on SQLite with Room, compile-time SQL validation and schema migrations.",
+  "category": "storage",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [
+    "storage/sqlite-direct"
+  ],
+  "capabilities": [
+    "persistence",
+    "local-database",
+    "migrations"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned for a later patch; F0 generates no Room code.",
+      "Upstream license: Apache-2.0 (androidx.room)"
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/training/data-storage/room"
+}

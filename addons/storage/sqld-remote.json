@@ -1,0 +1,34 @@
+{
+  "id": "storage/sqld-remote",
+  "version": "0.1.0",
+  "displayName": "Remote sqld",
+  "description": "Connect to a self-hosted sqld instance over HTTP or WebSocket for remote persistence.",
+  "category": "storage",
+  "status": "planned",
+  "dependencies": [
+    "storage/libsql-android"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "persistence",
+    "remote-database"
+  ],
+  "requirements": {
+    "minSdk": 26,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "8.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned; requires an operator-provided sqld endpoint.",
+      "Use the opt-in compose profile only during development."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://github.com/tursodatabase/libsql"
+}

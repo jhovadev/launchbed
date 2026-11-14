@@ -1,0 +1,30 @@
+{
+  "id": "ui/login",
+  "version": "0.1.0",
+  "displayName": "Login screen",
+  "description": "Compose login form with email/password fields, validation and loading and error states.",
+  "category": "ui",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "auth-ui"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned. UI only: no authentication backend is generated.",
+      "Never ship fake authentication presented as secure."
+    ]
+  },
+  "license": "MIT"
+}

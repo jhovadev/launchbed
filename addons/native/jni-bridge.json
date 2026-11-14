@@ -1,0 +1,32 @@
+{
+  "id": "native/jni-bridge",
+  "version": "0.1.0",
+  "displayName": "JNI bridge",
+  "description": "Kotlin-facing JNI loader with explicit error mapping, ownership rules and ABI checks.",
+  "category": "native",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "native-ffi",
+    "jni"
+  ],
+  "requirements": {
+    "minSdk": 26,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "8.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned; no native sources are generated in F0.",
+      "Prefer a stable C ABI over exposing C++ symbols."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/training/articles/perf-jni"
+}

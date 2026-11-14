@@ -1,0 +1,30 @@
+{
+  "id": "tooling/docker-compose",
+  "version": "0.1.0",
+  "displayName": "Docker Compose extras",
+  "description": "Opt-in compose profile for auxiliary development services such as a local sqld instance.",
+  "category": "tooling",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "dev-services"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned. Docker is never required to build an Android app.",
+      "No credentials or default production ports are included."
+    ]
+  },
+  "license": "MIT"
+}

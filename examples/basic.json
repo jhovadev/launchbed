@@ -1,0 +1,22 @@
+{
+  "template": "android-compose-minimal",
+  "projectName": "Demo App",
+  "applicationId": "com.example.demo",
+  "namespace": "com.example.demo",
+  "minSdk": 26,
+  "compileSdk": 37,
+  "targetSdk": 36,
+  "theme": {
+    "seedColor": "#006C4C",
+    "schemeVariant": "tonalSpot",
+    "defaultMode": "system",
+    "typography": { "fontFamily": "default" },
+    "shape": { "cornerRadius": 12 },
+    "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32 },
+    "components": {
+      "card": { "cornerRadius": 16, "elevation": 1 },
+      "button": { "cornerRadius": 20, "minHeight": 48 }
+    }
+  },
+  "addons": []
+}

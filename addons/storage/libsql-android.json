@@ -1,0 +1,33 @@
+{
+  "id": "storage/libsql-android",
+  "version": "0.1.0",
+  "displayName": "libSQL for Android",
+  "description": "Embedded libSQL database for Android with a local file and optional remote replicas.",
+  "category": "storage",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "persistence",
+    "local-database",
+    "replication"
+  ],
+  "requirements": {
+    "minSdk": 26,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "8.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned for a later patch; requires a verified libSQL Android artifact and 16 KB-aligned native libraries.",
+      "Never embed Turso credentials in an APK."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://docs.turso.tech/sdk/kotlin/quickstart"
+}

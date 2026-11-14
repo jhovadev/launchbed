@@ -1,0 +1,69 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Configurator from "../components/Configurator";
+import { buildCatalog } from "@android-initializr/catalog";
+
+const catalog = buildCatalog();
+---
+
+<Layout title="Android Initializr — native Android, from a single request">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Kotlin · Jetpack Compose · Material 3</p>
+      <h1>Native Android,<br /><em>from a single request.</em></h1>
+      <p class="lede">
+        Configure a real Android project and download a ZIP that builds on its own with the Gradle
+        wrapper. No Android Studio, no remote build service, no vendor account.
+      </p>
+      <ul class="chips" aria-label="Key properties">
+        <li>Deterministic ZIP</li>
+        <li>Web and CLI share one engine</li>
+        <li>Pinned toolchain</li>
+        <li>MIT</li>
+      </ul>
+    </div>
+    <div class="pipeline" aria-label="Generation pipeline">
+      <p class="pipeline-title">Request → ZIP</p>
+      <ol>
+        <li><code>validate</code><span>Zod contracts, size limits</span></li>
+        <li><code>resolve</code><span>addons, conflicts, SDK floors</span></li>
+        <li><code>plan</code><span>paths, sizes, SHA-256</span></li>
+        <li><code>render</code><span>local templates only</span></li>
+        <li><code>package</code><span>fixed timestamps, 0644/0755</span></li>
+      </ol>
+      <p class="pipeline-note">Two identical requests always produce identical bytes.</p>
+    </div>
+  </section>
+
+  <section id="configurator" aria-label="Project configurator">
+    <Configurator catalog={catalog} client:load />
+  </section>
+
+  <section class="facts" aria-labelledby="facts-title">
+    <h2 id="facts-title">What is actually implemented</h2>
+    <div class="facts-grid">
+      <article>
+        <h3>Generation engine</h3>
+        <p>
+          Shared TypeScript planner used by the web API and the CLI. Strict schemas, path validation,
+          request/ZIP limits and a plan-to-ZIP byte comparison before download.
+        </p>
+      </article>
+      <article>
+        <h3>Android template</h3>
+        <p>
+          Kotlin + Compose Material 3, version catalog, Gradle wrapper with checksum, unit tests,
+          <code>mise.toml</code>, <code>justfile</code> and SDK setup scripts for POSIX shells and
+          PowerShell.
+        </p>
+      </article>
+      <article>
+        <h3>Honest limits</h3>
+        <p>
+          The addon catalog is declarative: every entry is <code>planned</code> and cannot be generated.
+          The web preview is a token-based simulation, not a Compose runtime.
+        </p>
+      </article>
+    </div>
+  </section>
+</Layout>

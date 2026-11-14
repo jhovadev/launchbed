@@ -1,0 +1,29 @@
+{
+  "id": "ui/register",
+  "version": "0.1.0",
+  "displayName": "Register screen",
+  "description": "Compose registration form with field validation and accessible error reporting.",
+  "category": "ui",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "auth-ui"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned. UI only: no account backend is generated."
+    ]
+  },
+  "license": "MIT"
+}

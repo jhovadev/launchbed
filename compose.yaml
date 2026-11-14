@@ -1,0 +1,15 @@
+# Optional auxiliary service for the Initializr itself.
+# Docker is NOT required to build Android apps or to use the Initializr.
+# Usage: docker compose --profile docker up --build
+services:
+  web:
+    profiles: ["docker"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "127.0.0.1:4321:4321"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4321"
+    restart: "no"

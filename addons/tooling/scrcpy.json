@@ -1,0 +1,31 @@
+{
+  "id": "tooling/scrcpy",
+  "version": "0.1.0",
+  "displayName": "scrcpy recipes",
+  "description": "Optional scrcpy recipes for mirroring and controlling a connected device.",
+  "category": "tooling",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "device-mirroring"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "The base template already ships scrcpy recipes; this addon is for project variants that omit them.",
+      "scrcpy is never downloaded or redistributed by the Initializr."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://github.com/Genymobile/scrcpy"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "native/zig-ffi",
+  "version": "0.1.0",
+  "displayName": "Zig FFI",
+  "description": "Zig 0.17.1 shared library exporting a C ABI, packaged as a JNI-loadable Android library.",
+  "category": "native",
+  "status": "planned",
+  "dependencies": [
+    "native/jni-bridge"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "native-ffi"
+  ],
+  "requirements": {
+    "minSdk": 26,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "8.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned; F0 only documents the contract.",
+      "Zig 0.17.1 is pinned for the future addon. It is not required to build generated projects."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://ziglang.org/download/"
+}

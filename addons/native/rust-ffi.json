@@ -1,0 +1,34 @@
+{
+  "id": "native/rust-ffi",
+  "version": "0.1.0",
+  "displayName": "Rust FFI",
+  "description": "Rust cdylib built with cargo-ndk and exposed to Kotlin through a small JNI bridge.",
+  "category": "native",
+  "status": "planned",
+  "dependencies": [
+    "native/jni-bridge"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "native-ffi"
+  ],
+  "requirements": {
+    "minSdk": 26,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "8.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned; F0 only documents the contract and ABI policy.",
+      "Targets arm64-v8a first and x86_64 for emulator tests.",
+      "Native libraries must be 16 KB page aligned."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://github.com/bbqsrc/cargo-ndk"
+}

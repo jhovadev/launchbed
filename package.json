@@ -1,0 +1,39 @@
+{
+  "name": "android-initializr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generator for native Android projects built with Kotlin and Jetpack Compose",
+  "license": "MIT",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "node": ">=22.23.4",
+    "bun": ">=1.4.4"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@android-initializr/catalog": "workspace:*",
+    "@android-initializr/cli": "workspace:*",
+    "@android-initializr/design-tokens": "workspace:*",
+    "@android-initializr/generator": "workspace:*",
+    "@android-initializr/preview": "workspace:*",
+    "@android-initializr/resolver": "workspace:*",
+    "@android-initializr/schema": "workspace:*",
+    "@types/bun": "1.4.4",
+    "typescript": "7.0.2"
+  },
+  "scripts": {
+    "dev": "bun run --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build",
+    "preview": "bun run --cwd apps/web start",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "bun test packages tests",
+    "templates:embed": "bun run scripts/embed-templates.ts",
+    "templates:check": "bun run scripts/embed-templates.ts --check",
+    "cli": "bun run packages/cli/src/index.ts",
+    "generate:example": "bun run packages/cli/src/index.ts generate --config examples/basic.json --out build/example.zip"
+  }
+}

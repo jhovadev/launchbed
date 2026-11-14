@@ -1,0 +1,62 @@
+import type { APIRoute } from "astro";
+import { LIMITS, toErrorPayload } from "@android-initializr/schema";
+import { generateProject, parseRequestJson } from "@android-initializr/generator";
+
+export const prerender = false;
+
+function errorStatus(code: string): number {
+  if (code === "LIMIT_EXCEEDED") return 413;
+  if (code === "SECURITY_ERROR") return 422;
+  if (code === "INVALID_REQUEST" || code === "RESOLUTION_ERROR" || code === "UNKNOWN_ADDON") return 400;
+  return 500;
+}
+
+export const POST: APIRoute = async ({ request }) => {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return new Response(
+      JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Content-Type must be application/json.", issues: [] } }),
+      { status: 415, headers: { "content-type": "application/json; charset=utf-8" } },
+    );
+  }
+
+  const declaredLength = Number(request.headers.get("content-length") ?? "0");
+  if (declaredLength > LIMITS.requestBytes) {
+    return new Response(
+      JSON.stringify({ error: { code: "LIMIT_EXCEEDED", message: "Request body is too large.", issues: [] } }),
+      { status: 413, headers: { "content-type": "application/json; charset=utf-8" } },
+    );
+  }
+
+  try {
+    const body = await request.text();
+    const project = generateProject(parseRequestJson(body));
+    const zipBytes = new Uint8Array(project.zip.length);
+    zipBytes.set(project.zip);
+
+    return new Response(new Blob([zipBytes], { type: "application/zip" }), {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="${project.fileName}"`,
+        "content-length": String(project.zip.length),
+        "cache-control": "no-store",
+        "x-generation-files": String(project.plan.totals.files),
+        "x-generation-bytes": String(project.plan.totals.bytes),
+        "x-generation-hash": project.plan.request.hash,
+      },
+    });
+  } catch (error) {
+    const payload = toErrorPayload(error);
+    return new Response(JSON.stringify(payload), {
+      status: errorStatus(payload.error.code),
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    });
+  }
+};
+
+export const ALL: APIRoute = () =>
+  new Response(JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Use POST.", issues: [] } }), {
+    status: 405,
+    headers: { allow: "POST", "content-type": "application/json; charset=utf-8" },
+  });

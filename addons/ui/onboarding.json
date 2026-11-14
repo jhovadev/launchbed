@@ -1,0 +1,31 @@
+{
+  "id": "ui/onboarding",
+  "version": "0.1.0",
+  "displayName": "Onboarding flow",
+  "description": "Multi-step onboarding with pager navigation and a persisted completion flag.",
+  "category": "ui",
+  "status": "planned",
+  "dependencies": [
+    "ui/navigation"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "onboarding"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned; persistence strategy will be chosen by the selected storage addon."
+    ]
+  },
+  "license": "MIT"
+}

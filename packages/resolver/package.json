@@ -1,0 +1,16 @@
+{
+  "name": "@android-initializr/resolver",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@android-initializr/catalog": "workspace:*",
+    "@android-initializr/schema": "workspace:*"
+  }
+}

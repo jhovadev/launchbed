@@ -1,0 +1,29 @@
+{
+  "id": "tooling/github-actions",
+  "version": "0.1.0",
+  "displayName": "GitHub Actions",
+  "description": "CI workflow that runs unit tests and assembles a debug APK on a pinned JDK.",
+  "category": "tooling",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "ci"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned. The Initializr repository has its own CI; generated projects will get an opt-in workflow."
+    ]
+  },
+  "license": "MIT"
+}

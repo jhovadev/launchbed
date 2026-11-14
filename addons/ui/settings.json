@@ -1,0 +1,29 @@
+{
+  "id": "ui/settings",
+  "version": "0.1.0",
+  "displayName": "Settings screen",
+  "description": "Material 3 settings list with switches, theme selection and an about section.",
+  "category": "ui",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "settings"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned for a later patch."
+    ]
+  },
+  "license": "MIT"
+}

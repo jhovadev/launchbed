@@ -1,0 +1,30 @@
+{
+  "id": "tooling/android-cli",
+  "version": "0.1.0",
+  "displayName": "Android CLI",
+  "description": "Scaffolding and device tasks built on the official Android CLI instead of Android Studio.",
+  "category": "tooling",
+  "status": "planned",
+  "dependencies": [],
+  "conflicts": [],
+  "capabilities": [
+    "cli-workflow"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned. The generated project is already fully CLI-buildable with the Gradle wrapper."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/tools/agents/android-cli"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@android-initializr/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "android-initializr": "./src/index.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@android-initializr/catalog": "workspace:*",
+    "@android-initializr/generator": "workspace:*",
+    "@android-initializr/schema": "workspace:*"
+  }
+}

@@ -1,0 +1,57 @@
+---
+import "@android-initializr/preview/styles.css";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Generate a native Android project with Kotlin and Jetpack Compose." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">AI</span>
+        <span class="brand-text">
+          Android Initializr
+          <span class="brand-sub">native first · MIT</span>
+        </span>
+      </div>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#configurator">Configurator</a>
+        <a href="/api/catalog">Catalog API</a>
+        <a href="#scope">F0 scope</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer" id="scope">
+      <div>
+        <p class="footer-title">Android Initializr · F0 foundation</p>
+        <p>
+          One real template, one shared engine for web and CLI, deterministic ZIPs. Authentication,
+          Turso Sync, production Rust/Zig plugins, remote builds and a plugin marketplace are explicitly
+          out of scope for F0.
+        </p>
+      </div>
+      <p class="footer-license">MIT licensed · No telemetry · No Android Studio required</p>
+    </footer>
+  </body>
+</html>

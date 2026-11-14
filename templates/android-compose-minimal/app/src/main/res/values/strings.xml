@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">{{projectName}}</string>
+    <string name="home_subtitle">A native Android app built with Kotlin and Jetpack Compose.</string>
+    <string name="home_card_title">Your starting point</string>
+    <string name="home_taps">Taps: %1$d</string>
+    <string name="home_action">Tap the button</string>
+</resources>

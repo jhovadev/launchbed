@@ -1,0 +1,7 @@
+# Toolchain for the generated project. The Android SDK itself is installed by
+# `just sdk-setup`, because mise has no official Android SDK backend.
+min_version = "2026.10.13"
+
+[tools]
+java = "temurin-21.0.13+9.0.LTS"
+just = "1.59.0"

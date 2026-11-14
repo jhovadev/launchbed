@@ -1,0 +1,25 @@
+.gradle/
+build/
+local.properties
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing material must never be committed
+*.jks
+*.keystore
+keystore.properties
+
+# Local secrets and databases
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE and OS files
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

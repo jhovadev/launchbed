@@ -1,0 +1,19 @@
+min_version = "2026.10.13"
+
+[tools]
+bun = "1.4.4"
+node = "24.22.2"
+just = "1.59.0"
+java = "temurin-21.0.13+9.0.LTS"
+
+[env]
+# Keep tool output stable and scripts free of interactive noise.
+ANDROID_INITIALIZR_ROOT = "{{ config_root }}"
+
+[tasks.install]
+description = "Install web/TypeScript workspace dependencies"
+run = "bun install --frozen-lockfile"
+
+[tasks.check]
+description = "Typecheck, test, verify template bundle and build the web app"
+run = ["bun run typecheck", "bun test packages tests", "bun run templates:check", "bun run build"]

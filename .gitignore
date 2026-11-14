@@ -1,0 +1,45 @@
+# Dependencies and builds
+node_modules/
+.astro/
+dist/
+build/
+coverage/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+keystore.properties
+
+# Generated databases / local state
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+.turso/
+
+# Android SDK / IDE local files
+local.properties
+.gradle/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+bun-error.log

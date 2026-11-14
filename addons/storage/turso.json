@@ -1,0 +1,35 @@
+{
+  "id": "storage/turso",
+  "version": "0.1.0",
+  "displayName": "Turso embedded replica",
+  "description": "Embedded replica synchronisation against a Turso database, with explicit opt-in configuration.",
+  "category": "storage",
+  "status": "planned",
+  "dependencies": [
+    "storage/libsql-android"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "persistence",
+    "replication",
+    "sync"
+  ],
+  "requirements": {
+    "minSdk": 26,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [],
+  "compatibility": {
+    "android": [
+      "8.0+"
+    ],
+    "notes": [
+      "Declarative entry for F0; not generatable yet.",
+      "Planned; no synchronisation code is generated in F0.",
+      "Tokens must be supplied at runtime, never baked into the APK."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://docs.turso.tech/llms.txt"
+}
