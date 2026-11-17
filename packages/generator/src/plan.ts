@@ -25,14 +25,12 @@ import {
   type ProjectRequestInput,
 } from "@launchbed/schema";
 import {
-  generateComposeColors,
-  generateComposeTokens,
   resolveThemeTokens,
   themeTokensToDtcg,
-  dtcgToThemeTokens,
   serializeDtcg,
   type ThemeTokens,
 } from "@launchbed/design-tokens";
+import { compileDesignTokens } from "@launchbed/design-tokens/style-dictionary";
 import { renderText, type TemplateVars } from "./render";
 import { FRAGMENT_FILES, TEMPLATE_FILES } from "./templates.generated";
 import { TOOLCHAIN, sdkPlatformPackage } from "./versions";
@@ -103,7 +101,43 @@ export function isExecutablePath(path: string): boolean {
   return path === "gradlew" || (path.startsWith("scripts/") && path.endsWith(".sh"));
 }
 
-function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens): TemplateVars {
+function homeRoute(addonIds: ReadonlySet<string>): string {
+  if (addonIds.has("ui/dashboard")) return "Dashboard";
+  if (addonIds.has("ui/settings")) return "Settings";
+  if (addonIds.has("ui/notes")) return "Notes";
+  if (addonIds.has("ui/catalog")) return "Catalog";
+  return "Welcome";
+}
+
+function startRouteParts(addonIds: ReadonlySet<string>, packageName: string): { imports: string; body: string } {
+  const imports: string[] = [];
+  const body: string[] = [];
+  if (addonIds.has("ui/onboarding")) {
+    imports.push("import androidx.compose.runtime.produceState");
+    imports.push("import androidx.compose.ui.platform.LocalContext");
+    imports.push(`import ${packageName}.ui.onboarding.OnboardingStore`);
+    body.push("    val context = LocalContext.current");
+    body.push("    val onboardingSeen = produceState<Boolean?>(initialValue = null, context) {");
+    body.push("        OnboardingStore.seen(context).collect { value = it }");
+    body.push("    }.value");
+    body.push("    if (onboardingSeen == null) return null");
+    body.push("    if (!onboardingSeen) return AppRoute.Onboarding");
+  }
+  if (addonIds.has("ui/auth")) {
+    imports.push("import androidx.lifecycle.compose.collectAsStateWithLifecycle");
+    imports.push(`import ${packageName}.ui.auth.AuthRepositoryHolder`);
+    body.push("    val session = AuthRepositoryHolder.repository.session.collectAsStateWithLifecycle().value");
+    body.push("    if (!session.ready) return null");
+    body.push("    if (session.user == null) return AppRoute.Login");
+  }
+  imports.sort((a, b) => a.localeCompare(b));
+  return {
+    imports: imports.length > 0 ? `${imports.join("\n")}\n` : "",
+    body: body.length > 0 ? `${body.join("\n")}\n` : "",
+  };
+}
+
+function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens, resolvedAddonIds: readonly string[] = request.addons): TemplateVars {
   const darkThemeDefault =
     request.theme.defaultMode === "system"
       ? "isSystemInDarkTheme()"
@@ -111,20 +145,18 @@ function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens): Templa
         ? "true"
         : "false";
 
-  const hasNavigation = request.addons.includes("ui/navigation");
-  const initialRoute = request.addons.includes("ui/dashboard")
-    ? "Dashboard"
-    : request.addons.includes("ui/settings")
-      ? "Settings"
-      : request.addons.includes("ui/notes")
-        ? "Notes"
-        : request.addons.includes("ui/catalog")
-          ? "Catalog"
-          : "Welcome";
+  const addonIds = new Set(resolvedAddonIds);
+  const hasNavigation = addonIds.has("ui/navigation");
+  const initialRoute = homeRoute(addonIds);
+  const afterOnboardingRoute = addonIds.has("ui/auth") ? "Login" : initialRoute;
+  const startRoute = startRouteParts(addonIds, request.packageName!);
 
   return {
     hasNavigation: String(hasNavigation),
     initialRoute,
+    afterOnboardingRoute,
+    startRouteImports: startRoute.imports,
+    startRouteBody: startRoute.body,
     projectName: request.projectName,
     applicationId: request.applicationId,
     namespace: request.namespace,
@@ -179,10 +211,10 @@ export interface EngineOptions {
   fragments?: Readonly<Record<string, string>>;
 }
 
-export function materializeProject(
+export async function materializeProject(
   input: ProjectRequestInput | ProjectRequest,
   options: EngineOptions = {},
-): MaterializedProject {
+): Promise<MaterializedProject> {
   const request = parseRequest(input);
   const preset = request.preset ? findPreset(request.preset) : undefined;
   if (request.preset && !preset) {
@@ -205,7 +237,7 @@ export function materializeProject(
   const resolution = resolveAddons(resolvedRequest, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
   const tokens = resolveThemeTokens(resolvedRequest.theme);
   const dtcg = themeTokensToDtcg(tokens);
-  const vars = buildTemplateVars(resolvedRequest, tokens);
+  const vars = buildTemplateVars(resolvedRequest, tokens, resolution.addons.map((addon) => addon.id));
   const files = new Map<string, Uint8Array>();
   const origins = new Map<string, "template" | "generated" | "addon">();
 
@@ -221,23 +253,13 @@ export function materializeProject(
   }
 
   const sourceRoot = `app/src/main/java/${vars.packagePath}`;
-  // Compose theme files are derived from the DTCG document so it stays the source of truth.
-  const themeFromDtcg = dtcgToThemeTokens(dtcg);
+  // Style Dictionary compiles the DTCG document at generator time (not in the app).
+  const compiled = await compileDesignTokens(dtcg, { packageName: request.packageName! });
   addFile(files, origins, "design-tokens.json", encoder.encode(serializeDtcg(dtcg)), "generated");
-  addFile(
-    files,
-    origins,
-    `${sourceRoot}/ui/theme/GeneratedColors.kt`,
-    encoder.encode(generateComposeColors(themeFromDtcg, request.packageName!)),
-    "generated",
-  );
-  addFile(
-    files,
-    origins,
-    `${sourceRoot}/ui/theme/GeneratedTokens.kt`,
-    encoder.encode(generateComposeTokens(themeFromDtcg, request.packageName!)),
-    "generated",
-  );
+  addFile(files, origins, `${sourceRoot}/ui/theme/GeneratedColors.kt`, encoder.encode(compiled.composeColors), "generated");
+  addFile(files, origins, `${sourceRoot}/ui/theme/GeneratedTokens.kt`, encoder.encode(compiled.composeTokens), "generated");
+  addFile(files, origins, "tokens/tokens.css", encoder.encode(compiled.css), "generated");
+  addFile(files, origins, "tokens/tokens.dart", encoder.encode(compiled.flutter), "generated");
 
   const composition = applyComposition(
     resolution.addons,
@@ -299,11 +321,11 @@ export function materializeProject(
   return { plan, files, warnings };
 }
 
-export function createPlan(
+export async function createPlan(
   input: ProjectRequestInput | ProjectRequest,
   options: EngineOptions = {},
-): GenerationPlan {
-  return materializeProject(input, options).plan;
+): Promise<GenerationPlan> {
+  return (await materializeProject(input, options)).plan;
 }
 
 export interface GeneratedProject {
@@ -343,11 +365,11 @@ export function verifyZipAgainstPlan(zip: Uint8Array, plan: GenerationPlan): voi
 }
 
 /** Request -> validate -> resolve -> plan -> render -> package. */
-export function generateProject(
+export async function generateProject(
   input: ProjectRequestInput | ProjectRequest,
   options: EngineOptions = {},
-): GeneratedProject {
-  const { plan, files } = materializeProject(input, options);
+): Promise<GeneratedProject> {
+  const { plan, files } = await materializeProject(input, options);
   const entries = [...files.entries()].map(([path, data]) => ({
     path,
     data,

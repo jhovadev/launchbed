@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.text();
-    const plan = createPlan(parseRequestJson(body));
+    const plan = await createPlan(parseRequestJson(body));
     return new Response(JSON.stringify(plan), {
       status: 200,
       headers: {

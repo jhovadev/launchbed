@@ -5,8 +5,8 @@ import {baseRequest} from './fixtures';
 const decode=(bytes:Uint8Array)=>new TextDecoder().decode(bytes);
 const names=['compose-minimal','compose-starter','local-notes','catalog-ui'];
 describe('F1.6D generated release/backup policy',()=>{
-  for (const preset of names) test(`${preset} embeds AGP release optimization and explicit backup protections`,()=>{
-    const project=materializeProject(baseRequest({preset}));
+  for (const preset of names) test(`${preset} embeds AGP release optimization and explicit backup protections`,async ()=>{
+    const project=await materializeProject(baseRequest({preset}));
     const file=(name:string)=>{const bytes=project.files.get(name);expect(bytes).toBeDefined();return decode(bytes!);};
     const gradle=file('app/build.gradle.kts');
     expect(gradle).toContain('optimization {');

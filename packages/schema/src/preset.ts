@@ -18,7 +18,7 @@ export const ProjectPresetManifestSchema = z.strictObject({
   requiredAddons: z.array(z.string().regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/)).max(24).default([]),
   optionalAddons: z.array(z.string().regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/)).max(24).default([]),
   defaultTheme: ThemeConfigSchema,
-  previewScreens: z.array(z.enum(["welcome", "dashboard", "settings", "notes", "catalog"])).max(8).default(["welcome"]),
+  previewScreens: z.array(z.enum(["welcome", "dashboard", "settings", "notes", "catalog", "onboarding", "login", "register", "profile"])).max(8).default(["welcome"]),
   compatibility: z.strictObject({
     minSdk: z.number().int().min(SDK_LIMITS.minSdk.min).max(SDK_LIMITS.minSdk.max),
     notes: z.array(z.string().min(1).max(300)).max(12).default([]),

@@ -55,7 +55,7 @@ describe("launchbed new", () => {
       expect(options.projectName).toBe("Demo App");
       expect(options.applicationId).toBe(slugToApplicationId("Demo App"));
       expect(options.preset).toBe("compose-minimal");
-      const result = writeGeneratedProject(options);
+      const result = await writeGeneratedProject(options);
       expect(existsSync(join(result.directory, "mise.toml"))).toBe(true);
       expect(existsSync(join(result.directory, "justfile"))).toBe(true);
       expect(existsSync(join(result.directory, "gradlew"))).toBe(true);
@@ -72,7 +72,7 @@ describe("launchbed new", () => {
       requestFromNewOptions({
         projectName: "X",
         applicationId: "com.example.x",
-        preset: "auth-ui",
+        preset: "media-player",
         addons: [],
         outDir: "x",
         force: false,

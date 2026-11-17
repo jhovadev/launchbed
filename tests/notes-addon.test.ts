@@ -7,13 +7,13 @@ function text(files: Map<string, Uint8Array>, path: string): string {
 }
 
 describe("ui/notes addon", () => {
-  test("resolves room and navigation automatically", () => {
-    const project = materializeProject(baseRequest({ addons: ["ui/notes"] }));
+  test("resolves room and navigation automatically", async () => {
+    const project = await materializeProject(baseRequest({ addons: ["ui/notes"] }));
     expect(project.plan.request.addons).toEqual(["storage/room", "ui/navigation", "ui/notes"]);
   });
 
-  test("generates reactive note files and navigation registration", () => {
-    const project = materializeProject(baseRequest({ addons: ["ui/notes"] }));
+  test("generates reactive note files and navigation registration", async () => {
+    const project = await materializeProject(baseRequest({ addons: ["ui/notes"] }));
     const paths = project.plan.files.map((file) => file.path);
     expect(paths).toContain("app/src/main/java/com/example/demo/feature/notes/NotesViewModel.kt");
     expect(paths).toContain("app/src/main/java/com/example/demo/feature/notes/NotesScreen.kt");
@@ -23,24 +23,24 @@ describe("ui/notes addon", () => {
     expect(appRoot).toContain("entry<AppRoute.NoteEditor>");
   });
 
-  test("adds lifecycle dependencies without duplicates", () => {
-    const project = materializeProject(baseRequest({ addons: ["ui/notes"] }));
+  test("adds lifecycle dependencies without duplicates", async () => {
+    const project = await materializeProject(baseRequest({ addons: ["ui/notes"] }));
     const build = text(project.files, "app/build.gradle.kts");
     expect(build).toContain("implementation(libs.lifecycleviewmodelcompose)");
     expect(build).toContain("implementation(libs.lifecycleruntimecompose)");
     expect(build.split("implementation(libs.lifecycleviewmodelcompose)").length - 1).toBe(1);
   });
 
-  test("minimal project has no notes artifacts", () => {
-    const minimal = materializeProject(baseRequest());
+  test("minimal project has no notes artifacts", async () => {
+    const minimal = await materializeProject(baseRequest());
     const paths = minimal.plan.files.map((file) => file.path);
     expect(paths.some((path) => path.includes("feature/notes"))).toBe(false);
     expect(minimal.plan.operations).toEqual([]);
   });
 
-  test("zip is deterministic", () => {
-    const first = generateProject(baseRequest({ addons: ["ui/notes"] }));
-    const second = generateProject(baseRequest({ addons: ["ui/notes"] }));
+  test("zip is deterministic", async () => {
+    const first = await generateProject(baseRequest({ addons: ["ui/notes"] }));
+    const second = await generateProject(baseRequest({ addons: ["ui/notes"] }));
     expect(Buffer.from(first.zip).equals(Buffer.from(second.zip))).toBe(true);
   });
 });

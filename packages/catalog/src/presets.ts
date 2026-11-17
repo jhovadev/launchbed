@@ -8,7 +8,7 @@ import composeStarter from "../../../presets/compose-starter.json";
 import localNotes from "../../../presets/local-notes.json";
 import catalogUi from "../../../presets/catalog-ui.json";
 import inventoryOffline from "../../../presets/inventory-offline.json";
-import authUi from "../../../presets/auth-ui.json";
+import appStarter from "../../../presets/app-starter.json";
 import offlineReader from "../../../presets/offline-reader.json";
 import mediaPlayer from "../../../presets/media-player.json";
 import clientServer from "../../../presets/client-server.json";
@@ -19,7 +19,7 @@ const RAW = [
   localNotes,
   catalogUi,
   inventoryOffline,
-  authUi,
+  appStarter,
   offlineReader,
   mediaPlayer,
   clientServer,

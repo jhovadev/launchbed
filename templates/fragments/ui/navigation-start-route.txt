@@ -1,0 +1,17 @@
+package {{packageName}}.ui.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation3.runtime.NavKey
+{{startRouteImports}}
+
+internal fun MutableList<NavKey>.replaceRoot(destination: AppRoute) {
+    add(destination)
+    while (size > 1) {
+        removeAt(0)
+    }
+}
+
+@Composable
+fun rememberStartRoute(): AppRoute? {
+{{startRouteBody}}    return AppRoute.{{initialRoute}}
+}

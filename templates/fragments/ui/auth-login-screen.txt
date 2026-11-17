@@ -1,0 +1,107 @@
+package {{packageName}}.ui.auth
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import {{packageName}}.ui.theme.Spacing
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginScreen(
+    onLoggedIn: () -> Unit,
+    onRegister: () -> Unit,
+    viewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory()),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Sign in") }) },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = Spacing.md, vertical = Spacing.lg),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Text(
+                "Demo only. This screen talks to an in-memory fake, not a real backend.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Spacing.sm))
+            Text(
+                "Try ${InMemoryAuthRepository.DEMO_EMAIL} / ${InMemoryAuthRepository.DEMO_PASSWORD}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Spacing.lg))
+            OutlinedTextField(
+                value = state.email,
+                onValueChange = viewModel::onEmailChange,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Email" },
+                label = { Text("Email") },
+                isError = state.emailError != null,
+                supportingText = state.emailError?.let { { Text(it) } },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                enabled = !state.loading,
+            )
+            Spacer(Modifier.height(Spacing.sm))
+            OutlinedTextField(
+                value = state.password,
+                onValueChange = viewModel::onPasswordChange,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Password" },
+                label = { Text("Password") },
+                isError = state.passwordError != null,
+                supportingText = state.passwordError?.let { { Text(it) } },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !state.loading,
+            )
+            if (state.formError != null) {
+                Spacer(Modifier.height(Spacing.sm))
+                Text(state.formError!!, color = MaterialTheme.colorScheme.error)
+            }
+            Spacer(Modifier.height(Spacing.lg))
+            Button(
+                onClick = { viewModel.signIn(onLoggedIn) },
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sign in" },
+                enabled = !state.loading,
+            ) {
+                if (state.loading) CircularProgressIndicator() else Text("Sign in")
+            }
+            TextButton(
+                onClick = onRegister,
+                enabled = !state.loading,
+                modifier = Modifier.semantics { contentDescription = "Create an account" },
+            ) { Text("Create an account") }
+        }
+    }
+}

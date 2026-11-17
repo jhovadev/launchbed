@@ -108,6 +108,11 @@
     },
     {
       "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/StartRoute.kt",
+      "template": "ui/navigation-start-route"
+    },
+    {
+      "type": "add",
       "path": "app/src/main/java/{{packagePath}}/ui/navigation/WelcomeScreen.kt",
       "template": "ui/navigation-welcome-screen"
     },

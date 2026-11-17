@@ -4,7 +4,7 @@ export interface PreviewScreenProps {
   tokens: ThemeTokens;
   mode: "light" | "dark";
   projectName: string;
-  screen?: "welcome" | "dashboard" | "settings" | "notes" | "catalog";
+  screen?: "welcome" | "dashboard" | "settings" | "notes" | "catalog" | "onboarding" | "login" | "register" | "profile";
   /** Optional caption rendered under the device frame. */
   caption?: string;
 }
@@ -39,7 +39,39 @@ export function PreviewScreen(props: PreviewScreenProps) {
           </span>
         </div>
         <div class="aip-body" style={{ "background-color": colors().background }}>
-          {props.screen === "notes" ? (
+          {props.screen === "onboarding" ? (
+            <>
+              <h3 class="aip-headline" style={{ color: colors().primary }}>Welcome</h3>
+              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>A short tour of this generated app.</p>
+              <div class="aip-button" style={{ "background-color": colors().primary, color: colors().onPrimary, "border-radius": `${props.tokens.components.button.cornerRadius}px`, "min-height": `${props.tokens.components.button.minHeight}px` }}>
+                Next
+              </div>
+            </>
+          ) : props.screen === "login" ? (
+            <>
+              <h3 class="aip-headline" style={{ color: colors().primary }}>Sign in</h3>
+              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Demo only. In-memory fake, not a real backend.</p>
+              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
+                <span class="aip-card-title" style={{ color: colors().onSurface }}>Email</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>demo@example.com</span>
+              </div>
+            </>
+          ) : props.screen === "register" ? (
+            <>
+              <h3 class="aip-headline" style={{ color: colors().primary }}>Create account</h3>
+              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Accounts exist only in memory for this session.</p>
+            </>
+          ) : props.screen === "profile" ? (
+            <>
+              <h3 class="aip-headline" style={{ color: colors().primary }}>Profile</h3>
+              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Demo user</p>
+              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
+                <span class="aip-card-title" style={{ color: colors().onSurface }}>demo@example.com</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>In-memory session</span>
+              </div>
+            </>
+          ) : props.screen === "notes" ? (
+
             <>
               <h3 class="aip-headline" style={{ color: colors().primary }}>My notes</h3>
               <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Your ideas, kept on this device.</p>

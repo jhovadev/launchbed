@@ -1,0 +1,26 @@
+package {{packageName}}.ui.onboarding
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+
+data class OnboardingPage(
+    val title: String,
+    val body: String,
+)
+
+class OnboardingViewModel(application: Application) : AndroidViewModel(application) {
+    val pages: List<OnboardingPage> = listOf(
+        OnboardingPage("Welcome", "A short tour of this generated app."),
+        OnboardingPage("Your data stays here", "Preferences like this tour are stored on the device."),
+        OnboardingPage("You are ready", "Continue to start using the app."),
+    )
+
+    fun complete(onFinished: () -> Unit) {
+        viewModelScope.launch {
+            OnboardingStore.markSeen(getApplication())
+            onFinished()
+        }
+    }
+}

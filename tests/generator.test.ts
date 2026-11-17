@@ -12,8 +12,8 @@ import { baseRequest } from "./fixtures";
 const defaultRequest = baseRequest();
 
 describe("generator", () => {
-  test("produces a plan with a stable, realistic file set", () => {
-    const plan = createPlan(defaultRequest);
+  test("produces a plan with a stable, realistic file set", async () => {
+    const plan = await createPlan(defaultRequest);
     expect(plan.schemaVersion).toBe(1);
     expect(plan.template.id).toBe("android-compose-minimal");
     expect(plan.totals.files).toBeGreaterThanOrEqual(34);
@@ -32,16 +32,16 @@ describe("generator", () => {
     expect(paths).toContain("scripts/sdk-setup.ps1");
   });
 
-  test("is byte-for-byte deterministic", () => {
-    const first = generateProject(defaultRequest);
-    const second = generateProject(baseRequest());
+  test("is byte-for-byte deterministic", async () => {
+    const first = await generateProject(defaultRequest);
+    const second = await generateProject(baseRequest());
     expect(Buffer.from(first.zip).equals(Buffer.from(second.zip))).toBe(true);
     expect(first.plan.request.hash).toBe(second.plan.request.hash);
     expect(first.fileName).toBe(second.fileName);
   });
 
-  test("ZIP matches the GenerationPlan exactly", () => {
-    const project = generateProject(defaultRequest);
+  test("ZIP matches the GenerationPlan exactly", async () => {
+    const project = await generateProject(defaultRequest);
     verifyZipAgainstPlan(project.zip, project.plan);
     const entries = readZip(project.zip);
     expect(entries.map((entry) => entry.path)).toEqual(project.plan.files.map((file) => file.path));
@@ -51,8 +51,8 @@ describe("generator", () => {
     }
   });
 
-  test("only gradlew and shell scripts are executable", () => {
-    const entries = readZip(generateProject(defaultRequest).zip);
+  test("only gradlew and shell scripts are executable", async () => {
+    const entries = readZip((await generateProject(defaultRequest)).zip);
     const executable = entries.filter((entry) => entry.executable).map((entry) => entry.path);
     expect(executable).toContain("gradlew");
     expect(executable).toContain("scripts/doctor.sh");
@@ -60,14 +60,14 @@ describe("generator", () => {
     expect(executable).not.toContain("README.md");
   });
 
-  test("uses applicationId, namespace and packageName independently", () => {
+  test("uses applicationId, namespace and packageName independently", async () => {
     const request = baseRequest({
       projectName: "Independent Ids",
       applicationId: "com.published.app",
       namespace: "com.internal.namespace",
       packageName: "com.source.code",
     });
-    const project = generateProject(request);
+    const project = await generateProject(request);
     const render = (path: string) =>
       new TextDecoder().decode(readZip(project.zip).find((entry) => entry.path === path)!.data);
 
@@ -83,8 +83,8 @@ describe("generator", () => {
     expect(home).toContain("com.internal.namespace.R");
   });
 
-  test("contains no unresolved template placeholders", () => {
-    const project = generateProject(defaultRequest);
+  test("contains no unresolved template placeholders", async () => {
+    const project = await generateProject(defaultRequest);
     for (const entry of readZip(project.zip)) {
       if (entry.path.endsWith(".jar") || entry.path.endsWith(".png")) continue;
       const text = new TextDecoder().decode(entry.data);
@@ -92,7 +92,7 @@ describe("generator", () => {
     }
   });
 
-  test("applies theme tokens to generated Kotlin", () => {
+  test("applies theme tokens to generated Kotlin", async () => {
     const request = baseRequest({
       theme: {
         ...defaultRequest.theme,
@@ -104,7 +104,7 @@ describe("generator", () => {
         typography: { fontFamily: "monospace" },
       },
     });
-    const project = generateProject(request);
+    const project = await generateProject(request);
     const colors = new TextDecoder().decode(
       readZip(project.zip).find((entry) => entry.path.endsWith("GeneratedColors.kt"))!.data,
     );
@@ -116,17 +116,27 @@ describe("generator", () => {
     expect(tokens).toContain("internal val BaseCornerRadius = 20.dp");
     expect(tokens).toContain("val cardElevation = 3.dp");
     expect(tokens).toContain("val buttonMinHeight = 52.dp");
+    expect(colors).toContain("via Style Dictionary 5");
+    expect(tokens).toContain("via Style Dictionary 5");
+    const css = new TextDecoder().decode(readZip(project.zip).find((entry) => entry.path === "tokens/tokens.css")!.data);
+    const flutter = new TextDecoder().decode(readZip(project.zip).find((entry) => entry.path === "tokens/tokens.dart")!.data);
+    expect(css).toContain("--color-light-primary: #005544;");
+    expect(css).toContain("--dimension-shape-corner-radius: 20px;");
+    expect(flutter).toContain("static const Color colorLightPrimary = Color(0xFF005544);");
+    expect(flutter).toContain("static const double dimensionShapeCornerRadius = 20.0;");
+    expect(project.plan.files.some((file) => file.path === "tokens/tokens.css")).toBe(true);
+    expect(project.plan.files.some((file) => file.path === "tokens/tokens.dart")).toBe(true);
   });
 
-  test("changes output paths and content when the package changes", () => {
-    const a = generateProject(baseRequest({ namespace: "com.example.a", packageName: "com.example.a", applicationId: "com.example.a" }));
-    const b = generateProject(baseRequest({ namespace: "com.example.b", packageName: "com.example.b", applicationId: "com.example.b" }));
+  test("changes output paths and content when the package changes", async () => {
+    const a = await generateProject(baseRequest({ namespace: "com.example.a", packageName: "com.example.a", applicationId: "com.example.a" }));
+    const b = await generateProject(baseRequest({ namespace: "com.example.b", packageName: "com.example.b", applicationId: "com.example.b" }));
     expect(a.plan.request.hash).not.toBe(b.plan.request.hash);
     expect(a.plan.files.map((file) => file.path)).not.toEqual(b.plan.files.map((file) => file.path));
   });
 
-  test("creates a real ZIP within the configured limits", () => {
-    const project = generateProject(defaultRequest);
+  test("creates a real ZIP within the configured limits", async () => {
+    const project = await generateProject(defaultRequest);
     expect(project.zip[0]).toBe(0x50);
     expect(project.zip[1]).toBe(0x4b);
     expect(project.zip.length).toBeLessThan(8 * 1024 * 1024);

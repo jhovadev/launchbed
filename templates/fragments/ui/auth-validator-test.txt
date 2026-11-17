@@ -1,0 +1,28 @@
+package {{packageName}}.ui.auth
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class AuthValidatorTest {
+    @Test fun rejectsEmptyEmail() {
+        assertEquals("Enter an email address", AuthValidator.emailError("  "))
+    }
+
+    @Test fun rejectsMalformedEmail() {
+        assertEquals("Enter a valid email address", AuthValidator.emailError("not-an-email"))
+    }
+
+    @Test fun acceptsSimpleEmail() {
+        assertNull(AuthValidator.emailError("demo@example.com"))
+    }
+
+    @Test fun rejectsShortPassword() {
+        assertEquals("Use at least 8 characters", AuthValidator.passwordError("short"))
+    }
+
+    @Test fun confirmPasswordMustMatch() {
+        assertEquals("Passwords do not match", AuthValidator.confirmPasswordError("demo-password", "other"))
+        assertNull(AuthValidator.confirmPasswordError("demo-password", "demo-password"))
+    }
+}

@@ -114,11 +114,11 @@ export function requestFromNewOptions(options: NewOptions): ProjectRequestInput 
   };
 }
 
-export function writeGeneratedProject(
+export async function writeGeneratedProject(
   options: NewOptions,
-): { directory: string; zipPath: string; command: string; files: number; bytes: number; warnings: string[] } {
+): Promise<{ directory: string; zipPath: string; command: string; files: number; bytes: number; warnings: string[] }> {
   const request = requestFromNewOptions(options);
-  const materialized = materializeProject(request);
+  const materialized = await materializeProject(request);
   const directory = writeProjectTree(materialized.files, options.outDir, { force: options.force });
   const zipPath = `${directory}.zip`;
   if (existsSync(zipPath) && !options.force) {

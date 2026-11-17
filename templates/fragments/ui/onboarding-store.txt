@@ -1,0 +1,21 @@
+package {{packageName}}.ui.onboarding
+
+import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+private val Context.onboardingDataStore by preferencesDataStore(name = "launchbed_onboarding")
+
+object OnboardingStore {
+    private val SeenKey = booleanPreferencesKey("onboarding_seen")
+
+    fun seen(context: Context): Flow<Boolean> =
+        context.applicationContext.onboardingDataStore.data.map { prefs -> prefs[SeenKey] == true }
+
+    suspend fun markSeen(context: Context) {
+        context.applicationContext.onboardingDataStore.edit { prefs -> prefs[SeenKey] = true }
+    }
+}

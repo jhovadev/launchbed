@@ -1,0 +1,91 @@
+package {{packageName}}.ui.onboarding
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.viewmodel.compose.viewModel
+import {{packageName}}.ui.theme.Spacing
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OnboardingScreen(
+    onFinished: () -> Unit,
+    viewModel: OnboardingViewModel = viewModel(),
+) {
+    val pages = viewModel.pages
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+    val scope = rememberCoroutineScope()
+    val lastPage = pagerState.currentPage == pages.lastIndex
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Welcome") }) },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = Spacing.md, vertical = Spacing.lg),
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Onboarding pages" },
+            ) { page ->
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Text(pages[page].title, style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(Spacing.sm))
+                    Text(pages[page].body, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = { viewModel.complete(onFinished) },
+                    modifier = Modifier.semantics { contentDescription = "Skip onboarding" },
+                ) { Text("Skip") }
+                Button(
+                    onClick = {
+                        if (lastPage) {
+                            viewModel.complete(onFinished)
+                        } else {
+                            scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                        }
+                    },
+                    modifier = Modifier.semantics {
+                        contentDescription = if (lastPage) "Finish onboarding" else "Next onboarding page"
+                    },
+                ) { Text(if (lastPage) "Get started" else "Next") }
+            }
+        }
+    }
+}

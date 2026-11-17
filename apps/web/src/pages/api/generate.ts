@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.text();
-    const project = generateProject(parseRequestJson(body));
+    const project = await generateProject(parseRequestJson(body));
     const zipBytes = new Uint8Array(project.zip.length);
     zipBytes.set(project.zip);
 

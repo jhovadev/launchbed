@@ -37,15 +37,16 @@ Optional Android / integrity recipes also exist: `just runtime-parser-test`, `ju
 
 The pipeline is documented in `docs/architecture.md`:
 
-`ProjectRequest` → Zod validation → addon resolution → theme tokens → render template + fragments → addon composition (add / insert / merge) → **mise.toml + justfile tooling merge** → limits / path checks → deterministic ZIP with plan/ZIP parity.
+`ProjectRequest` → Zod validation → addon resolution → theme tokens → **Style Dictionary 5.8.0 compiles the DTCG document to Compose, CSS and Flutter outputs (generator time, not app runtime)** → render template + fragments → addon composition (add / insert / merge) → **mise.toml + justfile tooling merge** → limits / path checks → deterministic ZIP with plan/ZIP parity.
 
 Web routes in `apps/web/src/pages/api/*` and `packages/cli` only parse input and call `packages/generator`. Do not reimplement generation in the UI.
 
-Generated apps: mise pins tools and env (no secrets). just is the command catalog (`doctor`, `build`, `test`, `run`, …). mise `[tasks]` are shortcuts to just. Addon `tooling` contributions are merged deterministically; conflicting tool versions or recipe bodies fail before files are written. See `docs/addon-spec.md`.
+Generated apps: mise pins tools and env (no secrets). just is the command catalog (`doctor`, `build`, `test`, `run`, …). mise `[tasks]` are shortcuts to just. Addon `tooling` contributions are merged deterministically; conflicting tool versions or recipe bodies fail before files are written. See `docs/addon-spec.md`. Android Compose addons now include onboarding (DataStore), auth (login/register with an in-memory fake — not a real backend; see `docs/auth-backends.md`) and profile; the `app-starter` preset composes them with dashboard and settings.
 
 ## Rules
 
 - Pin every new dependency and record it in `docs/compatibility.md`.
+- Design tokens: W3C DTCG in `design-tokens.json`. Style Dictionary 5.8.0 compiles them at generate time via `@launchbed/design-tokens/style-dictionary`. Do not import that subpath from the web preview. Custom formats must stay deterministic (no timestamps, no Prettier). See `docs/design-system.md`.
 - No remote templates, no executing user input, no dynamic `+` versions, no secrets or keystores in templates.
 - Do not claim a feature works without a test or a real command proving it.
 - Keep changes small. Conventional Commits, subject ≤ 72 characters.

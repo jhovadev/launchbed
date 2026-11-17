@@ -1,0 +1,24 @@
+package {{packageName}}.ui.auth
+
+object AuthValidator {
+    private val emailPattern = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+
+    fun emailError(email: String): String? {
+        val value = email.trim()
+        if (value.isEmpty()) return "Enter an email address"
+        if (!emailPattern.matches(value)) return "Enter a valid email address"
+        return null
+    }
+
+    fun passwordError(password: String): String? {
+        if (password.isEmpty()) return "Enter a password"
+        if (password.length < 8) return "Use at least 8 characters"
+        return null
+    }
+
+    fun confirmPasswordError(password: String, confirm: String): String? {
+        if (confirm.isEmpty()) return "Confirm your password"
+        if (confirm != password) return "Passwords do not match"
+        return null
+    }
+}

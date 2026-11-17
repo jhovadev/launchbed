@@ -1,0 +1,79 @@
+package {{packageName}}.ui.auth
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class AuthFormState(
+    val email: String = "",
+    val password: String = "",
+    val confirmPassword: String = "",
+    val displayName: String = "",
+    val emailError: String? = null,
+    val passwordError: String? = null,
+    val confirmPasswordError: String? = null,
+    val formError: String? = null,
+    val loading: Boolean = false,
+)
+
+class AuthViewModel(
+    private val repository: AuthRepository,
+) : ViewModel() {
+    private val state = MutableStateFlow(AuthFormState())
+    val uiState: StateFlow<AuthFormState> = state.asStateFlow()
+
+    fun onEmailChange(value: String) = state.update { it.copy(email = value, emailError = null, formError = null) }
+    fun onPasswordChange(value: String) = state.update { it.copy(password = value, passwordError = null, formError = null) }
+    fun onConfirmPasswordChange(value: String) = state.update { it.copy(confirmPassword = value, confirmPasswordError = null, formError = null) }
+    fun onDisplayNameChange(value: String) = state.update { it.copy(displayName = value, formError = null) }
+
+    fun signIn(onSuccess: () -> Unit) {
+        val current = state.value
+        val emailError = AuthValidator.emailError(current.email)
+        val passwordError = AuthValidator.passwordError(current.password)
+        if (emailError != null || passwordError != null) {
+            state.update { it.copy(emailError = emailError, passwordError = passwordError) }
+            return
+        }
+        runAction(onSuccess) { repository.signIn(current.email, current.password) }
+    }
+
+    fun register(onSuccess: () -> Unit) {
+        val current = state.value
+        val emailError = AuthValidator.emailError(current.email)
+        val passwordError = AuthValidator.passwordError(current.password)
+        val confirmError = AuthValidator.confirmPasswordError(current.password, current.confirmPassword)
+        if (emailError != null || passwordError != null || confirmError != null) {
+            state.update {
+                it.copy(emailError = emailError, passwordError = passwordError, confirmPasswordError = confirmError)
+            }
+            return
+        }
+        runAction(onSuccess) { repository.register(current.email, current.password, current.displayName) }
+    }
+
+    private fun runAction(onSuccess: () -> Unit, block: suspend () -> AuthResult) {
+        viewModelScope.launch {
+            state.update { it.copy(loading = true, formError = null) }
+            when (val result = block()) {
+                AuthResult.Success -> {
+                    state.update { it.copy(loading = false) }
+                    onSuccess()
+                }
+                is AuthResult.Failure -> state.update { it.copy(loading = false, formError = result.message) }
+            }
+        }
+    }
+
+    class Factory(
+        private val repository: AuthRepository = AuthRepositoryHolder.repository,
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AuthViewModel(repository) as T
+    }
+}

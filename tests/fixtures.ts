@@ -65,11 +65,11 @@ describe("ProjectRequestSchema", () => {
         projectName: "My App",
         applicationId: "com.example.myapp",
         namespace: "com.acme.namespace",
-        addons: ["ui/login", "storage/room"],
+        addons: ["ui/auth", "storage/room"],
       }),
     );
     expect(request.packageName).toBe("com.acme.namespace");
-    expect(request.addons).toEqual(["storage/room", "ui/login"]);
+    expect(request.addons).toEqual(["storage/room", "ui/auth"]);
   });
 
   test("keeps applicationId and namespace independent", () => {
@@ -121,7 +121,7 @@ describe("ProjectRequestSchema", () => {
       projectName: "My App",
       applicationId: "com.example.myapp",
       namespace: "com.example.myapp",
-      addons: ["ui/login", "ui/login"],
+      addons: ["ui/auth", "ui/auth"],
     });
     expect(result.success).toBe(false);
   });

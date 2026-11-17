@@ -7,10 +7,15 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./style-dictionary": {
+      "types": "./src/style-dictionary.ts",
+      "default": "./src/style-dictionary.ts"
     }
   },
   "dependencies": {
     "@launchbed/schema": "workspace:*",
-    "@material/material-color-utilities": "0.4.0"
+    "@material/material-color-utilities": "0.4.0",
+    "style-dictionary": "5.8.0"
   }
 }

@@ -33,16 +33,41 @@ generation and the browser preview.
 
 `resolveThemeTokens` returns light/dark semantic colors plus typography, shape,
 spacing and component tokens. Those tokens are written as a W3C Design Tokens
-(DTCG) document, and the Kotlin files are derived from it:
+(DTCG) document (`design-tokens.json`), which is the source of truth for the
+generated project.
 
-- `design-tokens.json` — DTCG source of truth for the generated project.
+At **generator build time** — never inside the generated app — Style Dictionary
+5.8.0 (`style-dictionary`, pinned in `bun.lock`) compiles that DTCG document.
+The package `@launchbed/design-tokens/style-dictionary` owns this step;
+`@launchbed/design-tokens` (the main entry) stays free of Style Dictionary so
+the browser preview can keep importing tokens without bundling the compiler.
+
+Built-in Style Dictionary formats are not used for Kotlin because they are not
+byte-for-byte deterministic (timestamps, Prettier, file headers) and do not
+match the existing Compose theme files. Launchbed registers custom formats
+(`launchbed/compose-colors`, `launchbed/compose-tokens`,
+`launchbed/css-variables`, `launchbed/flutter-dart`) with `showFileHeader:
+false` and silent logging, then calls `formatAllPlatforms` in memory.
+
+Outputs written into every generated project:
+
+- `design-tokens.json` — DTCG source of truth.
 - `ui/theme/GeneratedColors.kt` — 58 `Color(0xFF......)` constants.
 - `ui/theme/GeneratedTokens.kt` — font family, base radius, `Spacing`,
   `ComponentTokens`.
+- `tokens/tokens.css` — CSS custom properties, prepared for a future web
+  target. The generated Android app does not load this file.
+- `tokens/tokens.dart` — Dart/Flutter constants, prepared for a future Flutter
+  target. The generated Android app does not load this file.
+
+`generateComposeColors` / `generateComposeTokens` are thin wrappers around the
+same custom formatters, so tests can assert Style Dictionary output equals the
+helper. Repeating the compile with the same document yields identical bytes;
+the GenerationPlan lists these files and the ZIP must match them.
 
 `Theme.kt` (template source) builds `lightColorScheme`, `darkColorScheme`,
-`Shapes` and `Typography` from those generated values. The default `AppTheme`
-mode follows `ThemeConfig.defaultMode`.
+`Shapes` and `Typography` from the generated Kotlin values. The default
+`AppTheme` mode follows `ThemeConfig.defaultMode`.
 
 ## Preview
 

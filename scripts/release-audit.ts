@@ -54,9 +54,9 @@ function checkPolicy(files:Map<string,Uint8Array>):{r8:Check;backup:Check} {
   return {r8:{status:r8?'PASS':'FAIL',detail:r8?'AGP 9.3+ release optimization configured':'Release R8 configuration missing'},
     backup:{status:backup?'PASS':'FAIL',detail:backup?'Backup disabled and cloud/D2D explicit exclusions present; OEM behavior still requires review':'Incomplete cloud/D2D/legacy backup exclusions'}};
 }
-function unpack(preset:string,dir:string) {
+async function unpack(preset:string,dir:string) {
   const suffix=preset.replaceAll('-','');
-  const project=generateProject(parseRequest({...seed,preset,addons:[],projectName:`Release Audit ${preset}`,
+  const project=await generateProject(parseRequest({...seed,preset,addons:[],projectName:`Release Audit ${preset}`,
     applicationId:`dev.launchbed.release.${suffix}`,namespace:`dev.launchbed.release.${suffix}`}));
   verifyZipAgainstPlan(project.zip,project.plan);
   const entries=readZip(project.zip);
@@ -99,7 +99,7 @@ try {
       const dir=join(OUT,'projects',preset);
       try {
         rmSync(dir,{recursive:true,force:true}); mkdirSync(dir,{recursive:true});
-        const generated=unpack(preset,dir);
+        const generated=await unpack(preset,dir);
         row.zipSha256=generated.hash;row.r8=generated.policy.r8;row.backup=generated.policy.backup;
         if(generated.policy.r8.status==='FAIL' || generated.policy.backup.status==='FAIL') throw new Error('Generated release/backup policy check failed');
         const gradle=runGradle(dir,sdk);

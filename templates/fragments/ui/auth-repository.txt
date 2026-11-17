@@ -1,0 +1,90 @@
+package {{packageName}}.ui.auth
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+data class AuthUser(
+    val email: String,
+    val displayName: String,
+)
+
+data class AuthSession(
+    val ready: Boolean = true,
+    val user: AuthUser? = null,
+)
+
+sealed interface AuthResult {
+    data object Success : AuthResult
+    data class Failure(val message: String) : AuthResult
+}
+
+interface AuthRepository {
+    val session: StateFlow<AuthSession>
+    suspend fun signIn(email: String, password: String): AuthResult
+    suspend fun register(email: String, password: String, displayName: String): AuthResult
+    suspend fun updateProfile(displayName: String): AuthResult
+    fun signOut()
+}
+
+/**
+ * In-memory fake. This is not a security boundary and must not be presented as
+ * real authentication. Replace the holder below with a backend-backed addon
+ * (Firebase, Supabase, or your own API). See docs/AUTH.md.
+ */
+class InMemoryAuthRepository(
+    demoEmail: String = DEMO_EMAIL,
+    demoPassword: String = DEMO_PASSWORD,
+) : AuthRepository {
+    private val passwords = mutableMapOf(demoEmail.lowercase() to demoPassword)
+    private val users = mutableMapOf(
+        demoEmail.lowercase() to AuthUser(email = demoEmail, displayName = "Demo user"),
+    )
+    private val state = MutableStateFlow(AuthSession())
+    override val session: StateFlow<AuthSession> = state.asStateFlow()
+
+    override suspend fun signIn(email: String, password: String): AuthResult {
+        val key = email.trim().lowercase()
+        val expected = passwords[key]
+        val user = users[key]
+        if (expected == null || user == null || expected != password) {
+            return AuthResult.Failure("Email or password is not recognized")
+        }
+        state.value = AuthSession(user = user)
+        return AuthResult.Success
+    }
+
+    override suspend fun register(email: String, password: String, displayName: String): AuthResult {
+        val key = email.trim().lowercase()
+        if (users.containsKey(key)) {
+            return AuthResult.Failure("An account with this email already exists")
+        }
+        val user = AuthUser(email = email.trim(), displayName = displayName.trim().ifEmpty { email.trim() })
+        passwords[key] = password
+        users[key] = user
+        state.value = AuthSession(user = user)
+        return AuthResult.Success
+    }
+
+    override suspend fun updateProfile(displayName: String): AuthResult {
+        val current = state.value.user ?: return AuthResult.Failure("You are signed out")
+        val updated = current.copy(displayName = displayName.trim().ifEmpty { current.displayName })
+        users[current.email.lowercase()] = updated
+        state.update { it.copy(user = updated) }
+        return AuthResult.Success
+    }
+
+    override fun signOut() {
+        state.value = AuthSession(user = null)
+    }
+
+    companion object {
+        const val DEMO_EMAIL = "demo@example.com"
+        const val DEMO_PASSWORD = "demo-password"
+    }
+}
+
+object AuthRepositoryHolder {
+    val repository: AuthRepository = InMemoryAuthRepository()
+}

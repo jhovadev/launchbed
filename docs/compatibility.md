@@ -48,6 +48,7 @@ dynamic `+` versions. The generated template matrix lives in
 | typescript | 7.0.2 | `tsc --noEmit` |
 | zod | 4.6.7 | Strict contracts |
 | @material/material-color-utilities | 0.4.0 | HCT palettes (Apache-2.0) |
+| style-dictionary | 5.8.0 | DTCG compile at generate time (custom Compose/CSS/Flutter formats) |
 
 ## Known issues and decisions
 

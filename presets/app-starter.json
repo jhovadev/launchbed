@@ -1,15 +1,23 @@
 {
-  "id": "auth-ui",
+  "id": "app-starter",
   "version": "0.1.0",
-  "name": "Auth UI",
-  "description": "Planned preset: Auth UI.",
+  "name": "App Starter",
+  "description": "Onboarding, auth, profile, dashboard and settings on the Compose foundation.",
   "category": "application",
-  "status": "planned",
+  "status": "beta",
   "baseTemplate": "android-compose-minimal",
-  "requiredAddons": [],
+  "requiredAddons": [
+    "ui/foundation",
+    "ui/navigation",
+    "ui/onboarding",
+    "ui/auth",
+    "ui/profile",
+    "ui/dashboard",
+    "ui/settings"
+  ],
   "optionalAddons": [],
   "defaultTheme": {
-    "seedColor": "#4A4F5A",
+    "seedColor": "#006C4C",
     "schemeVariant": "tonalSpot",
     "defaultMode": "system",
     "typography": {
@@ -41,15 +49,25 @@
     }
   },
   "previewScreens": [
-    "welcome"
+    "onboarding",
+    "login",
+    "register",
+    "profile",
+    "dashboard",
+    "settings"
   ],
   "compatibility": {
     "minSdk": 26,
     "notes": [
-      "Planned only; not generatable."
+      "Beta: generated screens use DataStore for onboarding and an in-memory auth fake. Not a production backend."
     ]
   },
   "capabilities": [
-    "auth-ui"
+    "starter",
+    "onboarding",
+    "auth-ui",
+    "profile",
+    "navigation",
+    "settings"
   ]
 }

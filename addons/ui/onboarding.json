@@ -2,30 +2,109 @@
   "id": "ui/onboarding",
   "version": "0.1.0",
   "displayName": "Onboarding flow",
-  "description": "Multi-step onboarding with pager navigation and a persisted completion flag.",
+  "description": "Multi-step onboarding pager with a DataStore completion flag.",
   "category": "ui",
-  "status": "planned",
+  "status": "beta",
   "dependencies": [
     "ui/navigation"
   ],
   "conflicts": [],
   "capabilities": [
-    "onboarding"
+    "onboarding",
+    "compose-ui",
+    "material3"
   ],
   "requirements": {
     "minSdk": 24,
     "compileSdk": 34,
     "jdk": 17
   },
-  "fileOperations": [],
+  "fileOperations": [
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "datastorepreferences",
+      "module": "androidx.datastore:datastore-preferences",
+      "version": "1.1.7"
+    },
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "lifecycleviewmodelcompose",
+      "module": "androidx.lifecycle:lifecycle-viewmodel-compose",
+      "version": "2.11.0"
+    },
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "lifecycleruntimecompose",
+      "module": "androidx.lifecycle:lifecycle-runtime-compose",
+      "version": "2.11.0"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "datastorepreferences"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "lifecycleviewmodelcompose"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "lifecycleruntimecompose"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/onboarding/OnboardingStore.kt",
+      "template": "ui/onboarding-store"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/onboarding/OnboardingViewModel.kt",
+      "template": "ui/onboarding-viewmodel"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/onboarding/OnboardingScreen.kt",
+      "template": "ui/onboarding-screen"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-imports",
+      "template": "ui/onboarding-import"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-routes",
+      "template": "ui/onboarding-route"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-entries",
+      "template": "ui/onboarding-entry"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/ui/onboarding/OnboardingScreenTest.kt",
+      "template": "ui/onboarding-test"
+    }
+  ],
   "compatibility": {
     "android": [
       "7.0+"
     ],
     "notes": [
-      "Declarative entry for F0; not generatable yet.",
-      "Planned; persistence strategy will be chosen by the selected storage addon."
+      "Beta: pager plus DataStore flag `onboarding_seen`.",
+      "Depends on ui/navigation.",
+      "The start destination is resolved at runtime by rememberStartRoute()."
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/topic/libraries/architecture/datastore"
 }

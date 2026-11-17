@@ -123,12 +123,12 @@ function checkOutput(label: string, result: ReturnType<typeof runCmd>): Check {
   console.log(`${label}: PASS (${result.durationMs} ms)`);
   return { status: 'PASS', detail: 'Gradle exited 0', durationMs: result.durationMs };
 }
-function unzipGeneratedProject(preset: Preset, out: string): {zipBytes: number; files: number; instrumented: boolean} {
+async function unzipGeneratedProject(preset: Preset, out: string): Promise<{zipBytes: number; files: number; instrumented: boolean}> {
   const seed = JSON.parse(readFileSync(join(ROOT, 'examples/basic.json'), 'utf8')) as Record<string, unknown>;
   const input = parseRequest({ ...seed, projectName: `Runtime ${preset}`, preset, addons: [],
     applicationId: `dev.launchbed.runtime.${preset.replaceAll('-', '')}`,
     namespace: `dev.launchbed.runtime.${preset.replaceAll('-', '')}` });
-  const project = generateProject(input);
+  const project = await generateProject(input);
   verifyZipAgainstPlan(project.zip, project.plan);
   const entries = readZip(project.zip);
   if (!entries.length) throw new Error('Generator produced an empty ZIP.');
@@ -144,7 +144,7 @@ function unzipGeneratedProject(preset: Preset, out: string): {zipBytes: number; 
   return { zipBytes: project.zip.byteLength, files: entries.length,
     instrumented: entries.some((entry) => entry.path.startsWith('app/src/androidTest/') && entry.path.endsWith('.kt')) };
 }
-function runPreset(preset: Preset, sdk: string, serial?: string): PresetReport {
+async function runPreset(preset: Preset, sdk: string, serial?: string): Promise<PresetReport> {
   const dir = resolve(ROOT, 'build', 'runtime-verification', preset);
   const checks: Record<string, Check> = {};
   const report: PresetReport = { preset, checks };
@@ -152,7 +152,7 @@ function runPreset(preset: Preset, sdk: string, serial?: string): PresetReport {
   rmSync(dir, { recursive: true, force: true });
   let instrumented = false;
   try {
-    const generated = unzipGeneratedProject(preset, dir);
+    const generated = await unzipGeneratedProject(preset, dir);
     report.zipBytes = generated.zipBytes; report.files = generated.files;
     instrumented = generated.instrumented;
     checks.generation = { status: 'PASS', detail: `${generated.files} files; ${generated.zipBytes} ZIP bytes` };
@@ -240,7 +240,7 @@ function finishReport(reports: PresetReport[], device?: DeviceFacts): never {
   process.exit(0);
 }
 
-function main() {
+async function main() {
   let options: ReturnType<typeof argsOf>;
   try { options = argsOf(process.argv.slice(2)); }
   catch (err) {console.error(String(err));console.error(USAGE);process.exit(2);}
@@ -310,7 +310,7 @@ function main() {
   }
   const presets = options.all ? PRESETS : [options.preset ?? 'local-notes'];
   const reports: PresetReport[] = [];
-  for (const preset of presets) reports.push(runPreset(preset, sdk, serial));
+  for (const preset of presets) reports.push(await runPreset(preset, sdk, serial));
   finishReport(reports, device);
 }
-main();
+await main();

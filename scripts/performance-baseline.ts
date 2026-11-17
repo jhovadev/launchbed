@@ -39,9 +39,9 @@ function requestFor(preset: string) {
   });
 }
 function now() { return performance.now(); }
-function measureGenerator(input: ReturnType<typeof parseRequest>): { sample: OneSample; hash: string; bytes: number; files: number; sourceBytes: number } {
+async function measureGenerator(input: ReturnType<typeof parseRequest>): Promise<{ sample: OneSample; hash: string; bytes: number; files: number; sourceBytes: number }> {
   const start = now();
-  const project = materializeProject(input);
+  const project = await materializeProject(input);
   const materialized = now();
   const entries = [...project.files].map(([path, data]) => ({path, data, executable: isExecutablePath(path)}));
   const zip = createZip(entries);
@@ -76,17 +76,17 @@ function metadata() {
     measurement: 'wall-clock monotonic performance.now()',
   };
 }
-function generatorBenchmark(presets: string[], runs: number, warmup: number) {
+async function generatorBenchmark(presets: string[], runs: number, warmup: number) {
   const results = [];
   for (const preset of presets) {
     console.log(`Generator ${preset}: warmup=${warmup}, measured=${runs}`);
     const input = requestFor(preset);
-    const canonical = generateProject(input); // Production pipeline cross-check, excluded from timings.
+    const canonical = await generateProject(input); // Production pipeline cross-check, excluded from timings.
     const expectedHash = checksum(canonical.zip);
     const samples: OneSample[] = [];
-    let last: ReturnType<typeof measureGenerator> | undefined;
+    let last: Awaited<ReturnType<typeof measureGenerator>> | undefined;
     for (let index = -warmup; index < runs; index++) {
-      const measured = measureGenerator(input);
+      const measured = await measureGenerator(input);
       if (measured.hash !== expectedHash) throw new Error(`${preset} generated ZIP drift at sample ${index}`);
       if (index >= 0) samples.push(measured.sample);
       last = measured;
@@ -144,7 +144,7 @@ function gradleCommand(tasks: string[], cwd: string, sdk: string): CommandResult
   const message = (result.error?.message || result.stderr?.slice(-1400) || result.stdout?.slice(-1400) || '').trim();
   return {ok: !result.error && result.status === 0, elapsedMs, summary: result.status === 0 ? 'Gradle exited 0' : `exit ${result.status}: ${message}`};
 }
-function androidBenchmark(presets: string[], includeRelease: boolean) {
+async function androidBenchmark(presets: string[], includeRelease: boolean) {
   const sdk = sdkLocation();
   if (!sdk) {
     console.error('BLOCKED: Android SDK not found. Set ANDROID_HOME/ANDROID_SDK_ROOT; no Gradle build attempted.');
@@ -163,7 +163,7 @@ function androidBenchmark(presets: string[], includeRelease: boolean) {
     try {
       // Delete ONLY our fixed preset output folder; never user-supplied directories.
       rmSync(directory, {recursive:true,force:true});
-      const generated = generateProject(requestFor(preset));
+      const generated = await generateProject(requestFor(preset));
       verifyZipAgainstPlan(generated.zip, generated.plan);
       extractProject(generated.zip, directory);
       result.zipBytes = generated.zip.length;
@@ -207,8 +207,8 @@ function androidBenchmark(presets: string[], includeRelease: boolean) {
 
 try {
   const args = parseBenchmarkArgs(process.argv.slice(2));
-  if (args.command === 'generator') generatorBenchmark(args.presets, args.runs, args.warmup);
-  else androidBenchmark(args.presets, args.release);
+  if (args.command === 'generator') await generatorBenchmark(args.presets, args.runs, args.warmup);
+  else await androidBenchmark(args.presets, args.release);
 } catch (error) {
   console.error(`FAIL: ${String(error)}`);
   process.exitCode = 2;

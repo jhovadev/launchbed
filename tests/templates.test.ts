@@ -2,6 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { FRAGMENT_FILES, TEMPLATE_FILES } from "@launchbed/generator";
+import {
+  canonicalText,
+  expectedEol,
+  formatDiskEolWarning,
+  hasCanonicalEol,
+  normalizeNewlines,
+} from "../scripts/embed-templates";
 
 const ROOT = join(import.meta.dir, "..");
 const TEMPLATE_DIR = join(ROOT, "templates", "android-compose-minimal");
@@ -85,12 +92,10 @@ describe("embedded template bundle", () => {
         continue;
       }
       const diskText = raw.toString("utf8");
-      const expected = CRLF_EXTENSIONS.has(extension) ? "CRLF" : "LF";
-      const kind = eolKind(diskText);
-      if (kind !== "NONE" && kind !== expected) {
-        eolProblems.push(`${path} has ${kind} line endings; expected ${expected} (see .gitattributes)`);
+      if (!hasCanonicalEol(path, embedded.content)) {
+        eolProblems.push(`${path} is embedded with ${eolKind(embedded.content)} endings; generated files must use ${expectedEol(path)}`);
       }
-      if (embedded.content !== diskText) {
+      if (normalizeNewlines(embedded.content) !== normalizeNewlines(diskText)) {
         mismatches.push(describeTextDiff(path, embedded.content, diskText));
       }
     }
@@ -115,8 +120,35 @@ describe("embedded template bundle", () => {
     for (const name of disk) {
       const diskText = readFileSync(join(FRAGMENTS_DIR, name), "utf8");
       const embedded = FRAGMENT_FILES[name]!;
-      if (embedded !== diskText) mismatches.push(describeTextDiff(name, embedded, diskText));
+      if (normalizeNewlines(embedded) !== normalizeNewlines(diskText)) {
+        mismatches.push(describeTextDiff(name, embedded, diskText));
+      }
     }
     expect(mismatches).toEqual([]);
+  });
+});
+
+describe("template EOL policy", () => {
+  test("compares normalized content and requires canonical endings only in the bundle", () => {
+    const path = "scripts/doctor.ps1";
+    const lf = "# hello\nWrite-Host ok\n";
+    const crlf = canonicalText(path, lf);
+    expect(crlf).toBe("# hello\r\nWrite-Host ok\r\n");
+    expect(normalizeNewlines(crlf)).toBe(normalizeNewlines(lf));
+    expect(hasCanonicalEol(path, crlf)).toBe(true);
+    expect(hasCanonicalEol(path, lf)).toBe(false);
+    expect(expectedEol(path)).toBe("CRLF");
+    expect(expectedEol("justfile")).toBe("LF");
+    expect(hasCanonicalEol("justfile", "foo\n")).toBe(true);
+  });
+
+  test("disk EOL drift is a warning with a renormalize hint, not a failure", () => {
+    const message = formatDiskEolWarning([
+      "templates/android-compose-minimal/scripts/doctor.ps1: disk=LF expected=CRLF",
+    ]);
+    expect(message).toContain("git add --renormalize .");
+    expect(message).toContain("git checkout --");
+    expect(message).toContain("not a failure");
+    expect(message).toContain("doctor.ps1");
   });
 });

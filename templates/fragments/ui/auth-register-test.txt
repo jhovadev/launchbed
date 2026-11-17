@@ -1,0 +1,20 @@
+package {{packageName}}.ui.auth
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import androidx.test.ext.junit.runners.AndroidJUnit4
+
+@RunWith(AndroidJUnit4::class)
+class RegisterScreenTest {
+    @get:Rule val composeRule = createComposeRule()
+
+    @Test fun registerExplainsInMemoryAccounts() {
+        composeRule.setContent { RegisterScreen(onRegistered = {}, onSignIn = {}) }
+        composeRule.onNodeWithText("Create account").assertIsDisplayed()
+        composeRule.onNodeWithText("Accounts exist only in memory for this session. This is not a real backend.").assertIsDisplayed()
+    }
+}

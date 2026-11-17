@@ -1,0 +1,66 @@
+package {{packageName}}.ui.profile
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import {{packageName}}.ui.auth.AuthRepositoryHolder
+import {{packageName}}.ui.theme.Spacing
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileScreen(
+    onEdit: () -> Unit,
+    onSignedOut: () -> Unit,
+) {
+    val session by AuthRepositoryHolder.repository.session.collectAsStateWithLifecycle()
+    val user = session.user
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Profile") }) },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = Spacing.md, vertical = Spacing.lg),
+            verticalArrangement = Arrangement.Top,
+        ) {
+            if (user == null) {
+                Text("You are signed out.", style = MaterialTheme.typography.bodyLarge)
+            } else {
+                ListItem(headlineContent = { Text(user.displayName) }, supportingContent = { Text("Display name") })
+                ListItem(headlineContent = { Text(user.email) }, supportingContent = { Text("Email") })
+                Spacer(Modifier.height(Spacing.lg))
+                Button(
+                    onClick = onEdit,
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Edit profile" },
+                ) { Text("Edit profile") }
+                OutlinedButton(
+                    onClick = {
+                        AuthRepositoryHolder.repository.signOut()
+                        onSignedOut()
+                    },
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sign out" },
+                ) { Text("Sign out") }
+            }
+        }
+    }
+}

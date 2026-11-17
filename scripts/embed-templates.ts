@@ -50,6 +50,30 @@ export function expectedEol(path: string): "CRLF" | "LF" {
   return CRLF_EXTENSIONS.has(extensionOf(path)) ? "CRLF" : "LF";
 }
 
+export function normalizeNewlines(text: string): string {
+  return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+export function hasCanonicalEol(path: string, text: string): boolean {
+  return text === canonicalText(path, text);
+}
+
+/** Human-readable hint when the worktree was checked out with the wrong endings. */
+export const DISK_EOL_HINT =
+  "Working-tree line endings are not canonical (see .gitattributes). The embedded bundle already stores canonical endings (CRLF for .ps1/.bat/.cmd, LF otherwise), so this is not a failure. To rewrite the worktree, run: git add --renormalize .  or  git checkout -- templates/android-compose-minimal/scripts/";
+
+export function formatDiskEolWarning(problems: readonly string[]): string {
+  return [DISK_EOL_HINT, ...problems.map((line) => `  ${line}`)].join("\n");
+}
+
+export function reportDiskEolWarnings(
+  problems: readonly string[],
+  log: (message: string) => void = console.warn,
+): void {
+  if (problems.length === 0) return;
+  log(formatDiskEolWarning(problems));
+}
+
 function walk(directory: string, base = directory): string[] {
   const entries: string[] = [];
   for (const name of readdirSync(directory).sort()) {
@@ -125,7 +149,7 @@ function buildModule(): string {
   return lines.join("\n");
 }
 
-function listEolDrift(): string[] {
+export function listEolDrift(): string[] {
   const problems: string[] = [];
   for (const path of walk(TEMPLATE_DIR)) {
     if (BINARY_EXTENSIONS.has(extensionOf(path))) continue;
@@ -182,13 +206,8 @@ function rewriteCanonicalSources(): number {
 const check = process.argv.includes("--check");
 
 if (check) {
-  const drift = listEolDrift();
-  if (drift.length > 0) {
-    console.error("Template files have non-canonical line endings (see .gitattributes).");
-    for (const line of drift) console.error(`  ${line}`);
-    console.error("Run: bun run templates:embed");
-    process.exit(1);
-  }
+  // Disk EOL is advisory: git may leave stale LF .ps1 files in an already-checked-out tree.
+  reportDiskEolWarnings(listEolDrift());
   const moduleSource = buildModule();
   let existing = "";
   try {

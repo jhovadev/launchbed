@@ -85,7 +85,7 @@ async function main(): Promise<void> {
     try {
       const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
       const options = await resolveNewOptions(args, interactive);
-      const result = writeGeneratedProject(options);
+      const result = await writeGeneratedProject(options);
       console.log(`Created project ${result.directory}`);
       console.log(`Wrote ZIP ${result.zipPath}`);
       console.log(`Files: ${result.files}, bytes: ${result.bytes}`);
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
     }
 
     if (args.command === "plan") {
-      const plan = createPlan(request);
+      const plan = await createPlan(request);
       if (args.flags.has("json")) {
         console.log(JSON.stringify(plan, null, 2));
       } else {
@@ -134,7 +134,7 @@ async function main(): Promise<void> {
     }
 
     if (args.command === "generate") {
-      const project = generateProject(request);
+      const project = await generateProject(request);
       const out = resolve(args.values.get("out") ?? `${projectSlug(project.plan.request.projectName)}.zip`);
       if (existsSync(out) && !args.flags.has("force")) {
         throw new LaunchbedError("IO_ERROR", `Refusing to overwrite ${out}. Pass --force to replace it.`);

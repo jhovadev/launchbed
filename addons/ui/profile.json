@@ -1,0 +1,67 @@
+{
+  "id": "ui/profile",
+  "version": "0.1.0",
+  "displayName": "Profile",
+  "description": "Profile and edit screens bound to the in-memory auth session.",
+  "category": "ui",
+  "status": "beta",
+  "dependencies": [
+    "ui/auth"
+  ],
+  "conflicts": [],
+  "capabilities": [
+    "profile",
+    "compose-ui",
+    "material3"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/profile/ProfileScreen.kt",
+      "template": "ui/profile-screen"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/profile/ProfileEditScreen.kt",
+      "template": "ui/profile-edit-screen"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-imports",
+      "template": "ui/profile-import"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-routes",
+      "template": "ui/profile-route"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/AppRoot.kt",
+      "slot": "app-entries",
+      "template": "ui/profile-entry"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/ui/profile/ProfileScreenTest.kt",
+      "template": "ui/profile-test"
+    }
+  ],
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Beta: depends on ui/auth. Profile data lives in the in-memory session only."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/develop/ui/compose"
+}

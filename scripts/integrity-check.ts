@@ -34,9 +34,9 @@ for (const preset of PRESETS) {
     const request=parseRequest({...seed, preset, projectName:`Integrity ${preset}`, addons:[],
       applicationId:`dev.launchbed.integrity.${suffix}`,namespace:`dev.launchbed.generated.${suffix}`,
       packageName:`dev.launchbed.generated.${suffix}`});
-    const output=generateProject(request);
+    const output=await generateProject(request);
     verifyZipAgainstPlan(output.zip,output.plan);
-    const repeated=generateProject(request);
+    const repeated=await generateProject(request);
     if (sha(repeated.zip)!==sha(output.zip)) throw new Error('ZIP bytes changed between identical requests');
     const entries=readZip(output.zip);
     if (!entries.length || entries.length>LIMITS.files) throw new Error('Invalid ZIP entry count');

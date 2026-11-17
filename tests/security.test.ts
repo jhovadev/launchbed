@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import {
   generateProject,
   materializeProject,
@@ -15,9 +15,9 @@ import {
 } from "@launchbed/schema";
 import { baseRequest } from "./fixtures";
 
-function expectLaunchbedError(fn: () => unknown, code: "INVALID_REQUEST" | "LIMIT_EXCEEDED" | "RESOLUTION_ERROR" | "TEMPLATE_ERROR" | "SECURITY_ERROR" | "ZIP_ERROR" | "IO_ERROR" | "UNKNOWN_ADDON" | "INTERNAL_ERROR"): void {
+async function expectLaunchbedError(fn: () => unknown, code: "INVALID_REQUEST" | "LIMIT_EXCEEDED" | "RESOLUTION_ERROR" | "TEMPLATE_ERROR" | "SECURITY_ERROR" | "ZIP_ERROR" | "IO_ERROR" | "UNKNOWN_ADDON" | "INTERNAL_ERROR"): Promise<void> {
   try {
-    fn();
+    await fn();
   } catch (error) {
     expect(error).toBeInstanceOf(LaunchbedError);
     expect((error as LaunchbedError).code).toBe(code);
@@ -27,24 +27,24 @@ function expectLaunchbedError(fn: () => unknown, code: "INVALID_REQUEST" | "LIMI
 }
 
 describe("request validation and limits", () => {
-  test("rejects bodies above the request limit before parsing", () => {
+  test("rejects bodies above the request limit before parsing", async () => {
     const body = "x".repeat(LIMITS.requestBytes + 1);
-    expectLaunchbedError(() => parseRequestJson(body), "LIMIT_EXCEEDED");
+    await expectLaunchbedError(() => parseRequestJson(body), "LIMIT_EXCEEDED");
   });
 
-  test("rejects malformed JSON", () => {
-    expectLaunchbedError(() => parseRequestJson("{not json"), "INVALID_REQUEST");
+  test("rejects malformed JSON", async () => {
+    await expectLaunchbedError(() => parseRequestJson("{not json"), "INVALID_REQUEST");
   });
 
-  test("rejects unknown addons at generation time", () => {
+  test("rejects unknown addons at generation time", async () => {
     const request = baseRequest({ addons: ["storage/does-not-exist"] });
-    expectLaunchbedError(() => materializeProject(request), "RESOLUTION_ERROR");
+    await expectLaunchbedError(() => materializeProject(request), "RESOLUTION_ERROR");
   });
 
-  test("rejects planned catalog addons with a clear message", () => {
+  test("rejects planned catalog addons with a clear message", async () => {
     const request = baseRequest({ addons: ["storage/turso"] });
     try {
-      materializeProject(request);
+      await materializeProject(request);
       throw new Error("expected failure");
     } catch (error) {
       expect(error).toBeInstanceOf(LaunchbedError);
@@ -74,17 +74,20 @@ describe("request validation and limits", () => {
 });
 
 describe("template rendering", () => {
-  test("fails closed on unknown variables", () => {
-    expectLaunchbedError(() => renderText("hello {{unknown}}", {}, "test"), "TEMPLATE_ERROR");
+  test("fails closed on unknown variables", async () => {
+    await expectLaunchbedError(() => renderText("hello {{unknown}}", {}, "test"), "TEMPLATE_ERROR");
   });
 
-  test("fails on unresolved placeholders", () => {
-    expectLaunchbedError(() => renderText("{{ a b }}", {}, "test"), "TEMPLATE_ERROR");
+  test("fails on unresolved placeholders", async () => {
+    await expectLaunchbedError(() => renderText("{{ a b }}", {}, "test"), "TEMPLATE_ERROR");
   });
 });
 
 describe("generated project security", () => {
-  const project = generateProject(baseRequest());
+  let project: Awaited<ReturnType<typeof generateProject>>;
+  beforeAll(async () => {
+    project = await generateProject(baseRequest());
+  });
 
   test("contains only safe relative paths", () => {
     for (const file of project.plan.files) {

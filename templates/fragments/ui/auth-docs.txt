@@ -1,0 +1,20 @@
+# Authentication in this project
+
+`ui/auth` ships a login screen, a register screen, field validation and an
+**in-memory** `AuthRepository`. It is a UI scaffold, not a security product.
+
+- The demo account `demo@example.com` / `demo-password` exists only so the
+  screens can be exercised locally. It is not a real user store.
+- Credentials live in process memory. They disappear when the app is killed.
+  They are not encrypted and must not be treated as production authentication.
+- `AuthRepositoryHolder.repository` is the single swap point. A future
+  Firebase, Supabase or custom-API addon should replace that holder (or the
+  bound implementation) without rewriting the screens.
+
+Suggested later addons, not generated here:
+
+- `auth/firebase` — Firebase Authentication
+- `auth/supabase` — Supabase Auth
+- `auth/api` — your own backend session API
+
+Do not ship this fake session to users as if it were signed-in security.

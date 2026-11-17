@@ -20,7 +20,8 @@ ProjectRequest (JSON)
   -> schema validation (Zod, strict objects, identifiers, SDK relations, limits)
   -> normalization (packageName defaults, addons sorted and deduplicated)
   -> addon resolution (existence, status, dependencies, conflicts, SDK floors)
-  -> theme resolution (Material 3 token derivation)
+  -> theme resolution (Material 3 token derivation, W3C DTCG document)
+  -> Style Dictionary 5.8.0 compile (custom Compose/CSS/Flutter formats, generate time only)
   -> plan + render (templates, generated Kotlin, addon file operations)
   -> limits and path validation
   -> GenerationPlan (sorted paths, sizes, SHA-256, request hash)
@@ -39,7 +40,7 @@ web and CLI behavior cannot drift apart.
 | `schema` | Contracts, limits, identifier/path validation, typed errors | Read files, render templates |
 | `catalog` | Validate `addons/*.json` at module load, expose catalog entries | Generate code |
 | `resolver` | Dependency closure, cycles, conflicts, requirement merge, status gating | Render or package |
-| `design-tokens` | Theme resolution and Compose token code generation | Read templates |
+| `design-tokens` | Theme resolution, DTCG, and Style Dictionary 5 compile (Compose/CSS/Flutter) at generate time | Import Style Dictionary from the preview entry; run the compiler in the generated app |
 | `generator` | Planning, rendering, limits, deterministic ZIP, plan/ZIP verification | Know about Astro or HTTP |
 | `preview` | SolidJS approximation of the generated screen | Claim runtime equivalence |
 | `cli` | Argument parsing and file output | Reimplement generation |

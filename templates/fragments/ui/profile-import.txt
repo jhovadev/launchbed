@@ -1,0 +1,2 @@
+import {{packageName}}.ui.profile.ProfileEditScreen
+import {{packageName}}.ui.profile.ProfileScreen

@@ -11,9 +11,9 @@ import sqliteDirect from "../../../addons/storage/sqlite-direct.json";
 import libsqlAndroid from "../../../addons/storage/libsql-android.json";
 import turso from "../../../addons/storage/turso.json";
 import sqldRemote from "../../../addons/storage/sqld-remote.json";
-import login from "../../../addons/ui/login.json";
-import register from "../../../addons/ui/register.json";
+import auth from "../../../addons/ui/auth.json";
 import onboarding from "../../../addons/ui/onboarding.json";
+import profile from "../../../addons/ui/profile.json";
 import settings from "../../../addons/ui/settings.json";
 import dashboard from "../../../addons/ui/dashboard.json";
 import navigation from "../../../addons/ui/navigation.json";
@@ -35,9 +35,9 @@ const RAW_MANIFESTS = [
   libsqlAndroid,
   turso,
   sqldRemote,
-  login,
-  register,
+  auth,
   onboarding,
+  profile,
   settings,
   dashboard,
   navigation,

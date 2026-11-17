@@ -1,0 +1,3 @@
+            entry<AppRoute.Onboarding> {
+                OnboardingScreen(onFinished = { backStack.replaceRoot(AppRoute.{{afterOnboardingRoute}}) })
+            }

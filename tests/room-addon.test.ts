@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import { parseToml as parse } from "@launchbed/generator";
 import { generateProject, materializeProject, parseToml } from "@launchbed/generator";
 import { LaunchbedError } from "@launchbed/schema";
@@ -14,30 +14,30 @@ const roomRequest = baseRequest({
 });
 
 describe("storage/room addon", () => {
-  test("catalog announces room as beta and generatable", () => {
+  test("catalog announces room as beta and generatable", async () => {
     const room = buildCatalog().addons.find((addon) => addon.id === "storage/room");
     expect(room?.status).toBe("beta");
     expect(room?.generatable).toBe(true);
-    const project = materializeProject(roomRequest);
+    const project = await materializeProject(roomRequest);
     expect(project.plan.request.addons).toEqual(["storage/room"]);
   });
 
-  test("resolver accepts room and rejects incompatible minSdk", () => {
+  test("resolver accepts room and rejects incompatible minSdk", async () => {
     expect(() => baseRequest({ addons: ["storage/room"], minSdk: 23 })).toThrow();
-    expect(() => materializeProject(baseRequest({ addons: ["storage/room", "storage/sqlite-direct"] }))).toThrow(
+    await expect(materializeProject(baseRequest({ addons: ["storage/room", "storage/sqlite-direct"] }))).rejects.toThrow(
       LaunchbedError,
     );
   });
 
-  test("generates exactly the room files", () => {
+  test("generates exactly the room files", async () => {
     const sameBase = baseRequest({
       projectName: "Room Demo",
       applicationId: "com.example.roomdemo",
       namespace: "com.example.roomdemo",
       packageName: "com.example.roomdemo",
     });
-    const minimal = materializeProject(sameBase);
-    const room = materializeProject(roomRequest);
+    const minimal = await materializeProject(sameBase);
+    const room = await materializeProject(roomRequest);
     const added = room.plan.files.map((file) => file.path).filter((path) => !minimal.plan.files.map((f) => f.path).includes(path));
     expect(added.sort()).toEqual([
       "app/schemas/com/example/roomdemo/data/local/AppDatabase/1.json",
@@ -53,10 +53,16 @@ describe("storage/room addon", () => {
   });
 });
 describe("room gradle integration", () => {
-  const project = materializeProject(roomRequest);
-  const build = new TextDecoder().decode(project.files.get("app/build.gradle.kts")!);
-  const catalogText = new TextDecoder().decode(project.files.get("gradle/libs.versions.toml")!);
-  const catalog = parse(catalogText) as any;
+  let project: Awaited<ReturnType<typeof materializeProject>>;
+  let build: string;
+  let catalogText: string;
+  let catalog: any;
+  beforeAll(async () => {
+    project = await materializeProject(roomRequest);
+    build = new TextDecoder().decode(project.files.get("app/build.gradle.kts")!);
+    catalogText = new TextDecoder().decode(project.files.get("gradle/libs.versions.toml")!);
+    catalog = parse(catalogText) as any;
+  });
 
   test("applies ksp and room plugins only through the addon", () => {
     expect(build).toContain("alias(libs.plugins.ksp)");
@@ -97,9 +103,9 @@ describe("room gradle integration", () => {
 });
 
 describe("room determinism and parity", () => {
-  test("zip is byte-identical across runs", () => {
-    const first = generateProject(roomRequest);
-    const second = generateProject(baseRequest({
+  test("zip is byte-identical across runs", async () => {
+    const first = await generateProject(roomRequest);
+    const second = await generateProject(baseRequest({
       projectName: "Room Demo",
       applicationId: "com.example.roomdemo",
       namespace: "com.example.roomdemo",
@@ -109,15 +115,15 @@ describe("room determinism and parity", () => {
     expect(Buffer.from(first.zip).equals(Buffer.from(second.zip))).toBe(true);
   });
 
-  test("minimal project has no room artifacts", () => {
-    const minimal = materializeProject(baseRequest());
+  test("minimal project has no room artifacts", async () => {
+    const minimal = await materializeProject(baseRequest());
     const paths = minimal.plan.files.map((file) => file.path);
     expect(paths.some((path) => path.includes("Room") || path.includes("room"))).toBe(false);
     expect(paths).not.toContain("app/schemas/com/example/demo/data/local/AppDatabase/1.json");
     expect(minimal.plan.operations).toEqual([]);
   });
 
-  test("custom namespace changes generated paths", () => {
+  test("custom namespace changes generated paths", async () => {
     const request = baseRequest({
       projectName: "Room Demo",
       applicationId: "com.acme.mobile",
@@ -125,7 +131,7 @@ describe("room determinism and parity", () => {
       packageName: "pe.demo.inventory",
       addons: ["storage/room"],
     });
-    const project = materializeProject(request);
+    const project = await materializeProject(request);
     expect(project.plan.files.map((file) => file.path)).toContain(
       "app/src/main/java/pe/demo/inventory/data/local/NoteEntity.kt",
     );

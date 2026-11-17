@@ -101,7 +101,7 @@ export default function Configurator(props: Props) {
   // The minimal preset is a usable, predictable starting point on both SSR and hydration.
   const starterPreset = (props.presets ?? []).find((preset) => preset.id === "compose-minimal" && preset.status === "stable");
   const [presetId, setPresetId] = createSignal<string>(starterPreset?.id ?? "");
-  const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings" | "notes" | "catalog">("welcome");
+  const [previewScreen, setPreviewScreen] = createSignal<"welcome" | "dashboard" | "settings" | "notes" | "catalog" | "onboarding" | "login" | "register" | "profile">("welcome");
   const [selectedAddons, setSelectedAddons] = createSignal<string[]>([]);
   const [addonQuery, setAddonQuery] = createSignal("");
   const supportedPresets = (props.presets ?? []).filter((preset) => preset.status === "stable" || preset.status === "beta");
@@ -109,11 +109,17 @@ export default function Configurator(props: Props) {
   const selectedPreset = createMemo(() => (props.presets ?? []).find((preset) => preset.id === presetId()));
   const requiredAddons = createMemo(() => selectedPreset()?.requiredAddons ?? []);
   const availableScreens = createMemo(() => {
-    const screens: ("welcome" | "dashboard" | "settings" | "notes" | "catalog")[] = ["welcome"];
+    const screens: ("welcome" | "dashboard" | "settings" | "notes" | "catalog" | "onboarding" | "login" | "register" | "profile")[] = ["welcome"];
     if (selectedAddons().includes("ui/dashboard")) screens.push("dashboard");
     if (selectedAddons().includes("ui/settings")) screens.push("settings");
     if (selectedAddons().includes("ui/notes")) screens.push("notes");
     if (selectedAddons().includes("ui/catalog")) screens.push("catalog");
+    if (selectedAddons().includes("ui/onboarding")) screens.push("onboarding");
+    if (selectedAddons().includes("ui/auth")) {
+      screens.push("login");
+      screens.push("register");
+    }
+    if (selectedAddons().includes("ui/profile")) screens.push("profile");
     return screens;
   });
   const activePreviewScreen = createMemo(() =>

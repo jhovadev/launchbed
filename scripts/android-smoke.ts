@@ -26,7 +26,7 @@ if (!sdkRoot || !existsSync(sdkRoot)) {
 }
 
 const request = parseRequestJson(readFileSync(join(root, "examples", "basic.json"), "utf8"));
-const project = generateProject(request);
+const project = await generateProject(request);
 
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(projectDir, { recursive: true });

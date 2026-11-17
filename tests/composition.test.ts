@@ -27,9 +27,9 @@ function text(files: Map<string, Uint8Array>, path: string): string {
   return new TextDecoder().decode(files.get(path)!);
 }
 
-function expectCode(fn: () => unknown, code: ErrorCode): void {
+async function expectCode(fn: () => unknown, code: ErrorCode): Promise<void> {
   try {
-    fn();
+    await fn();
   } catch (error) {
     expect(error).toBeInstanceOf(LaunchbedError);
     expect((error as LaunchbedError).code).toBe(code);
@@ -39,18 +39,18 @@ function expectCode(fn: () => unknown, code: ErrorCode): void {
 }
 
 describe("safe addon composition", () => {
-  test("adds a Kotlin file with rendered path and content", () => {
+  test("adds a Kotlin file with rendered path and content", async () => {
     const request = baseRequest({ addons: ["ui/fixture-alpha"] });
-    const project = materializeProject(request, options);
+    const project = await materializeProject(request, options);
     const path = "app/src/main/java/com/example/demo/ui/FixtureAlpha.kt";
     expect(text(project.files, path)).toContain("package com.example.demo.ui");
     expect(text(project.files, path)).toContain('FIXTURE_SCREEN = "Demo App"');
     expect(project.plan.operations.some((op) => op.type === "add" && op.path === path)).toBe(true);
   });
 
-  test("merges catalog aliases and Gradle dependencies", () => {
+  test("merges catalog aliases and Gradle dependencies", async () => {
     const request = baseRequest({ addons: ["ui/fixture-alpha"] });
-    const project = materializeProject(request, options);
+    const project = await materializeProject(request, options);
     const catalog = parse(text(project.files, "gradle/libs.versions.toml")) as any;
     expect(catalog.versions["fixture-alpha"]).toBe("1.17.0");
     expect(catalog.libraries["fixture-alpha"]).toEqual({
@@ -62,9 +62,9 @@ describe("safe addon composition", () => {
     expect(build.split("implementation(libs.fixture-alpha)").length - 1).toBe(1);
   });
 
-  test("two addons extend the same slot independently of selection order", () => {
-    const a = generateProject(baseRequest({ addons: ["ui/fixture-alpha", "ui/fixture-beta"] }), options);
-    const b = generateProject(baseRequest({ addons: ["ui/fixture-beta", "ui/fixture-alpha"] }), options);
+  test("two addons extend the same slot independently of selection order", async () => {
+    const a = await generateProject(baseRequest({ addons: ["ui/fixture-alpha", "ui/fixture-beta"] }), options);
+    const b = await generateProject(baseRequest({ addons: ["ui/fixture-beta", "ui/fixture-alpha"] }), options);
     expect(Buffer.from(a.zip).equals(Buffer.from(b.zip))).toBe(true);
     const build = text(
       new Map(read(a.zip)),
@@ -75,16 +75,16 @@ describe("safe addon composition", () => {
     expect(build.indexOf("libs.fixture.alpha")).toBeLessThan(build.indexOf("libs.fixture.beta"));
   });
 
-  test("merges settings includes and root plugins", () => {
-    const project = materializeProject(baseRequest({ addons: ["tooling/fixture-settings"] }), options);
+  test("merges settings includes and root plugins", async () => {
+    const project = await materializeProject(baseRequest({ addons: ["tooling/fixture-settings"] }), options);
     expect(text(project.files, "settings.gradle.kts")).toContain('include(":feature:home")');
     expect(text(project.files, "build.gradle.kts")).toContain(
       "alias(libs.plugins.fixture-beta) apply false",
     );
   });
 
-  test("references an existing version alias", () => {
-    const project = materializeProject(baseRequest({ addons: ["ui/fixture-beta"] }), options);
+  test("references an existing version alias", async () => {
+    const project = await materializeProject(baseRequest({ addons: ["ui/fixture-beta"] }), options);
     const catalog = parse(text(project.files, "gradle/libs.versions.toml")) as any;
     expect(catalog.libraries["fixture-beta"]).toEqual({
       module: "androidx.appcompat:appcompat",
@@ -93,69 +93,69 @@ describe("safe addon composition", () => {
     expect(catalog.versions.composeBom).toBeDefined();
   });
 
-  test("deduplicates identical alias definitions from two addons", () => {
+  test("deduplicates identical alias definitions from two addons", async () => {
     const request = baseRequest({ addons: ["ui/fixture-alpha", "storage/fixture-duplicate"] });
-    const project = materializeProject(request, options);
+    const project = await materializeProject(request, options);
     const build = text(project.files, "app/build.gradle.kts");
     expect(build.split("implementation(libs.fixture-alpha)").length - 1).toBe(1);
   });
 
-  test("rejects the same alias with incompatible values", () => {
+  test("rejects the same alias with incompatible values", async () => {
     const request = baseRequest({ addons: ["ui/fixture-alpha", "storage/fixture-conflict"] });
-    expectCode(() => generateProject(request, options), "RESOLUTION_ERROR");
+    await expectCode(() => generateProject(request, options), "RESOLUTION_ERROR");
   });
 
-  test("rejects a stale slot when the template marker disappears", () => {
-    const project = materializeProject(baseRequest(), options);
+  test("rejects a stale slot when the template marker disappears", async () => {
+    const project = await materializeProject(baseRequest(), options);
     project.files.set(
       "app/build.gradle.kts",
       new TextEncoder().encode(
         text(project.files, "app/build.gradle.kts").replace("// @launchbed-slot app-dependencies", ""),
       ),
     );
-    expectCode(
+    await expectCode(
       () => applyComposition([staleSlotAddon], project.files, new Map(), {}, fixtureFragments),
       "TEMPLATE_ERROR",
     );
   });
 
-  test("rejects add operations on protected template files", () => {
+  test("rejects add operations on protected template files", async () => {
     const protectedAddon = stableAddon("storage/fixture-protected", {
       fileOperations: [{ type: "add", path: "settings.gradle.kts", template: "fixtures/screen" }],
     });
     const request = baseRequest({ addons: ["storage/fixture-protected"] });
-    expectCode(
+    await expectCode(
       () => generateProject(request, { addons: [...allFixtureAddons, protectedAddon], fragments: fixtureFragments }),
       "RESOLUTION_ERROR",
     );
   });
 
-  test("rejects legacy modify and append operations explicitly", () => {
+  test("rejects legacy modify and append operations explicitly", async () => {
     for (const type of ["modify", "append"] as const) {
       const addon = stableAddon("storage/fixture-legacy", {
         fileOperations: [{ type, path: "settings.gradle.kts", template: "fixtures/screen" }],
       });
       const request = baseRequest({ addons: ["storage/fixture-legacy"] });
-      expectCode(
+      await expectCode(
         () => generateProject(request, { addons: [...allFixtureAddons, addon], fragments: fixtureFragments }),
         "TEMPLATE_ERROR",
       );
     }
   });
 
-  test("fails atomically and leaves the minimal template intact", () => {
-    const minimalBefore = generateProject(baseRequest());
-    expectCode(
+  test("fails atomically and leaves the minimal template intact", async () => {
+    const minimalBefore = await generateProject(baseRequest());
+    await expectCode(
       () => generateProject(baseRequest({ addons: ["ui/fixture-alpha", "storage/fixture-conflict"] }), options),
       "RESOLUTION_ERROR",
     );
-    const minimalAfter = generateProject(baseRequest());
+    const minimalAfter = await generateProject(baseRequest());
     expect(Buffer.from(minimalBefore.zip).equals(Buffer.from(minimalAfter.zip))).toBe(true);
     expect(minimalAfter.plan.operations).toEqual([]);
   });
 
-  test("reports operations in the GenerationPlan", () => {
-    const plan = materializeProject(baseRequest({ addons: ["ui/fixture-alpha"] }), options).plan;
+  test("reports operations in the GenerationPlan", async () => {
+    const plan = (await materializeProject(baseRequest({ addons: ["ui/fixture-alpha"] }), options)).plan;
     expect(plan.operations.length).toBe(4);
     expect(plan.operations.map((op) => op.type)).toContain("merge");
     expect(plan.operations.map((op) => op.type)).toContain("insert");

@@ -1,0 +1,2 @@
+import {{packageName}}.ui.auth.LoginScreen
+import {{packageName}}.ui.auth.RegisterScreen

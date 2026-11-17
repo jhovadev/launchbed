@@ -38,8 +38,8 @@ const rustTooling = {
 };
 
 describe("mise and just tooling", () => {
-  test("base projects get pinned tools and just shortcuts", () => {
-    const { files } = materializeProject(baseRequest());
+  test("base projects get pinned tools and just shortcuts", async () => {
+    const { files } = await materializeProject(baseRequest());
     const mise = textFrom(files, "mise.toml");
     expect(mise).toContain(`min_version = "${GENERATED_MISE.minVersion}"`);
     expect(mise).toContain(`java = "${GENERATED_MISE.tools.java}"`);
@@ -58,16 +58,16 @@ describe("mise and just tooling", () => {
     expect(justfile).toMatch(/^run:/m);
   });
 
-  test("addons contribute tools and recipes deterministically", () => {
+  test("addons contribute tools and recipes deterministically", async () => {
     const addon = stableAddon("native/fixture-ffi", {
       tooling: rustTooling,
       fileOperations: [{ type: "add", path: "addons/ffi.txt", template: "fixtures/screen" }],
     });
-    const first = materializeProject(baseRequest({ addons: ["native/fixture-ffi"] }), {
+    const first = await materializeProject(baseRequest({ addons: ["native/fixture-ffi"] }), {
       addons: [addon],
       fragments,
     });
-    const second = materializeProject(baseRequest({ addons: ["native/fixture-ffi"] }), {
+    const second = await materializeProject(baseRequest({ addons: ["native/fixture-ffi"] }), {
       addons: [addon],
       fragments,
     });
@@ -159,8 +159,8 @@ describe("mise and just tooling", () => {
     ).toThrow();
   });
 
-  test("writeProjectTree writes executables and refuses a non-empty directory", () => {
-    const { files } = materializeProject(baseRequest());
+  test("writeProjectTree writes executables and refuses a non-empty directory", async () => {
+    const { files } = await materializeProject(baseRequest());
     const root = mkdtempSync(join(tmpdir(), "launchbed-tree-"));
     try {
       const directory = writeProjectTree(files, join(root, "app"));
@@ -173,13 +173,13 @@ describe("mise and just tooling", () => {
     }
   });
 
-  test("existing fixture addons still compose with the tooling pass", () => {
-    const project = generateProject(baseRequest({ addons: ["ui/fixture-alpha"] }), {
+  test("existing fixture addons still compose with the tooling pass", async () => {
+    const project = await generateProject(baseRequest({ addons: ["ui/fixture-alpha"] }), {
       addons: allFixtureAddons,
       fragments,
     });
     const justfile = new TextDecoder().decode(readZip(project.zip).find((entry) => entry.path === "justfile")!.data);
     expect(justfile).toContain("# @launchbed-slot just-recipes");
-    expect(createPlan(baseRequest()).files.some((file) => file.path === "mise.toml")).toBe(true);
+    expect((await createPlan(baseRequest())).files.some((file) => file.path === "mise.toml")).toBe(true);
   });
 });
