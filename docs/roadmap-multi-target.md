@@ -27,7 +27,7 @@ Launchbed generates **android-compose** (owned templates) and can **delegate** t
 
 - One DTCG token source. The generator compiles it with Style Dictionary 5.8.0 at generate time into Compose Kotlin, `tokens/tokens.css`, `tokens/tokens.ts`, and `tokens/tokens.dart` / `lib/tokens/tokens.dart`. See `docs/design-system.md`.
 - Shared screen contracts (login, onboarding, list/detail, settings, profile) are implemented for android-compose. Porting those screens to Expo/Flutter is still pending.
-- A shadcn-style `registry/` ships Button, TextField, Card, ListItem, Badge, and Switch for all three generatable targets. `launchbed add <component>` copies source into an existing project (detected via `launchbed.json`). Remaining components (Dialog/Sheet, Avatar, Toast/Snackbar, AppBar) are not in the registry yet.
+- A shadcn-style `registry/` ships Button, TextField, Card, ListItem, Badge, Switch, Avatar, AppBar, Snackbar and Dialog for all three generatable targets. `launchbed add <component>` copies source into an existing project (detected via `launchbed.json`). A bottom Sheet is not in the registry yet.
 - Auth and FFI come after the visual pack is stable. Planned FFI paths: UniFFI on Kotlin, `flutter_rust_bridge` on Flutter, official Tauri plugins on Tauri.
 
 ## Suggested order (remaining)

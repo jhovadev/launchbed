@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { REGISTRY_FILES } from "./registry.generated";
 import {
   LaunchbedError,
   LAUNCHBED_PROJECT_FILE,
@@ -34,25 +35,57 @@ export interface ComponentCatalog {
 
 const REQUIRED_TARGETS: TargetId[] = ["android-compose", "expo", "flutter"];
 
-export function registryRoot(from = import.meta.dir): string {
-  const candidates = [
-    resolve(from, "../../../registry/components"),
-    resolve(from, "../../../../registry/components"),
-    resolve(process.cwd(), "registry/components"),
-  ];
+/**
+ * Locates registry/components on disk. Only used by tests and tooling; runtime
+ * code reads the embedded REGISTRY_FILES so it also works under Node SSR/Vercel
+ * (Bun-only module paths are undefined there and the repository is not deployed).
+ */
+export function registryRoot(from: string = process.cwd()): string {
+  const candidates = [resolve(from, "registry/components"), resolve(from, "../../registry/components")];
   for (const candidate of candidates) {
     if (existsSync(candidate)) return candidate;
   }
   throw new LaunchbedError("IO_ERROR", "Could not find the Launchbed component registry (registry/components).");
 }
 
-export function loadComponentCatalog(root = registryRoot()): ComponentCatalog {
-  const names = readdirSync(root).filter((name) => existsSync(join(root, name, "contract.json"))).sort();
-  const components = names.map((name) => {
-    const raw = JSON.parse(readFileSync(join(root, name, "contract.json"), "utf8")) as ComponentContract;
-    return raw;
-  });
-  return { components };
+/** Embedded registry file (path relative to registry/components), or undefined. */
+export function registrySource(path: string): string | undefined {
+  return REGISTRY_FILES[path];
+}
+
+/**
+ * Component contracts, sorted by name. Reads the embedded registry by default;
+ * pass a directory to read contracts from disk instead.
+ */
+export function loadComponentCatalog(root?: string): ComponentCatalog {
+  if (root !== undefined) {
+    const names = readdirSync(root).filter((name) => existsSync(join(root, name, "contract.json"))).sort();
+    return { components: names.map((name) => JSON.parse(readFileSync(join(root, name, "contract.json"), "utf8")) as ComponentContract) };
+  }
+  const names = Object.keys(REGISTRY_FILES)
+    .filter((path) => /^[a-z0-9-]+\/contract\.json$/.test(path))
+    .map((path) => path.split("/")[0]!)
+    .sort();
+  return { components: names.map((name) => JSON.parse(REGISTRY_FILES[`${name}/contract.json`]!) as ComponentContract) };
+}
+
+export interface ComponentSourceFile {
+  target: string;
+  path: string;
+  destination: string;
+  content: string;
+}
+
+/** Per-target source files for one component, from the embedded registry. */
+export function componentSources(contract: ComponentContract): ComponentSourceFile[] {
+  const files: ComponentSourceFile[] = [];
+  for (const [target, support] of Object.entries(contract.targets)) {
+    if (support.status !== "supported" || !support.source || !support.destination) continue;
+    const content = REGISTRY_FILES[`${contract.name}/${support.source}`];
+    if (content === undefined) continue;
+    files.push({ target, path: support.source, destination: support.destination, content });
+  }
+  return files;
 }
 
 /** Every contract must declare all generatable targets, or an explicit unsupported reason. */
@@ -118,15 +151,14 @@ export function addComponent(options: {
     const reason = support?.reason ?? `Component "${options.name}" does not support target ${config.target}.`;
     throw new LaunchbedError("INCOMPATIBLE_ADDON", reason);
   }
-  const sourcePath = join(registryRoot(), contract.name, support.source);
-  if (!existsSync(sourcePath)) {
+  const source = REGISTRY_FILES[`${contract.name}/${support.source}`];
+  if (source === undefined) {
     throw new LaunchbedError("IO_ERROR", `Registry source missing for ${options.name} (${config.target}).`);
   }
   const packagePath = (config.packageName ?? config.applicationId).replaceAll(".", "/");
   const vars = { packagePath, packageName: config.packageName ?? config.applicationId };
   const renderedPath = renderKnownPlaceholders(support.destination, vars);
   const destination = join(root, renderedPath);
-  const source = readFileSync(sourcePath, "utf8");
   const rendered = renderKnownPlaceholders(source, vars);
   if (existsSync(destination)) {
     const existing = readFileSync(destination, "utf8");

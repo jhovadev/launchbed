@@ -1,0 +1,62 @@
+{
+  "name": "snackbar",
+  "displayName": "Snackbar",
+  "description": "Brief message at the bottom of the screen with an optional action.",
+  "variants": [
+    "default",
+    "with-action"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "visible",
+    "hidden"
+  ],
+  "tokens": [
+    "color.light.inverseSurface",
+    "color.light.inverseOnSurface",
+    "color.light.inversePrimary"
+  ],
+  "props": [
+    {
+      "name": "message",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "actionLabel",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "onAction",
+      "type": "callback",
+      "required": false
+    },
+    {
+      "name": "visible",
+      "type": "boolean",
+      "required": false,
+      "default": "true"
+    }
+  ],
+  "a11y": "Announced politely as a live region; the action is a labelled button. Flutter exposes showLaunchbedSnackbar(context, ...) over ScaffoldMessenger.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedSnackbar.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedSnackbar.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/Snackbar.tsx",
+      "destination": "components/ui/Snackbar.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/snackbar.dart",
+      "destination": "lib/ui/components/snackbar.dart"
+    }
+  }
+}

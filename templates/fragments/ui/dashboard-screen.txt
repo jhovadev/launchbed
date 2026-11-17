@@ -1,28 +1,73 @@
 package {{packageName}}.ui.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import {{packageName}}.ui.theme.ComponentTokens
 import {{packageName}}.ui.theme.Spacing
 
+/** Placeholder values shipped with the starter. Replace them with your own data source. */
+data class DashboardStat(val label: String, val value: String, val icon: ImageVector)
+
+data class DashboardActivity(val title: String, val detail: String, val time: String, val icon: ImageVector)
+
+val sampleStats = listOf(
+    DashboardStat("Tasks done", "8/12", Icons.Filled.CheckCircle),
+    DashboardStat("Due today", "3", Icons.Filled.DateRange),
+    DashboardStat("Messages", "5", Icons.Filled.Email),
+    DashboardStat("Streak", "4 days", Icons.Filled.Star),
+)
+
+val sampleActivity = listOf(
+    DashboardActivity("Design review", "Moved to Done", "2h", Icons.Filled.CheckCircle),
+    DashboardActivity("Weekly sync", "Notes added", "5h", Icons.Filled.Edit),
+    DashboardActivity("Release 1.0", "Build ready to test", "1d", Icons.Filled.Build),
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(
+    stats: List<DashboardStat> = sampleStats,
+    activity: List<DashboardActivity> = sampleActivity,
+) {
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Dashboard") })
@@ -32,36 +77,81 @@ fun DashboardScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(Spacing.lg),
+                .verticalScroll(rememberScrollState())
+                .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            Text(
-                text = "Overview",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                InfoCard(
-                    title = "Items",
-                    value = "12",
-                    modifier = Modifier.weight(1f),
-                )
-                InfoCard(
-                    title = "Status",
-                    value = "Ready",
-                    modifier = Modifier.weight(1f),
-                )
+                Column {
+                    Text(
+                        text = "Overview",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = "Good to see you",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                AssistChip(onClick = {}, label = { Text("Sample data") }, enabled = false)
+            }
+            stats.chunked(2).forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    row.forEach { stat ->
+                        StatCard(stat = stat, modifier = Modifier.weight(1f))
+                    }
+                    if (row.size == 1) Box(modifier = Modifier.weight(1f))
+                }
             }
             Text(
-                text = "Quick actions",
+                text = "Recent activity",
                 style = MaterialTheme.typography.titleMedium,
             )
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(ComponentTokens.cardCornerRadius),
+            ) {
+                activity.forEachIndexed { index, item ->
+                    ListItem(
+                        headlineContent = { Text(item.title) },
+                        supportingContent = { Text(item.detail) },
+                        leadingContent = { IconBadge(item.icon, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer) },
+                        trailingContent = { Text(item.time, style = MaterialTheme.typography.labelMedium) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    )
+                    if (index < activity.lastIndex) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = Spacing.md))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatCard(stat: DashboardStat, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.semantics { contentDescription = "${stat.label}: ${stat.value}" },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(ComponentTokens.cardCornerRadius),
+    ) {
+        Column(
+            modifier = Modifier.padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            IconBadge(stat.icon, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(text = stat.value, style = MaterialTheme.typography.titleLarge)
             Text(
-                text = "No actions are wired in F1.2. This screen is a composable starting point.",
-                style = MaterialTheme.typography.bodyMedium,
+                text = stat.label,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -69,15 +159,13 @@ fun DashboardScreen() {
 }
 
 @Composable
-private fun InfoCard(title: String, value: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.semantics { contentDescription = "$title: $value" },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(ComponentTokens.cardCornerRadius),
+private fun IconBadge(icon: ImageVector, container: Color, content: Color) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .background(container, CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Text(text = title, style = MaterialTheme.typography.labelMedium)
-            Text(text = value, style = MaterialTheme.typography.headlineSmall)
-        }
+        Icon(imageVector = icon, contentDescription = null, tint = content, modifier = Modifier.size(18.dp))
     }
 }

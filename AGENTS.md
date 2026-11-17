@@ -53,7 +53,8 @@ Generated apps: mise pins tools and env (no secrets). just is the command catalo
 - Do not use `git am` or `git apply` when preparing a delivery for the maintainer; prefer a ZIP of changed files plus a `.patch` for inspection, applied by unzip + `git add`.
 - Do not push or write to remotes unless the user explicitly asked for that exact action.
 - Multi-target: `android-compose` is owned; `expo` and `flutter` are beta delegate adapters (`launchbed new --target …`). Tauri and the RN community CLI are still planned. See `docs/roadmap-multi-target.md`.
-- Component registry: `launchbed components --json` and `launchbed add <component>` copy shadcn-style sources (Button, TextField, Card, ListItem, Badge, Switch) into a project that has `launchbed.json`.
+- Component registry: `launchbed components --json` and `launchbed add <component>` copy shadcn-style sources (Button, TextField, Card, ListItem, Badge, Switch, Avatar, AppBar, Snackbar, Dialog) into a project that has `launchbed.json`. The registry is embedded into `packages/generator/src/registry.generated.ts` by `bun run templates:embed` (Node SSR/Vercel never read `registry/` from disk).
+- Web UI (`apps/web`): Tailwind v4 + shadcn-style tokens in `src/styles/global.css`; `Button`/`Badge` in `src/components/ui/` are copied from solid-ui (MIT). Tabs and segmented controls are hand-written WAI-ARIA (no Kobalte primitives in islands, they broke Astro hydration). The phone preview (`packages/preview`) is illustrative and must mirror the generated screens.
 - `launchbed doctor [--target <id>]` checks local prerequisites. The web/API never runs official CLIs for delegate targets; it returns the plan and command.
 
 ## Device and scrcpy recipes

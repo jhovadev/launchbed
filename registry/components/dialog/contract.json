@@ -1,0 +1,72 @@
+{
+  "name": "dialog",
+  "displayName": "Dialog",
+  "description": "Modal confirmation dialog with confirm and dismiss actions.",
+  "variants": [
+    "alert"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "open",
+    "closed"
+  ],
+  "tokens": [
+    "color.light.surface",
+    "color.light.onSurface",
+    "color.light.onSurfaceVariant",
+    "color.light.primary"
+  ],
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "confirmLabel",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "onConfirm",
+      "type": "callback",
+      "required": true
+    },
+    {
+      "name": "onDismiss",
+      "type": "callback",
+      "required": true
+    },
+    {
+      "name": "dismissLabel",
+      "type": "string",
+      "required": false,
+      "default": "Cancel"
+    }
+  ],
+  "a11y": "Modal: focus is trapped inside, back/escape or the scrim dismisses, and both actions are labelled buttons. Flutter exposes showLaunchbedDialog(context, ...) returning Future<bool>.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedDialog.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedDialog.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/Dialog.tsx",
+      "destination": "components/ui/Dialog.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/dialog.dart",
+      "destination": "lib/ui/components/dialog.dart"
+    }
+  }
+}

@@ -74,6 +74,14 @@ export async function runSmoke(baseUrl, fetchFn = fetch, { timeoutMs = 20000 } =
     throw diagnose('outdated project builder; the Launchbed wizard has not reached this deployment');
   }
 
+  // The component registry must be embedded: Node SSR and Vercel cannot read registry/ at runtime.
+  const componentsPage = await (await makeRequest('/components')).text();
+  if (!componentsPage.includes('data-launchbed-components')) throw new Error('/components: component catalog did not render');
+  const components = await (await makeRequest('/api/components')).json();
+  if (!Array.isArray(components?.components) || components.components.length < 6) {
+    throw new Error('/api/components: expected at least six registry components');
+  }
+
   const catalog = await (await makeRequest('/api/catalog')).json();
   if (!catalog || typeof catalog !== 'object' || 'error' in catalog) throw new Error('/api/catalog: invalid payload');
   const presets = await (await makeRequest('/api/presets')).json();
@@ -107,7 +115,7 @@ export async function runSmoke(baseUrl, fetchFn = fetch, { timeoutMs = 20000 } =
     hashes.push(createHash('sha256').update(bytes).digest('hex'));
   }
   if (hashes[0] !== hashes[1]) throw new Error('/api/generate: repeated ZIP bytes are not deterministic');
-  return { baseUrl: base, presets: presets.presets.length, files: plan.totals.files, zipBytes: size, zipSha256: hashes[0] };
+  return { baseUrl: base, presets: presets.presets.length, components: components.components.length, files: plan.totals.files, zipBytes: size, zipSha256: hashes[0] };
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

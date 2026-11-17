@@ -1,168 +1,497 @@
+import type { JSX } from "solid-js";
+import { For, Show, children } from "solid-js";
 import type { ThemeTokens } from "@launchbed/design-tokens";
+import ArrowLeft from "lucide-solid/icons/arrow-left";
+import BatteryFull from "lucide-solid/icons/battery-full";
+import Bell from "lucide-solid/icons/bell";
+import Calendar from "lucide-solid/icons/calendar";
+import ChevronRight from "lucide-solid/icons/chevron-right";
+import CircleCheck from "lucide-solid/icons/circle-check";
+import Info from "lucide-solid/icons/info";
+import Layers from "lucide-solid/icons/layers";
+import LogOut from "lucide-solid/icons/log-out";
+import Mail from "lucide-solid/icons/mail";
+import Moon from "lucide-solid/icons/moon";
+import Package from "lucide-solid/icons/package";
+import Wrench from "lucide-solid/icons/wrench";
+import Pencil from "lucide-solid/icons/pencil";
+import Plus from "lucide-solid/icons/plus";
+import Search from "lucide-solid/icons/search";
+import ShieldCheck from "lucide-solid/icons/shield-check";
+import Signal from "lucide-solid/icons/signal";
+import Sparkles from "lucide-solid/icons/sparkles";
+import Star from "lucide-solid/icons/star";
+import Trash from "lucide-solid/icons/trash";
+import Wifi from "lucide-solid/icons/wifi";
+
+export type PreviewScreenId =
+  | "welcome"
+  | "dashboard"
+  | "settings"
+  | "notes"
+  | "catalog"
+  | "onboarding"
+  | "login"
+  | "register"
+  | "profile";
+
+export type PreviewTarget = "android-compose" | "expo" | "flutter";
+
+export const PREVIEW_SCREEN_LABELS: Record<PreviewScreenId, string> = {
+  welcome: "Home",
+  dashboard: "Dashboard",
+  settings: "Settings",
+  notes: "Notes",
+  catalog: "Catalog",
+  onboarding: "Onboarding",
+  login: "Sign in",
+  register: "Register",
+  profile: "Profile",
+};
 
 export interface PreviewScreenProps {
   tokens: ThemeTokens;
   mode: "light" | "dark";
   projectName: string;
-  screen?: "welcome" | "dashboard" | "settings" | "notes" | "catalog" | "onboarding" | "login" | "register" | "profile";
+  screen?: PreviewScreenId;
+  target?: PreviewTarget;
+  /** ui/navigation replaces the minimal HomeScreen with a Welcome destination. */
+  hasNavigation?: boolean;
   /** Optional caption rendered under the device frame. */
   caption?: string;
 }
 
-/**
- * Approximate Material 3 rendering of the generated Compose screen.
- * This is a web simulation, not a Compose runtime: it uses the same resolved
- * tokens but does not reproduce Compose layout or typography exactly.
- */
-export function PreviewScreen(props: PreviewScreenProps) {
-  const colors = () => (props.mode === "dark" ? props.tokens.dark : props.tokens.light);
-  const spacing = () => props.tokens.spacing;
-  const card = () => props.tokens.components.card;
+/** CSS custom properties that drive every preview element from the DTCG/Material 3 tokens. */
+export function tokenStyle(tokens: ThemeTokens, mode: "light" | "dark"): JSX.CSSProperties {
+  const c = mode === "dark" ? tokens.dark : tokens.light;
+  const font =
+    tokens.typography.fontFamily === "serif"
+      ? 'ui-serif, Georgia, "Noto Serif", serif'
+      : tokens.typography.fontFamily === "monospace"
+        ? 'ui-monospace, "Roboto Mono", "JetBrains Mono", monospace'
+        : 'Roboto, "Google Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+  return {
+    "--m-primary": c.primary,
+    "--m-on-primary": c.onPrimary,
+    "--m-primary-container": c.primaryContainer,
+    "--m-on-primary-container": c.onPrimaryContainer,
+    "--m-secondary": c.secondary,
+    "--m-secondary-container": c.secondaryContainer,
+    "--m-on-secondary-container": c.onSecondaryContainer,
+    "--m-tertiary": c.tertiary,
+    "--m-tertiary-container": c.tertiaryContainer,
+    "--m-on-tertiary-container": c.onTertiaryContainer,
+    "--m-error": c.error,
+    "--m-error-container": c.errorContainer,
+    "--m-on-error-container": c.onErrorContainer,
+    "--m-background": c.background,
+    "--m-on-background": c.onBackground,
+    "--m-surface": c.surface,
+    "--m-on-surface": c.onSurface,
+    "--m-surface-variant": c.surfaceVariant,
+    "--m-on-surface-variant": c.onSurfaceVariant,
+    "--m-outline": c.outline,
+    "--m-outline-variant": c.outlineVariant,
+    "--m-radius": `${tokens.shape.cornerRadius}px`,
+    "--m-card-radius": `${tokens.components.card.cornerRadius}px`,
+    "--m-button-radius": `${tokens.components.button.cornerRadius}px`,
+    "--m-button-height": `${Math.min(tokens.components.button.minHeight, 56)}px`,
+    "--m-sp-xs": `${tokens.spacing.xs}px`,
+    "--m-sp-sm": `${tokens.spacing.sm}px`,
+    "--m-sp-md": `${tokens.spacing.md}px`,
+    "--m-sp-lg": `${tokens.spacing.lg}px`,
+    "--m-font": font,
+  } as JSX.CSSProperties;
+}
 
+/* ------------------------------------------------------------------ */
+/* Registry visual language: the same primitives back the catalog.    */
+/* ------------------------------------------------------------------ */
+
+export function PButton(props: { label: string; variant?: "filled" | "tonal" | "outlined" | "text" | "error"; icon?: JSX.Element; block?: boolean; disabled?: boolean }) {
   return (
-    <figure class="aip-figure">
-      <div class="aip-phone" style={{ "background-color": colors().surface }}>
-        <div class="aip-status" style={{ color: colors().onSurface }}>
-          <span>9:41</span>
-          <span class="aip-status-icons" aria-hidden="true">
-            <span class="aip-signal" />
-            <span class="aip-battery" />
-          </span>
-        </div>
-        <div class="aip-appbar" style={{ "background-color": colors().surface }}>
-          <span
-            class="aip-appbar-title"
-            style={{ color: colors().onSurface }}
-            title={props.projectName}
-          >
-            {props.projectName}
-          </span>
-        </div>
-        <div class="aip-body" style={{ "background-color": colors().background }}>
-          {props.screen === "onboarding" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Welcome</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>A short tour of this generated app.</p>
-              <div class="aip-button" style={{ "background-color": colors().primary, color: colors().onPrimary, "border-radius": `${props.tokens.components.button.cornerRadius}px`, "min-height": `${props.tokens.components.button.minHeight}px` }}>
-                Next
-              </div>
-            </>
-          ) : props.screen === "login" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Sign in</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Demo only. In-memory fake, not a real backend.</p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Email</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>demo@example.com</span>
-              </div>
-            </>
-          ) : props.screen === "register" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Create account</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Accounts exist only in memory for this session.</p>
-            </>
-          ) : props.screen === "profile" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Profile</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Demo user</p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>demo@example.com</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>In-memory session</span>
-              </div>
-            </>
-          ) : props.screen === "notes" ? (
+    <span class={`aip-btn aip-btn-${props.variant ?? "filled"}`} classList={{ "aip-btn-block": props.block, "aip-btn-disabled": props.disabled }}>
+      {props.icon}
+      <span>{props.label}</span>
+    </span>
+  );
+}
 
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>My notes</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Your ideas, kept on this device.</p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Getting started</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>A place for your first note</span>
-              </div>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Ideas for the week</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Saved locally with Room</span>
-              </div>
-              <div class="aip-button" style={{ "background-color": colors().primary, color: colors().onPrimary, "border-radius": `${props.tokens.components.button.cornerRadius}px`, "min-height": `${props.tokens.components.button.minHeight}px` }}>
-                Add note
-              </div>
-            </>
-          ) : props.screen === "catalog" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Catalog</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>Browse sample categories and items.</p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Search items</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Explore the demo collection</span>
-              </div>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Featured collection</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Example data · Compose UI</span>
-              </div>
-            </>
-          ) : props.screen === "dashboard" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Dashboard</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
-                Overview of your generated app.
-              </p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Items</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>12</span>
-              </div>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Status</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Ready</span>
-              </div>
-            </>
-          ) : props.screen === "settings" ? (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>Settings</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
-                Grouped preferences and about section.
-              </p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Appearance</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Dark mode: off</span>
-              </div>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>About</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Launchbed</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 class="aip-headline" style={{ color: colors().primary }}>{props.projectName}</h3>
-              <p class="aip-subtitle" style={{ color: colors().onSurfaceVariant }}>
-                A native Android app built with Kotlin and Jetpack Compose.
-              </p>
-              <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px`, "box-shadow": card().elevation > 0 ? `0 ${card().elevation}px ${card().elevation * 3}px rgba(0,0,0,0.18)` : "none" }}>
-                <span class="aip-card-title" style={{ color: colors().onSurface }}>Your starting point</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Taps: 0</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Ready to build.</span>
-              </div>
-              <div class="aip-button" style={{ "background-color": colors().primary, color: colors().onPrimary, "border-radius": `${props.tokens.components.button.cornerRadius}px`, "min-height": `${props.tokens.components.button.minHeight}px` }}>
-                Tap the button
-              </div>
-            </>
-          )}
-          <div class="aip-spacer" style={{ height: `${spacing().xl}px` }} />
-          <div class="aip-swatches" aria-label="Material 3 color roles">
-            {[
-              ["primary", colors().primary],
-              ["secondary", colors().secondary],
-              ["tertiary", colors().tertiary],
-              ["error", colors().error],
-              ["surface", colors().surface],
-            ].map(([role, value]) => (
-              <span class="aip-swatch" title={`${role}: ${value}`} style={{ "background-color": value, "border-color": colors().outlineVariant }} />
-            ))}
+export function PTextField(props: { label: string; value?: string; placeholder?: string; leading?: JSX.Element; trailing?: JSX.Element; supporting?: string; error?: boolean; focused?: boolean }) {
+  return (
+    <span class="aip-field" classList={{ "aip-field-error": props.error, "aip-field-focused": props.focused }}>
+      <span class="aip-field-box">
+        {props.leading}
+        <span class="aip-field-text">
+          <span class="aip-field-label">{props.label}</span>
+          <span class="aip-field-value" classList={{ "aip-field-placeholder": !props.value }}>{props.value || props.placeholder || ""}</span>
+        </span>
+        {props.trailing}
+      </span>
+      <Show when={props.supporting}><span class="aip-field-support">{props.supporting}</span></Show>
+    </span>
+  );
+}
+
+export function PCard(props: { children: JSX.Element; variant?: "elevated" | "filled" | "outlined"; class?: string }) {
+  return <span class={`aip-card aip-card-${props.variant ?? "outlined"} ${props.class ?? ""}`}>{props.children}</span>;
+}
+
+export function PListItem(props: { headline: string; supporting?: string; leading?: JSX.Element; trailing?: JSX.Element; divider?: boolean }) {
+  // Resolve slot JSX exactly once: reading a JSX prop twice (condition + body) creates two
+  // instances and breaks SSR hydration keys.
+  const leading = children(() => props.leading);
+  const trailing = children(() => props.trailing);
+  return (
+    <span class="aip-li" classList={{ "aip-li-divider": props.divider }}>
+      <Show when={leading()}><span class="aip-li-leading">{leading()}</span></Show>
+      <span class="aip-li-text">
+        <span class="aip-li-headline">{props.headline}</span>
+        <Show when={props.supporting}><span class="aip-li-supporting">{props.supporting}</span></Show>
+      </span>
+      <Show when={trailing()}><span class="aip-li-trailing">{trailing()}</span></Show>
+    </span>
+  );
+}
+
+export function PBadge(props: { label: string; tone?: "primary" | "secondary" | "tertiary" | "error" | "neutral" }) {
+  return <span class={`aip-badge aip-badge-${props.tone ?? "secondary"}`}>{props.label}</span>;
+}
+
+export function PSwitch(props: { checked: boolean; label?: string }) {
+  return (
+    <span class="aip-switch" classList={{ "aip-switch-on": props.checked }} role="img" aria-label={`${props.label ?? "Switch"}: ${props.checked ? "on" : "off"}`}>
+      <span class="aip-switch-thumb">
+        <Show when={props.checked}><CircleCheck size={12} stroke-width={3} aria-hidden="true" /></Show>
+      </span>
+    </span>
+  );
+}
+
+export function PAvatar(props: { initials: string; size?: "sm" | "md" | "lg" }) {
+  return <span class={`aip-avatar aip-avatar-${props.size ?? "md"}`} aria-hidden="true">{props.initials}</span>;
+}
+
+/** Wraps registry primitives in the token CSS variables (used by the component catalog). */
+export function TokenSurface(props: { tokens: ThemeTokens; mode: "light" | "dark"; children: JSX.Element; class?: string }) {
+  return <div class={`aip-surface ${props.class ?? ""}`} style={tokenStyle(props.tokens, props.mode)}>{props.children}</div>;
+}
+
+/* ------------------------------------------------------------------ */
+/* Screens                                                            */
+/* ------------------------------------------------------------------ */
+
+function TopBar(props: { title: string; back?: boolean; actions?: JSX.Element; large?: boolean }) {
+  return (
+    <div class="aip-topbar" classList={{ "aip-topbar-large": props.large }}>
+      <Show when={props.back}><span class="aip-icon-btn" aria-hidden="true"><ArrowLeft size={20} /></span></Show>
+      <span class="aip-topbar-title">{props.title}</span>
+      <span class="aip-topbar-actions">{props.actions}</span>
+    </div>
+  );
+}
+
+function SampleChip() {
+  return <span class="aip-sample" title="Placeholder values shipped with the starter">Sample data</span>;
+}
+
+function HomeScreen(props: { projectName: string }) {
+  return (
+    <>
+      <TopBar title={props.projectName} />
+      <div class="aip-content aip-center">
+        <span class="aip-hero-icon" aria-hidden="true"><Sparkles size={28} /></span>
+        <h4 class="aip-display">{props.projectName}</h4>
+        <p class="aip-body-muted aip-text-center">A native Android app built with Kotlin and Jetpack Compose.</p>
+        <PCard variant="filled" class="aip-w-full">
+          <span class="aip-title-sm">Your starting point</span>
+          <span class="aip-body-muted">Taps: 0</span>
+          <span class="aip-body-muted">Ready to build.</span>
+        </PCard>
+        <PButton label="Tap the button" block />
+      </div>
+    </>
+  );
+}
+
+/**
+ * Delegated targets (Expo, Flutter) keep the official template's own screens, which this
+ * preview does not reproduce. It shows the Launchbed tokens applied to registry components.
+ */
+function TokensScreen(props: { projectName: string; target: PreviewTarget }) {
+  const file = () => (props.target === "flutter" ? "lib/tokens/tokens.dart" : "tokens/tokens.ts");
+  return (
+    <>
+      <TopBar title={props.projectName} />
+      <div class="aip-content aip-gap-md">
+        <div class="aip-stack-xs">
+          <span class="aip-headline">Your design tokens</span>
+          <span class="aip-body-muted">Generated into {file()}. Add components with launchbed add.</span>
+        </div>
+        <PTextField label="Email" placeholder="you@example.com" leading={<Mail size={16} aria-hidden="true" />} />
+        <PCard variant="outlined" class="aip-card-list">
+          <PListItem headline="Notifications" supporting="ListItem + Switch" trailing={<PSwitch checked label="Notifications" />} divider />
+          <PListItem headline="Ada Lovelace" supporting="ListItem + Avatar" leading={<PAvatar initials="AL" size="sm" />} />
+        </PCard>
+        <div class="aip-row-between"><span class="aip-title-sm">Badges</span><span style={{ display: "inline-flex", gap: "6px" }}><PBadge label="New" tone="primary" /><PBadge label="Beta" tone="secondary" /></span></div>
+        <PButton label="Continue" block />
+        <PButton label="Not now" variant="outlined" block />
+      </div>
+    </>
+  );
+}
+
+function WelcomeScreen(props: { projectName: string }) {
+  return (
+    <>
+      <TopBar title={props.projectName} />
+      <div class="aip-content aip-center">
+        <span class="aip-hero-icon" aria-hidden="true"><Sparkles size={28} /></span>
+        <h4 class="aip-display">Welcome</h4>
+        <p class="aip-body-muted aip-text-center">Navigation is ready. Add screens and register their routes in AppRoot.</p>
+      </div>
+    </>
+  );
+}
+
+const STATS = [
+  { label: "Tasks done", value: "8/12", icon: CircleCheck, tone: "primary" },
+  { label: "Due today", value: "3", icon: Calendar, tone: "tertiary" },
+  { label: "Messages", value: "5", icon: Mail, tone: "secondary" },
+  { label: "Streak", value: "4 days", icon: Star, tone: "primary" },
+] as const;
+
+const ACTIVITY = [
+  { title: "Design review", detail: "Moved to Done", time: "2h", icon: CircleCheck },
+  { title: "Weekly sync", detail: "Notes added", time: "5h", icon: Pencil },
+  { title: "Release 1.0", detail: "Build ready to test", time: "1d", icon: Wrench },
+] as const;
+
+function DashboardScreen() {
+  return (
+    <>
+      <TopBar title="Dashboard" />
+      <div class="aip-content">
+        <div class="aip-row-between">
+          <div class="aip-stack-xs">
+            <span class="aip-headline">Overview</span>
+            <span class="aip-body-muted">Good to see you</span>
           </div>
+          <SampleChip />
+        </div>
+        <div class="aip-grid-2">
+          <For each={STATS}>{(stat) => (
+            <PCard variant="filled" class="aip-stat">
+              <span class={`aip-stat-icon aip-tone-${stat.tone}`} aria-hidden="true"><stat.icon size={16} /></span>
+              <span class="aip-stat-value">{stat.value}</span>
+              <span class="aip-label">{stat.label}</span>
+            </PCard>
+          )}</For>
+        </div>
+        <span class="aip-title-sm">Recent activity</span>
+        <PCard variant="outlined" class="aip-card-list">
+          <For each={ACTIVITY}>{(item, index) => (
+            <PListItem headline={item.title} supporting={item.detail} divider={index() < ACTIVITY.length - 1}
+              leading={<span class="aip-li-icon" aria-hidden="true"><item.icon size={16} /></span>}
+              trailing={<span class="aip-label">{item.time}</span>} />
+          )}</For>
+        </PCard>
+      </div>
+    </>
+  );
+}
+
+function SettingsScreen() {
+  return (
+    <>
+      <TopBar title="Settings" />
+      <div class="aip-content aip-gap-sm">
+        <span class="aip-group-label">Appearance</span>
+        <PCard variant="filled" class="aip-card-list">
+          <PListItem headline="Dark mode" supporting="Follow the selected appearance preference"
+            leading={<span class="aip-li-icon" aria-hidden="true"><Moon size={16} /></span>} trailing={<PSwitch checked={false} label="Dark mode" />} />
+        </PCard>
+        <span class="aip-group-label">Notifications</span>
+        <PCard variant="filled" class="aip-card-list">
+          <PListItem headline="Enable notifications" supporting="Preference kept in memory"
+            leading={<span class="aip-li-icon" aria-hidden="true"><Bell size={16} /></span>} trailing={<PSwitch checked label="Enable notifications" />} />
+        </PCard>
+        <span class="aip-group-label">About</span>
+        <PCard variant="filled" class="aip-card-list">
+          <PListItem headline="Launchbed" supporting="Generated native Android project" divider
+            leading={<span class="aip-li-icon" aria-hidden="true"><Info size={16} /></span>} />
+          <PListItem headline="Version" supporting="1.0"
+            leading={<span class="aip-li-icon" aria-hidden="true"><Layers size={16} /></span>} />
+        </PCard>
+      </div>
+    </>
+  );
+}
+
+const NOTES = [
+  { title: "Grocery list", body: "Milk, eggs, coffee beans", time: "Today" },
+  { title: "Ideas for the week", body: "Try the new onboarding copy", time: "Yesterday" },
+  { title: "Meeting notes", body: "Ship the beta on Friday", time: "Mon" },
+] as const;
+
+function NotesScreen() {
+  return (
+    <>
+      <TopBar title="Notes" />
+      <div class="aip-content aip-gap-sm">
+        <div class="aip-row-between"><span class="aip-body-muted">Saved on this device with Room</span><SampleChip /></div>
+        <For each={NOTES}>{(note) => (
+          <PCard variant="outlined" class="aip-note">
+            <span class="aip-row-between"><span class="aip-title-sm">{note.title}</span><span class="aip-label">{note.time}</span></span>
+            <span class="aip-body-muted">{note.body}</span>
+            <span class="aip-note-actions" aria-hidden="true"><Pencil size={14} /><Trash size={14} /></span>
+          </PCard>
+        )}</For>
+      </div>
+      <span class="aip-fab" aria-hidden="true"><Plus size={22} /></span>
+    </>
+  );
+}
+
+const CATALOG = [
+  { title: "Compose toolkit", category: "UI", icon: Layers },
+  { title: "Room storage", category: "Data", icon: Package },
+  { title: "Navigation", category: "Architecture", icon: ChevronRight },
+] as const;
+
+function CatalogScreen() {
+  return (
+    <>
+      <TopBar title="Catalog" />
+      <div class="aip-content aip-gap-sm">
+        <PTextField label="Search" placeholder="Search items" leading={<Search size={16} aria-hidden="true" />} />
+        <div class="aip-row-between"><span class="aip-title-sm">3 items</span><SampleChip /></div>
+        <For each={CATALOG}>{(item) => (
+          <PCard variant="elevated" class="aip-card-row">
+            <span class="aip-li-icon" aria-hidden="true"><item.icon size={16} /></span>
+            <span class="aip-stack-xs aip-grow"><span class="aip-title-sm">{item.title}</span><PBadge label={item.category} tone="secondary" /></span>
+            <ChevronRight size={16} aria-hidden="true" class="aip-muted-icon" />
+          </PCard>
+        )}</For>
+      </div>
+    </>
+  );
+}
+
+function OnboardingScreen() {
+  return (
+    <>
+      <TopBar title="Welcome" />
+      <div class="aip-content aip-onboarding">
+        <span class="aip-illustration" aria-hidden="true"><Sparkles size={40} /></span>
+        <div class="aip-stack-sm">
+          <span class="aip-headline">Welcome</span>
+          <span class="aip-body">A short tour of this generated app.</span>
+        </div>
+        <span class="aip-dots" aria-hidden="true"><span class="on" /><span /><span /></span>
+        <div class="aip-row-between aip-w-full">
+          <PButton label="Skip" variant="text" />
+          <PButton label="Next" />
         </div>
       </div>
-      <figcaption class="aip-caption">
-        {props.caption ?? "Material 3 simulation using the generated design tokens."}
-      </figcaption>
+    </>
+  );
+}
+
+function LoginScreen() {
+  return (
+    <>
+      <TopBar title="Sign in" />
+      <div class="aip-content aip-gap-md">
+        <div class="aip-stack-xs">
+          <span class="aip-headline">Welcome back</span>
+          <span class="aip-body-muted">Demo account: demo@example.com</span>
+        </div>
+        <PTextField label="Email" value="demo@example.com" leading={<Mail size={16} aria-hidden="true" />} focused />
+        <PTextField label="Password" value="••••••••••••" leading={<ShieldCheck size={16} aria-hidden="true" />} supporting="In-memory fake. Not a real backend." />
+        <PButton label="Sign in" block />
+        <PButton label="Create an account" variant="text" block />
+      </div>
+    </>
+  );
+}
+
+function RegisterScreen() {
+  return (
+    <>
+      <TopBar title="Create account" back />
+      <div class="aip-content aip-gap-md">
+        <span class="aip-body-muted">Accounts exist only in memory for this session.</span>
+        <PTextField label="Display name" value="Ada Lovelace" />
+        <PTextField label="Email" value="ada@example.com" leading={<Mail size={16} aria-hidden="true" />} />
+        <PTextField label="Password" value="••••••••" supporting="At least 8 characters" />
+        <PButton label="Create account" block />
+      </div>
+    </>
+  );
+}
+
+function ProfileScreen() {
+  return (
+    <>
+      <TopBar title="Profile" />
+      <div class="aip-content aip-gap-md">
+        <div class="aip-profile-head">
+          <PAvatar initials="DU" size="lg" />
+          <div class="aip-stack-xs">
+            <span class="aip-title">Demo user</span>
+            <span class="aip-body-muted">demo@example.com</span>
+          </div>
+        </div>
+        <PCard variant="filled" class="aip-card-list">
+          <PListItem headline="Demo user" supporting="Display name" divider leading={<span class="aip-li-icon" aria-hidden="true"><Pencil size={16} /></span>} />
+          <PListItem headline="demo@example.com" supporting="Email" leading={<span class="aip-li-icon" aria-hidden="true"><Mail size={16} /></span>} />
+        </PCard>
+        <PButton label="Edit profile" variant="outlined" block icon={<Pencil size={16} aria-hidden="true" />} />
+        <PButton label="Sign out" variant="error" block icon={<LogOut size={16} aria-hidden="true" />} />
+      </div>
+    </>
+  );
+}
+
+/**
+ * Illustrative Material 3 rendering of the generated screens.
+ * This is a web simulation, not a Compose/React Native/Flutter runtime: it uses the
+ * same resolved tokens and the same copy as the generated sources, but layout and
+ * typography are approximations.
+ */
+export function PreviewScreen(props: PreviewScreenProps) {
+  const screen = () => props.screen ?? "welcome";
+  const target = () => props.target ?? "android-compose";
+  return (
+    <figure class="aip-figure">
+      <div class="aip-phone" classList={{ "aip-dark": props.mode === "dark" }} style={tokenStyle(props.tokens, props.mode)}
+        role="img" aria-label={`Illustrative ${PREVIEW_SCREEN_LABELS[screen()]} screen of ${props.projectName} in ${props.mode} mode`}>
+        <div class="aip-screen">
+          <div class="aip-status" aria-hidden="true">
+            <span>9:41</span>
+            <span class="aip-camera" />
+            <span class="aip-status-icons"><Signal size={12} /><Wifi size={12} /><BatteryFull size={14} /></span>
+          </div>
+          <div class="aip-app">
+            {screen() === "dashboard" ? <DashboardScreen />
+              : screen() === "settings" ? <SettingsScreen />
+              : screen() === "notes" ? <NotesScreen />
+              : screen() === "catalog" ? <CatalogScreen />
+              : screen() === "onboarding" ? <OnboardingScreen />
+              : screen() === "login" ? <LoginScreen />
+              : screen() === "register" ? <RegisterScreen />
+              : screen() === "profile" ? <ProfileScreen />
+              : target() !== "android-compose" ? <TokensScreen projectName={props.projectName} target={target()} />
+              : props.hasNavigation ? <WelcomeScreen projectName={props.projectName} />
+              : <HomeScreen projectName={props.projectName} />}
+          </div>
+          <div class="aip-gesture" aria-hidden="true"><span /></div>
+        </div>
+      </div>
+      <Show when={props.caption}>
+        <figcaption class="aip-caption">{props.caption}</figcaption>
+      </Show>
     </figure>
   );
 }

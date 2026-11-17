@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@launchbed/design-tokens": "workspace:*",
-    "@launchbed/schema": "workspace:*"
+    "@launchbed/schema": "workspace:*",
+    "lucide-solid": "1.73.0"
   },
   "peerDependencies": {
     "solid-js": "^1.9.19"

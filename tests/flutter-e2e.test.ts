@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { describe, expect, test } from "bun:test";
+import { loadComponentCatalog } from "@launchbed/generator";
 
 const enabled = process.env.LAUNCHBED_E2E_FLUTTER === "1";
 
@@ -33,6 +34,17 @@ describe.skipIf(!enabled)("flutter e2e (LAUNCHBED_E2E_FLUTTER=1)", () => {
     }
     expect(existsSync(join(out, "launchbed.json"))).toBe(true);
     expect(existsSync(join(out, "lib/tokens/tokens.dart"))).toBe(true);
+    // Copy every registry component so the toolchain checks them too.
+    for (const component of loadComponentCatalog().components) {
+      const added = spawnSync("bun", [join(import.meta.dir, "../packages/cli/src/index.ts"), "add", component.name], {
+        cwd: out,
+        encoding: "utf8",
+        timeout: 60 * 1000,
+      });
+      if (added.status !== 0) {
+        throw new Error(`launchbed add ${component.name} failed:\n${added.stdout}\n${added.stderr}`);
+      }
+    }
     const pub = spawnSync("flutter", ["pub", "get"], { cwd: out, encoding: "utf8", timeout: 5 * 60 * 1000, shell: false });
     if (pub.status !== 0) {
       throw new Error(`flutter pub get failed:\n${pub.stdout}\n${pub.stderr}`);

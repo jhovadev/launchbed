@@ -1,0 +1,49 @@
+{
+  "name": "app-bar",
+  "displayName": "AppBar",
+  "description": "Top app bar with a title and an optional back action.",
+  "variants": [
+    "small"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "default",
+    "with-back"
+  ],
+  "tokens": [
+    "color.light.surface",
+    "color.light.onSurface"
+  ],
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "onBack",
+      "type": "callback",
+      "required": false
+    }
+  ],
+  "a11y": "The title is a header; the back control is a button named \"Navigate back\" with a 48dp/40pt target.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedAppBar.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedAppBar.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/AppBar.tsx",
+      "destination": "components/ui/AppBar.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/app_bar.dart",
+      "destination": "lib/ui/components/app_bar.dart"
+    }
+  }
+}

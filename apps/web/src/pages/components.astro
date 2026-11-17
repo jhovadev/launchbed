@@ -1,39 +1,33 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { loadComponentCatalog } from "@launchbed/generator";
+import ComponentCatalog, { type CatalogComponent } from "../components/ComponentCatalog";
+import { componentSources, loadComponentCatalog } from "@launchbed/generator";
 
-const catalog = loadComponentCatalog();
+// Embedded registry: works under Bun, Node SSR and Vercel without repository access.
+const components: CatalogComponent[] = loadComponentCatalog().components.map((component) => ({
+  ...component,
+  props: component.props as CatalogComponent["props"],
+  sources: componentSources(component),
+}));
 ---
 
-<Layout title="Launchbed components">
-  <section class="hero" aria-labelledby="components-title">
-    <div class="hero-copy">
-      <p class="eyebrow">Component registry</p>
-      <h1 id="components-title">Copied into your project.</h1>
-      <p class="lede">
-        A shadcn-style registry: Launchbed copies source for the selected target
-        (Compose, Expo, or Flutter). Not a runtime dependency.
-        Use <code>launchbed components --json</code> and <code>launchbed add &lt;name&gt;</code>.
+<Layout title="Components — Launchbed" active="components"
+  description="Universal components for Android Compose, Expo and Flutter, copied into your project shadcn-style.">
+  <section class="border-b" aria-labelledby="components-title">
+    <div class="mx-auto flex max-w-screen-2xl flex-col gap-4 px-4 py-10 sm:px-6 lg:px-8">
+      <p class="text-sm font-medium text-muted-foreground">Component registry</p>
+      <h1 id="components-title" class="text-3xl font-semibold tracking-tight sm:text-4xl">Universal components, copied into your project.</h1>
+      <p class="max-w-2xl text-muted-foreground text-pretty">
+        One contract, three native implementations: Jetpack Compose, Expo (React Native) and Flutter. Like shadcn/ui, Launchbed copies
+        the source into your app. It is yours to edit, not a runtime dependency.
       </p>
-      <p><a href="/">Back to the project builder</a></p>
+      <div class="flex flex-wrap gap-2 text-sm">
+        <code class="rounded-md border bg-muted/50 px-3 py-1.5 font-mono text-xs">launchbed components --json</code>
+        <code class="rounded-md border bg-muted/50 px-3 py-1.5 font-mono text-xs">launchbed add &lt;name&gt; [--force]</code>
+      </div>
     </div>
   </section>
-  <section id="catalog" aria-label="Component catalog">
-    {catalog.components.map((component) => (
-      <article>
-        <h2>{component.displayName} <code>{component.name}</code></h2>
-        <p>{component.description}</p>
-        <p>Variants: {component.variants.join(", ")}. Sizes: {component.sizes.join(", ")}.</p>
-        <p>Accessibility: {component.a11y}</p>
-        <ul>
-          {Object.entries(component.targets).map(([id, support]) => (
-            <li>
-              <strong>{id}</strong>: {support.status}
-              {support.status === "unsupported" && support.reason ? ` — ${support.reason}` : ""}
-            </li>
-          ))}
-        </ul>
-      </article>
-    ))}
+  <section id="catalog" class="mx-auto max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8" aria-label="Component catalog">
+    <ComponentCatalog components={components} client:load />
   </section>
 </Layout>

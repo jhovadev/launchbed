@@ -2,6 +2,7 @@ package {{packageName}}.ui.dashboard
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import org.junit.Rule
 import org.junit.Test
@@ -15,5 +16,7 @@ class DashboardScreenTest {
     @Test fun dashboardShowsOverview() {
         composeRule.setContent { DashboardScreen() }
         composeRule.onNodeWithText("Overview").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Tasks done: 8/12").assertIsDisplayed()
+        composeRule.onNodeWithText("Recent activity").assertExists()
     }
 }

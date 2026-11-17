@@ -30,4 +30,4 @@ export { runDelegateStep, validateDelegateStep, dartPackageName, npmProjectSlug,
 export { buildExpoDelegate, buildFlutterDelegate, projectConfigJson } from "./overlays";
 export { ACTION_PINS, EXPO_PINS, FLUTTER_PINS } from "./versions";
 export { renderGhaExpression } from "./render";
-export { loadComponentCatalog, contractProblems, addComponent, findLaunchbedConfig, type ComponentCatalog, type ComponentContract } from "./components";
+export { loadComponentCatalog, componentSources, registrySource, registryRoot, contractProblems, addComponent, findLaunchbedConfig, type ComponentCatalog, type ComponentContract, type ComponentSourceFile } from "./components";

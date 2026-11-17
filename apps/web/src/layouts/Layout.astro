@@ -5,9 +5,19 @@ import "../styles/global.css";
 interface Props {
   title: string;
   description?: string;
+  active?: "builder" | "components";
 }
 
-const { title, description = "Launchbed generates native Android starters with Kotlin, Jetpack Compose, mise and just." } = Astro.props;
+const {
+  title,
+  description = "Launchbed generates mobile-first starters for Android Compose, Expo and Flutter, with mise for tools and just for complex commands.",
+  active = "builder",
+} = Astro.props;
+
+const navItems = [
+  { href: "/#configurator", label: "Builder", id: "builder" },
+  { href: "/components", label: "Components", id: "components" },
+] as const;
 ---
 
 <!doctype html>
@@ -16,43 +26,90 @@ const { title, description = "Launchbed generates native Android starters with K
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
+    <script is:inline>
+      // Apply the stored or system theme before first paint (no flash).
+      (function () {
+        try {
+          var stored = localStorage.getItem("launchbed-theme");
+          var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (_) {}
+      })();
+    </script>
   </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+  <body class="min-h-screen">
+    <a
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+      href="#main">Skip to content</a>
 
-    <header class="site-header">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">L</span>
-        <span class="brand-text">
-          Launchbed
-          <span class="brand-sub">mobile first · MIT</span>
-        </span>
+    <header class="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div class="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <a href="/" class="flex items-center gap-2 font-semibold tracking-tight" aria-label="Launchbed home">
+          <span class="grid size-7 place-items-center rounded-md bg-primary text-primary-foreground" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+          </span>
+          <span class="max-[359px]:sr-only">Launchbed</span>
+        </a>
+        <nav class="ml-2 hidden items-center gap-1 text-sm sm:flex" aria-label="Primary">
+          {navItems.map((item) => (
+            <a href={item.href}
+              aria-current={active === item.id ? "page" : undefined}
+              class:list={["rounded-md px-3 py-1.5 transition-colors hover:bg-accent hover:text-accent-foreground", active === item.id ? "text-foreground font-medium" : "text-muted-foreground"]}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        <div class="ml-auto flex items-center gap-1">
+          <nav class="flex items-center gap-1 text-sm sm:hidden" aria-label="Primary (mobile)">
+            {navItems.map((item) => (
+              <a href={item.href} aria-current={active === item.id ? "page" : undefined}
+                class:list={["rounded-md px-2 py-1.5", active === item.id ? "text-foreground font-medium" : "text-muted-foreground"]}>{item.label}</a>
+            ))}
+          </nav>
+          <a href="https://github.com/jhovadev/launchbed" target="_blank" rel="noopener noreferrer"
+            class="hidden size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground sm:inline-flex"
+            aria-label="Launchbed on GitHub (opens in a new tab)">
+            <svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.04 1.77 2.72 1.26 3.38.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          </a>
+          <button type="button" id="theme-toggle"
+            class="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            aria-label="Toggle dark mode" aria-pressed="false">
+            <svg viewBox="0 0 24 24" class="size-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            <svg viewBox="0 0 24 24" class="hidden size-4 dark:block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-14.93 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </button>
+        </div>
       </div>
-      <nav class="site-nav" aria-label="Primary">
-        <a href="#configurator">Build</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="https://github.com/jhovadev/launchbed" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
-      </nav>
     </header>
 
     <main id="main">
       <slot />
     </main>
 
-    <footer class="site-footer" id="scope">
-      <div>
-        <p class="footer-title">Launchbed · mobile-first starters</p>
+    <footer class="border-t">
+      <div class="mx-auto flex max-w-screen-2xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <p>
-          Native Kotlin + Jetpack Compose projects from reproducible presets. The web and CLI
-          share one deterministic generator. Generated apps use mise for tools and just for
-          commands. Some add-ons remain beta pending device tests. The live preview is
-          illustrative, not an Android emulator.
+          <span class="font-medium text-foreground">Launchbed</span> · mobile-first starters. One deterministic generator for the web and the CLI.
         </p>
+        <p>MIT licensed · No telemetry · The phone preview is illustrative, not an emulator.</p>
       </div>
-      <p class="footer-license">MIT licensed · No telemetry · No Android Studio required</p>
     </footer>
+
+    <script is:inline>
+      (function () {
+        var button = document.getElementById("theme-toggle");
+        if (!button) return;
+        var sync = function () { button.setAttribute("aria-pressed", String(document.documentElement.classList.contains("dark"))); };
+        sync();
+        button.addEventListener("click", function () {
+          var dark = !document.documentElement.classList.contains("dark");
+          document.documentElement.classList.toggle("dark", dark);
+          try { localStorage.setItem("launchbed-theme", dark ? "dark" : "light"); } catch (_) {}
+          sync();
+        });
+      })();
+    </script>
   </body>
 </html>

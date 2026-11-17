@@ -4,52 +4,60 @@ import Configurator from "../components/Configurator";
 import { buildCatalog, ALL_PRESETS } from "@launchbed/catalog";
 
 const catalog = buildCatalog();
+const facts = [
+  { title: "Real source code", body: "Kotlin + Compose with a Gradle wrapper, or the official Expo / Flutter starter. No hosted builder, no lock-in." },
+  { title: "Composable add-ons", body: "Screens, storage and tooling are validated against dependencies, conflicts and SDK levels before packaging." },
+  { title: "Reproducible output", body: "Identical requests produce identical ZIP bytes, and every ZIP is verified against its file plan." },
+  { title: "mise + just included", body: "Pinned tools in mise.toml and a justfile for the long commands: build, test, install, scrcpy and more." },
+];
+const steps = ["Pick a platform", "Choose a template", "Add capabilities", "Theme it", "Download or copy the CLI"];
 ---
 
-<Layout title="Launchbed — Build native Android apps, minus the setup">
-  <section class="hero hero-new" aria-labelledby="hero-title">
-    <div class="hero-copy">
-      <p class="eyebrow"><span class="hero-spark" aria-hidden="true"></span> Native Android, simplified</p>
-      <h1 id="hero-title">Ship the app.<br /><em>Skip the setup.</em></h1>
-      <p class="lede">
-        Start with Kotlin and Jetpack Compose. Choose the features you need,
-        personalize your project and download buildable source — or copy the equivalent CLI command.
-      </p>
-      <div class="hero-actions">
-        <a href="#configurator" class="button primary">Build my project <span aria-hidden="true">→</span></a>
-        <a href="/components">Component catalog</a>
-        <a href="https://github.com/jhovadev/launchbed" class="hero-source" target="_blank" rel="noopener noreferrer">View open source code <span aria-hidden="true">↗</span></a>
+<Layout title="Launchbed — mobile starters for Android, Expo and Flutter" active="builder">
+  <section class="relative overflow-hidden border-b" aria-labelledby="hero-title">
+    <div class="bg-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true"></div>
+    <div class="relative mx-auto flex max-w-screen-2xl flex-col gap-6 px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+      <a href="/components" class="inline-flex w-fit items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs hover:text-foreground">
+        <span class="size-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+        New: shadcn-style component registry for Compose, Expo and Flutter →
+      </a>
+      <div class="flex max-w-3xl flex-col gap-4">
+        <h1 id="hero-title" class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">Ship the app. Skip the setup.</h1>
+        <p class="max-w-2xl text-base text-muted-foreground text-pretty sm:text-lg">
+          Generate a mobile starter for Android Compose, Expo or Flutter. Choose screens and tooling, theme it with one seed color,
+          then download buildable source or copy the equivalent CLI command.
+        </p>
       </div>
-      <ul class="chips" aria-label="Project features">
-        <li>No account</li>
-        <li>Native Kotlin</li>
-        <li>CLI-first</li>
-        <li>MIT licensed</li>
-      </ul>
-    </div>
-    <div class="hero-guide" aria-label="How Launchbed works">
-      <p class="guide-eyebrow">A project in five steps</p>
-      <div class="guide-step"><span class="guide-number">01</span><div><strong>Name the project</strong><p>App name and application ID.</p></div></div>
-      <div class="guide-step"><span class="guide-number">02</span><div><strong>Pick a preset</strong><p>Minimal, Starter, Notes or Catalog.</p></div></div>
-      <div class="guide-step"><span class="guide-number">03</span><div><strong>Add capabilities</strong><p>Room, navigation and more. Planned items stay visible but disabled.</p></div></div>
-      <div class="guide-step"><span class="guide-number">04</span><div><strong>Choose a theme</strong><p>Material 3 colors from a seed.</p></div></div>
-      <div class="guide-step"><span class="guide-number">05</span><div><strong>Review and download</strong><p>Copy the CLI command or download a verified ZIP.</p></div></div>
-      <div class="guide-bottom"><span class="guide-ready-dot" aria-hidden="true"></span> Buildable source. No hosted app builder.</div>
+      <div class="flex flex-wrap gap-3">
+        <a href="#configurator" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">Start building</a>
+        <a href="/components" class="inline-flex h-10 items-center justify-center gap-2 rounded-md border bg-background px-5 text-sm font-medium shadow-xs hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">Browse components</a>
+      </div>
+      <ol class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground" aria-label="How it works">
+        {steps.map((label, index) => (
+          <li class="flex items-center gap-2"><span class="grid size-5 place-items-center rounded-full border bg-background text-[11px] font-medium text-foreground">{index + 1}</span>{label}</li>
+        ))}
+      </ol>
     </div>
   </section>
 
-  <section id="configurator" aria-label="Project configurator">
+  <section id="configurator" class="mx-auto max-w-screen-2xl scroll-mt-16 px-4 py-8 sm:px-6 md:py-10 lg:px-8" aria-labelledby="builder-title">
+    <div class="mb-6 flex flex-col gap-1">
+      <h2 id="builder-title" class="text-2xl font-semibold tracking-tight">Project builder</h2>
+      <p class="text-sm text-muted-foreground">No sign-up. Nothing is built in the cloud. Your project is generated as source.</p>
+    </div>
     <Configurator catalog={catalog} presets={ALL_PRESETS} client:load />
   </section>
 
-  <section class="facts" id="how-it-works" aria-labelledby="facts-title">
-    <p class="eyebrow">Built for developers</p>
-    <h2 id="facts-title">Real projects, not mockups.</h2>
-    <div class="facts-grid">
-      <article><span class="fact-symbol" aria-hidden="true">&#123; &#125;</span><h3>Real Android code</h3><p>Kotlin, Compose Material 3, a Gradle wrapper, version catalog and ready-to-run tooling.</p></article>
-      <article><span class="fact-symbol" aria-hidden="true">≡</span><h3>Composable features</h3><p>Addons are validated against dependencies, conflicts and SDK requirements before packaging.</p></article>
-      <article><span class="fact-symbol" aria-hidden="true">✓</span><h3>Reproducible output</h3><p>The generator verifies ZIP contents against a plan. Identical requests produce identical ZIP bytes.</p></article>
+  <section id="how-it-works" class="mx-auto max-w-screen-2xl px-4 pb-16 sm:px-6 lg:px-8" aria-labelledby="facts-title">
+    <h2 id="facts-title" class="mb-4 text-2xl font-semibold tracking-tight">Real projects, not mockups</h2>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {facts.map((fact) => (
+        <article class="rounded-xl border bg-card p-5 shadow-xs">
+          <h3 class="font-semibold">{fact.title}</h3>
+          <p class="mt-2 text-sm text-muted-foreground">{fact.body}</p>
+        </article>
+      ))}
     </div>
-    <p class="facts-note">Some templates and addons are beta while Android device tests are pending. Planned features are not offered as downloadable code.</p>
+    <p class="mt-4 text-xs text-muted-foreground">Some templates and add-ons are beta while device tests are pending. Planned features are listed but never offered as downloadable code.</p>
   </section>
 </Layout>

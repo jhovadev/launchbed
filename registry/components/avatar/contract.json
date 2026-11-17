@@ -1,0 +1,56 @@
+{
+  "name": "avatar",
+  "displayName": "Avatar",
+  "description": "Circular initials avatar for people and accounts.",
+  "variants": [
+    "initials"
+  ],
+  "sizes": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "states": [
+    "default"
+  ],
+  "tokens": [
+    "color.light.primaryContainer",
+    "color.light.onPrimaryContainer"
+  ],
+  "props": [
+    {
+      "name": "initials",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "size",
+      "type": "sm | md | lg",
+      "required": false,
+      "default": "md"
+    }
+  ],
+  "a11y": "Exposed as an image whose accessible name is label (for example the person's full name); the initials text is not read separately.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedAvatar.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedAvatar.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/Avatar.tsx",
+      "destination": "components/ui/Avatar.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/avatar.dart",
+      "destination": "lib/ui/components/avatar.dart"
+    }
+  }
+}
