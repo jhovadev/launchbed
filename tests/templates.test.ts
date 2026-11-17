@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join, relative, sep } from "node:path";
 import { FRAGMENT_FILES, TEMPLATE_FILES } from "@launchbed/generator";
 import {
@@ -150,5 +151,22 @@ describe("template EOL policy", () => {
     expect(message).toContain("git checkout --");
     expect(message).toContain("not a failure");
     expect(message).toContain("doctor.ps1");
+  });
+});
+
+describe("embed helper is read-only when imported", () => {
+  test("importing scripts/embed-templates does not rewrite templates.generated.ts", () => {
+    const generated = join(ROOT, "packages/generator/src/templates.generated.ts");
+    const before = readFileSync(generated);
+    const result = spawnSync(
+      process.execPath,
+      ["--eval", 'await import("./scripts/embed-templates.ts");'],
+      { cwd: ROOT, encoding: "utf8" },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout ?? "").not.toContain("Embedded");
+    expect(result.stderr ?? "").not.toContain("Embedded");
+    const after = readFileSync(generated);
+    expect(Buffer.from(after).equals(Buffer.from(before))).toBe(true);
   });
 });

@@ -8,6 +8,24 @@ cd "$script_dir/.."
 action="${1:-devices}"
 if [ "$#" -gt 0 ]; then shift; fi
 
+is_safe_relpath() {
+  local path="$1"
+  [ -n "$path" ] || return 1
+  case "$path" in
+    /*|~*|*..*) return 1 ;;
+  esac
+  [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]]
+}
+
+is_safe_uri() {
+  local uri="$1"
+  [ -n "$uri" ] || return 1
+  case "$uri" in
+    *$'\n'*|*$'\r'*|*';'*|*'|'*|*'`'*|*'$'*|*'*'*|*')'*) return 1 ;;
+  esac
+  [[ "$uri" =~ ^[A-Za-z][A-Za-z0-9+.-]*: ]]
+}
+
 select_serial() {
   if ! command -v adb >/dev/null 2>&1; then
     echo "adb not found. Run: just sdk-setup" >&2
@@ -66,7 +84,8 @@ select_serial() {
   read -r choice
   case "$choice" in ''|*[!0-9]*) echo "Invalid selection." >&2; return 3 ;; esac
   if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#devices[@]}" ]; then
-    echo "Invalid selection." >&2; return 3
+    echo "Invalid selection." >&2
+    return 3
   fi
   printf '%s\n' "${devices[$((choice - 1))]}"
 }
@@ -92,7 +111,7 @@ case "$action" in
     ANDROID_SERIAL="$serial" ./gradlew :app:installDebug
     adb -s "$serial" shell am start -n "{{applicationId}}/{{packageName}}.MainActivity"
     ;;
-  logs)
+  logs|logcat)
     serial="$(select_serial)"
     pid="$(adb -s "$serial" shell pidof -s "{{applicationId}}" | tr -d '\r')"
     if [ -z "$pid" ]; then
@@ -102,8 +121,36 @@ case "$action" in
     printf 'Streaming logcat for %s (pid %s). Press Ctrl+C to stop.\n' "{{applicationId}}" "$pid" >&2
     exec adb -s "$serial" logcat -v brief --pid "$pid"
     ;;
+  screenshot)
+    file="${1:-screenshot.png}"
+    if ! is_safe_relpath "$file"; then
+      echo "Refusing screenshot path '$file'. Use a relative path with letters, digits, '.', '_', '-' or '/' only." >&2
+      exit 2
+    fi
+    serial="$(select_serial)"
+    mkdir -p "$(dirname -- "$file")"
+    adb -s "$serial" exec-out screencap -p > "$file"
+    printf 'Wrote %s\n' "$file"
+    ;;
+  clear-data)
+    serial="$(select_serial)"
+    adb -s "$serial" shell pm clear "{{applicationId}}"
+    ;;
+  uninstall)
+    serial="$(select_serial)"
+    adb -s "$serial" uninstall "{{applicationId}}"
+    ;;
+  deeplink)
+    uri="${1:-}"
+    if ! is_safe_uri "$uri"; then
+      echo "Refusing deeplink '$uri'. Pass a URI such as https://example.com/path or myapp://host." >&2
+      exit 2
+    fi
+    serial="$(select_serial)"
+    adb -s "$serial" shell am start -a android.intent.action.VIEW -d "$uri"
+    ;;
   *)
-    echo "Usage: scripts/device.sh [devices|serial|install|launch|run|logs]" >&2
+    echo "Usage: scripts/device.sh [devices|serial|install|launch|run|logs|screenshot|clear-data|uninstall|deeplink]" >&2
     exit 2
     ;;
 esac

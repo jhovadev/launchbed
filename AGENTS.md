@@ -54,6 +54,30 @@ Generated apps: mise pins tools and env (no secrets). just is the command catalo
 - Do not push or write to remotes unless the user explicitly asked for that exact action.
 - Multi-target stacks in `docs/roadmap-multi-target.md` are a **plan**, not implemented generators.
 
+## Device and scrcpy recipes
+
+Every generated Android project ships `just` recipes that use the existing
+`ANDROID_SERIAL` validation in `scripts/device.sh` / `device.ps1`: `devices`,
+`install`, `run` / `launch`, `logs` / `logcat`, `screenshot`, `clear-data`,
+`uninstall`, `deeplink`, plus `mirror`, `mirror-wifi` and `record` (scrcpy).
+
+The opt-in addon `tooling/scrcpy` pins `github:Genymobile/scrcpy` `5.0.1` in
+`mise.toml`. That backend (and `aqua:Genymobile/scrcpy`) was verified to list
+and install the official 5.0.1 release. Distro packages are often obsolete;
+`just doctor` prints OS-specific install instructions when scrcpy is missing.
+Do not invent scrcpy flags: use the official ones (`--record`, `--no-audio`,
+`--tcpip`, `--stay-awake`, `--turn-screen-off`, `--video-codec`, `--max-size`,
+`--new-display`, `--camera`, …).
+
+## Generated project CI
+
+The beta `tooling/github-actions` addon writes `.github/workflows/ci.yml` and
+`docs/CI.md`. The workflow uses Temurin 21, installs platform `android-37.0` and
+build-tools `36.0.0`, then runs `./gradlew :app:testDebugUnitTest`,
+`:app:assembleDebug`, and `:app:lintDebug`. It does not use GitHub expressions
+or secrets and does not sign a release APK. `compose-starter` and `app-starter`
+include it; other presets can pass `--addon tooling/github-actions`.
+
 ## How to add an addon
 
 1. Read `docs/addon-spec.md` and the skill `.agents/skills/add-addon/SKILL.md`.

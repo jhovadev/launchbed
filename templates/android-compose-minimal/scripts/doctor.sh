@@ -75,7 +75,16 @@ fi
 if command -v scrcpy >/dev/null 2>&1; then
   ok "scrcpy: $(scrcpy --version 2>/dev/null | head -n 1)"
 else
-  warn "scrcpy is not installed (optional; just scrcpy needs it)."
+  warn "scrcpy is not installed (optional; just mirror / record need it)."
+  printf '            Install a current build (distro packages are often obsolete):\n'
+  printf '              mise use -g github:Genymobile/scrcpy@5.0.1\n'
+  printf '              or add Launchbed addon tooling/scrcpy, then mise install\n'
+  case "$(uname -s 2>/dev/null || echo unknown)" in
+    Darwin) printf '              macOS: brew install scrcpy\n' ;;
+    Linux*|GNU*) printf '              Linux: official tarball from https://github.com/Genymobile/scrcpy/releases\n' ;;
+    MINGW*|MSYS*|CYGWIN*) printf '              Windows: winget install Genymobile.scrcpy\n' ;;
+  esac
+  printf '              Docs: https://github.com/Genymobile/scrcpy\n'
 fi
 
 printf '\n'

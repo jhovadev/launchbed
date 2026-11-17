@@ -95,6 +95,11 @@ export function mergeTooling(addons: readonly AddonManifest[]): MergedTooling {
   return { tools, env, recipes };
 }
 
+function tomlKey(name: string): string {
+  if (/^[A-Za-z_][A-Za-z0-9_-]*$/.test(name)) return name;
+  return `"${name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+}
+
 export function serializeMiseToml(merged: MergedTooling): string {
   const lines: string[] = [
     "# Toolchain for the generated Launchbed project.",
@@ -110,7 +115,7 @@ export function serializeMiseToml(merged: MergedTooling): string {
   const toolNames = [...merged.tools.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   for (const name of toolNames) {
     const tool = merged.tools.get(name)!;
-    lines.push(`${name} = "${tool.version}"`);
+    lines.push(`${tomlKey(name)} = "${tool.version}"`);
   }
   lines.push("");
   if (merged.env.size > 0) {

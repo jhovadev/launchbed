@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-const TOOL_NAME = /^[a-z][a-z0-9-]{0,39}$/;
+// Short names (java, rust) or mise backend identifiers (github:Genymobile/scrcpy).
+const TOOL_NAME = /^(?:[a-z][a-z0-9-]{0,39}|[a-z][a-z0-9-]{0,20}:[A-Za-z0-9._+/-]{1,80})$/;
 const TOOL_VERSION = /^[A-Za-z0-9][A-Za-z0-9.+_-]{0,79}$/;
 const RECIPE_NAME = /^[a-z][a-z0-9-]{0,39}$/;
 const ENV_KEY = /^[A-Z][A-Z0-9_]{0,63}$/;
@@ -14,7 +15,7 @@ export const JustRecipeSchema = z.strictObject({
 });
 
 export const MiseToolSchema = z.strictObject({
-  name: z.string().regex(TOOL_NAME, "must be a mise tool name such as java or rust"),
+  name: z.string().regex(TOOL_NAME, "must be a mise tool name such as java, or a backend id such as github:Genymobile/scrcpy"),
   version: z.string().regex(TOOL_VERSION, "must be a pinned mise tool version"),
 });
 

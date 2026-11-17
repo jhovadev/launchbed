@@ -33,3 +33,11 @@ just build
 ```
 
 `just run` needs an authorized device or emulator. The Android SDK is installed with `just sdk-setup` (add `INSTALL=1` to install packages). mise does not install the Android SDK.
+
+Device recipes (`just devices`, `run`, `logcat`, `screenshot`, `mirror`, `record`,
+`deeplink`, …) validate `ANDROID_SERIAL` against `adb devices -l`. The optional
+`tooling/scrcpy` addon pins `github:Genymobile/scrcpy@5.0.1` in `mise.toml`.
+`just doctor` prints OS-specific install instructions when scrcpy is missing.
+
+The optional `tooling/github-actions` addon (included in `compose-starter` and
+`app-starter`) writes `.github/workflows/ci.yml` and `docs/CI.md`.

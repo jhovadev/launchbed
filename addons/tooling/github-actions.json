@@ -1,10 +1,10 @@
 {
   "id": "tooling/github-actions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "GitHub Actions",
-  "description": "CI workflow that runs unit tests and assembles a debug APK on a pinned JDK.",
+  "description": "CI workflow that runs unit tests, assembles a debug APK, and lints on Temurin JDK 21.",
   "category": "tooling",
-  "status": "planned",
+  "status": "beta",
   "dependencies": [],
   "conflicts": [],
   "capabilities": [
@@ -12,18 +12,34 @@
   ],
   "requirements": {
     "minSdk": 24,
-    "compileSdk": 34,
-    "jdk": 17
+    "compileSdk": 37,
+    "jdk": 21
   },
-  "fileOperations": [],
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": ".github/workflows/ci.yml",
+      "template": "tooling/github-actions-ci",
+      "description": "CI workflow for unit tests, a debug APK, and lint."
+    },
+    {
+      "type": "add",
+      "path": "docs/CI.md",
+      "template": "tooling/github-actions-docs",
+      "description": "Explains the generated GitHub Actions workflow."
+    }
+  ],
+  "tooling": {},
   "compatibility": {
     "android": [
       "7.0+"
     ],
     "notes": [
-      "Declarative entry for F0; not generatable yet.",
-      "Planned. Launchbed repository has its own CI; generated projects will get an opt-in workflow."
+      "Beta. Pins Temurin 21 and the compileSdk/build-tools IDs from the compatibility matrix.",
+      "The workflow is read-only (contents: read) and does not sign a release APK or use secrets.",
+      "Included by default in the compose-starter and app-starter presets; add it with --addon tooling/github-actions otherwise."
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "docsUrl": "https://docs.github.com/en/actions"
 }

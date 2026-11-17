@@ -49,6 +49,8 @@ dynamic `+` versions. The generated template matrix lives in
 | zod | 4.6.7 | Strict contracts |
 | @material/material-color-utilities | 0.4.0 | HCT palettes (Apache-2.0) |
 | style-dictionary | 5.8.0 | DTCG compile at generate time (custom Compose/CSS/Flutter formats) |
+| scrcpy | 5.0.1 | Optional; pinned by tooling/scrcpy as github:Genymobile/scrcpy (mise GitHub and aqua backends verified) |
+| GitHub Actions (generated) | checkout@v4, setup-java@v4, setup-android@v3, upload-artifact@v4 | Optional tooling/github-actions workflow: Temurin 21, unit tests, assembleDebug, lintDebug |
 
 ## Known issues and decisions
 

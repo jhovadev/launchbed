@@ -1,0 +1,30 @@
+# adb and scrcpy
+
+This project opted into the Launchbed `tooling/scrcpy` addon, which pins
+
+```toml
+"github:Genymobile/scrcpy" = "5.0.1"
+```
+
+in `mise.toml`. Run `mise install` to get the official 5.0.1 release. The
+recipes themselves are in the base template and also work without the addon if
+you install scrcpy another way (`just doctor` prints OS-specific instructions).
+
+```bash
+mise install
+just devices
+ANDROID_SERIAL=<serial> just run
+just logcat
+just screenshot captures/home.png
+just record captures/demo.mp4
+just mirror -- --max-size 1024 --turn-screen-off
+just mirror-wifi
+just deeplink https://example.com
+just clear-data
+just uninstall
+```
+
+`ANDROID_SERIAL` is validated against `adb devices -l`. Official scrcpy flags
+only: `--record`, `--no-audio`, `--tcpip`, `--stay-awake`, `--turn-screen-off`,
+`--video-codec`, `--max-size`, `--new-display`, `--camera`, and the others in
+`scrcpy --help`. Docs: https://github.com/Genymobile/scrcpy

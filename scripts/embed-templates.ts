@@ -203,9 +203,12 @@ function rewriteCanonicalSources(): number {
   return count;
 }
 
+const isMain = import.meta.main === true;
 const check = process.argv.includes("--check");
 
-if (check) {
+// Only the CLI entry writes or checks. Importing this module from tests must be
+// read-only (no rewrite of templates.generated.ts or source files).
+if (isMain && check) {
   // Disk EOL is advisory: git may leave stale LF .ps1 files in an already-checked-out tree.
   reportDiskEolWarnings(listEolDrift());
   const moduleSource = buildModule();
@@ -220,7 +223,7 @@ if (check) {
     process.exit(1);
   }
   console.log(`templates.generated.ts is up to date (${walk(TEMPLATE_DIR).length} files).`);
-} else {
+} else if (isMain) {
   const rewritten = rewriteCanonicalSources();
   const moduleSource = buildModule();
   writeFileSync(OUT_FILE, moduleSource, "utf8");

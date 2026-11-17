@@ -136,7 +136,7 @@ planned/experimental rejection.
 
 Optional `tooling` on a generatable addon declares:
 
-- `tools`: pinned mise tool names and versions (merged into generated `mise.toml`)
+- `tools`: pinned mise tool names and versions (merged into generated `mise.toml`). Names may be short (`java`) or backend identifiers (`github:Genymobile/scrcpy`); keys that are not bare TOML are quoted.
 - `env`: non-secret environment keys (rejected if the key looks like a secret)
 - `justRecipes`: named just recipes inserted above `# @launchbed-slot just-recipes`
 

@@ -1,11 +1,27 @@
 param(
     [Parameter(Position = 0)]
-    [string]$Action = "devices"
+    [string]$Action = "devices",
+    [Parameter(Position = 1)]
+    [string]$Argument = ""
 )
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $scriptDir "..")
+
+function Test-SafeRelPath([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+    if ($Path.Contains("..")) { return $false }
+    if ($Path.StartsWith("/") -or $Path.StartsWith("\") -or $Path.StartsWith("~")) { return $false }
+    if ($Path -match '^[A-Za-z]:') { return $false }
+    return $Path -match '^[A-Za-z0-9._/\-\\]+$'
+}
+
+function Test-SafeUri([string]$Uri) {
+    if ([string]::IsNullOrWhiteSpace($Uri)) { return $false }
+    if ($Uri -match "[\r\n;|`$`]") { return $false }
+    return $Uri -match '^[A-Za-z][A-Za-z0-9+.-]*:'
+}
 
 function Select-Serial {
     $listing = @(& adb devices -l)
@@ -73,7 +89,7 @@ switch ($Action) {
         & adb -s $serial shell am start -n "{{applicationId}}/{{packageName}}.MainActivity"
         exit $LASTEXITCODE
     }
-    "logs" {
+    { $_ -in @("logs", "logcat") } {
         $serial = Select-Serial
         $appPid = (& adb -s $serial shell pidof -s "{{applicationId}}").Trim()
         if (-not $appPid) {
@@ -83,8 +99,40 @@ switch ($Action) {
         Write-Host "Streaming logcat for {{applicationId}} (pid $appPid). Press Ctrl+C to stop."
         & adb -s $serial logcat -v brief --pid $appPid
     }
+    "screenshot" {
+        $file = if ($Argument) { $Argument } else { "screenshot.png" }
+        if (-not (Test-SafeRelPath $file)) {
+            Write-Error "Refusing screenshot path '$file'. Use a relative path with letters, digits, '.', '_', '-' or '/' only."
+            exit 2
+        }
+        $serial = Select-Serial
+        $dir = Split-Path -Parent $file
+        if ($dir) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+        & adb -s $serial exec-out screencap -p | Set-Content -Path $file -Encoding Byte
+        Write-Host "Wrote $file"
+        exit $LASTEXITCODE
+    }
+    "clear-data" {
+        $serial = Select-Serial
+        & adb -s $serial shell pm clear "{{applicationId}}"
+        exit $LASTEXITCODE
+    }
+    "uninstall" {
+        $serial = Select-Serial
+        & adb -s $serial uninstall "{{applicationId}}"
+        exit $LASTEXITCODE
+    }
+    "deeplink" {
+        if (-not (Test-SafeUri $Argument)) {
+            Write-Error "Refusing deeplink '$Argument'. Pass a URI such as https://example.com/path or myapp://host."
+            exit 2
+        }
+        $serial = Select-Serial
+        & adb -s $serial shell am start -a android.intent.action.VIEW -d $Argument
+        exit $LASTEXITCODE
+    }
     default {
-        Write-Error "Usage: .\scripts\device.ps1 [devices|serial|install|launch|run|logs]"
+        Write-Error "Usage: .\scripts\device.ps1 [devices|serial|install|launch|run|logs|screenshot|clear-data|uninstall|deeplink]"
         exit 2
     }
 }

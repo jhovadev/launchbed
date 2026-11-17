@@ -20,8 +20,19 @@ just build            # app/build/outputs/apk/debug/app-debug.apk
 just test
 just devices
 just run              # build + install + launch on the selected device
-just logs
+just logs             # also: just logcat
+just screenshot       # PNG of the selected device
+just record           # scrcpy recording (needs scrcpy)
+just mirror           # scrcpy USB/TCP mirror (needs scrcpy)
+just mirror-wifi      # scrcpy --tcpip then mirror
+just deeplink https://example.com
+just clear-data
+just uninstall
 ```
+
+Device commands validate `ANDROID_SERIAL` against `adb devices -l` and refuse to
+guess when several devices are connected in a non-interactive shell. Screenshot,
+record and deeplink arguments are restricted to safe relative paths or URIs.
 
 On Windows, PowerShell scripts are provided directly (`.\scripts\sdk-setup.ps1 -Install`);
 `just` requires a POSIX shell (Git Bash).
@@ -46,11 +57,23 @@ intentionally independent.
 
 - There is no hot reload or Compose Live Edit without Android Studio. `just run`
   rebuilds, reinstalls and relaunches the app.
-- `scrcpy` is optional and is never downloaded by this project. Install it from
-  your package manager or from https://github.com/Genymobile/scrcpy.
+- `scrcpy` is optional. The `tooling/scrcpy` addon pins
+  `github:Genymobile/scrcpy` `5.0.1` in `mise.toml` (verified mise GitHub and
+  aqua backends). Without the addon, install it yourself:
+  `mise use -g github:Genymobile/scrcpy@5.0.1`, Homebrew, `winget install
+  Genymobile.scrcpy`, or the official release tarball. Distro packages are often
+  obsolete. Extra official flags (`--max-size`, `--video-codec`,
+  `--turn-screen-off`, `--no-audio`, `--new-display`, `--camera`, …) can be
+  forwarded: `just mirror -- --max-size 1024`.
+  Path arguments are positional because just interpolations would collide with
+  the generator: `just screenshot captures/home.png`, `just record captures/demo.mp4`.
 - The Gradle wrapper pins Gradle {{gradleVersion}} and verifies its distribution
   checksum.
 - Do not commit `local.properties`, keystores or `.env` files.
+- The optional `tooling/github-actions` addon writes `.github/workflows/ci.yml`
+  (Temurin 21, unit tests, debug APK, lint) and `docs/CI.md`. It is included in
+  the `compose-starter` and `app-starter` presets.
+
 - No network permission is declared. Add it explicitly when your app needs it.
 
 ## Structure

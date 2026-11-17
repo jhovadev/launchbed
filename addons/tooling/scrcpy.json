@@ -1,29 +1,46 @@
 {
   "id": "tooling/scrcpy",
   "version": "0.1.0",
-  "displayName": "scrcpy recipes",
-  "description": "Optional scrcpy recipes for mirroring and controlling a connected device.",
+  "displayName": "adb + scrcpy",
+  "description": "Pins scrcpy in mise.toml and documents device recipes (mirror, record, screenshot, logcat, Wi-Fi, deeplink).",
   "category": "tooling",
-  "status": "planned",
+  "status": "beta",
   "dependencies": [],
   "conflicts": [],
   "capabilities": [
-    "device-mirroring"
+    "device-mirroring",
+    "adb"
   ],
   "requirements": {
     "minSdk": 24,
     "compileSdk": 34,
     "jdk": 17
   },
-  "fileOperations": [],
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "docs/SCRCPY.md",
+      "template": "tooling/scrcpy-docs"
+    }
+  ],
+  "tooling": {
+    "tools": [
+      {
+        "name": "github:Genymobile/scrcpy",
+        "version": "5.0.1"
+      }
+    ],
+    "env": [],
+    "justRecipes": []
+  },
   "compatibility": {
     "android": [
       "7.0+"
     ],
     "notes": [
-      "Declarative entry for F0; not generatable yet.",
-      "The base template already ships scrcpy recipes; this addon is for project variants that omit them.",
-      "scrcpy is never downloaded or redistributed by Launchbed."
+      "Beta: verified mise backends github:Genymobile/scrcpy and aqua:Genymobile/scrcpy list and install 5.0.1.",
+      "Device just recipes (devices, install, run, logcat, mirror, mirror-wifi, record, screenshot, clear-data, uninstall, deeplink) ship in the base template so they also work without this addon; this addon only pins scrcpy in mise.toml.",
+      "Launchbed does not download scrcpy at generate time; mise install fetches the official GitHub release when you opt into this addon or run mise use."
     ]
   },
   "license": "MIT",

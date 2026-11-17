@@ -13,7 +13,9 @@
     "ui/auth",
     "ui/profile",
     "ui/dashboard",
-    "ui/settings"
+    "ui/settings",
+    "tooling/scrcpy",
+    "tooling/github-actions"
   ],
   "optionalAddons": [],
   "defaultTheme": {

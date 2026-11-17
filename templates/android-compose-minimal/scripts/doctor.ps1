@@ -61,7 +61,16 @@ if ($adb) {
 if (Test-Path ".\gradlew.bat") { Ok "Gradle wrapper present ({{gradleVersion}})" } else { Warn "gradlew.bat is missing." }
 
 $scrcpy = Get-Command scrcpy -ErrorAction SilentlyContinue
-if ($scrcpy) { Ok "scrcpy is available" } else { Warn "scrcpy is not installed (optional; just scrcpy needs it)." }
+if ($scrcpy) {
+    Ok "scrcpy is available"
+} else {
+    Warn "scrcpy is not installed (optional; just mirror / record need it)."
+    Write-Host "            Install a current build (distro packages are often obsolete):"
+    Write-Host "              mise use -g github:Genymobile/scrcpy@5.0.1"
+    Write-Host "              or add Launchbed addon tooling/scrcpy, then mise install"
+    Write-Host "              Windows: winget install Genymobile.scrcpy"
+    Write-Host "              Docs: https://github.com/Genymobile/scrcpy"
+}
 
 Write-Host ""
 if ($status -eq 0) {
