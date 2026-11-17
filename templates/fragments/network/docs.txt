@@ -1,0 +1,8 @@
+# HTTP client (network/http-client)
+
+`data/network/ApiClient.kt` wraps Ktor 3.6.1 with the Android engine, a request timeout and an
+`ApiResult` type (Success, HttpError, NetworkError). It is provider-neutral: Launchbed bundles no base
+URL, API key or backend. Pass your own base URL, and keep secrets on your server.
+
+The INTERNET permission is added to `AndroidManifest.xml`. `ApiClientTest` uses Ktor's MockEngine, so
+`just test` never touches the network.

@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, useColorScheme } from "react-native";
 import { tokens } from "../../tokens/tokens";
 
 export interface SnackbarProps {
@@ -9,6 +9,7 @@ export interface SnackbarProps {
 }
 
 export function Snackbar({ message, visible, actionLabel, onAction }: SnackbarProps) {
+  const role = useRole();
   if (!visible) return null;
   return (
     <View
@@ -23,15 +24,23 @@ export function Snackbar({ message, visible, actionLabel, onAction }: SnackbarPr
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderRadius: 6,
-        backgroundColor: tokens.colorLightInverseSurface,
+        backgroundColor: role("InverseSurface"),
       }}
     >
-      <Text style={{ flex: 1, color: tokens.colorLightInverseOnSurface }}>{message}</Text>
+      <Text style={{ flex: 1, color: role("InverseOnSurface") }}>{message}</Text>
       {actionLabel && onAction ? (
         <Pressable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={onAction} hitSlop={8}>
-          <Text style={{ color: tokens.colorLightInversePrimary, fontWeight: "600" }}>{actionLabel}</Text>
+          <Text style={{ color: role("InversePrimary"), fontWeight: "600" }}>{actionLabel}</Text>
         </Pressable>
       ) : null}
     </View>
   );
+}
+
+type ColorRole = { [K in keyof typeof tokens]: K extends `colorLight${infer R}` ? R : never }[keyof typeof tokens];
+
+/** Light or dark token for a Material color role, following the system color scheme. */
+function useRole(): (role: ColorRole) => string {
+  const dark = useColorScheme() === "dark";
+  return (role) => (dark ? tokens[`colorDark${role}`] : tokens[`colorLight${role}`]);
 }

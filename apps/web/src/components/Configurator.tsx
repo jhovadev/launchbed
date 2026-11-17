@@ -1,7 +1,7 @@
 import type { JSX } from "solid-js";
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import type { CatalogResponse, ProjectPresetManifest, ProjectRequest, TargetId, ThemeConfig } from "@launchbed/schema";
-import { resolveThemeTokens } from "@launchbed/design-tokens";
+import { THEME_PRESETS, applyThemePreset, findThemePreset, resolveThemeTokens } from "@launchbed/design-tokens";
 import { PREVIEW_SCREEN_LABELS, PreviewScreen, previewTabs, type PreviewScreenId } from "@launchbed/preview";
 import { delegateSetupCommands, formatNewCommand, overlayZipFileName, presetAddonsForTarget, projectSlug } from "@launchbed/schema";
 import ArrowLeft from "lucide-solid/icons/arrow-left";
@@ -48,6 +48,8 @@ interface FormState {
   fontFamily: ThemeConfig["typography"]["fontFamily"];
   cornerRadius: number;
   defaultMode: ThemeConfig["defaultMode"];
+  /** Imported theme preset (tweakcn); empty means "seed color only". */
+  themeId: string;
 }
 
 interface ApiError {
@@ -87,12 +89,13 @@ const PALETTES = [
 ];
 const CATEGORY_LABELS: Record<string, string> = {
   storage: "Storage",
+  network: "Networking",
   ui: "Screens & UI",
   native: "Native",
   tooling: "Tooling",
   foundation: "Foundation",
 };
-const CATEGORY_ORDER = ["ui", "storage", "tooling", "native", "foundation"];
+const CATEGORY_ORDER = ["ui", "storage", "network", "tooling", "native", "foundation"];
 
 const TARGET_META: Record<string, { icon: (props: { class?: string }) => JSX.Element; stack: string; blurb: string; tile: string }> = {
   "android-compose": {
@@ -155,6 +158,12 @@ const helpClass = "text-xs text-muted-foreground";
 const errorClass = "text-xs font-medium text-destructive";
 
 function themeConfig(form: FormState): ThemeConfig {
+  const base = seedThemeConfig(form);
+  const preset = form.themeId ? findThemePreset(form.themeId) : undefined;
+  return preset ? applyThemePreset(preset, base) : base;
+}
+
+function seedThemeConfig(form: FormState): ThemeConfig {
   return {
     seedColor: form.seedColor,
     schemeVariant: "tonalSpot",
@@ -218,6 +227,7 @@ export default function Configurator(props: Props) {
     fontFamily: "default",
     cornerRadius: 12,
     defaultMode: "system",
+    themeId: "",
   });
   const [target, setTarget] = createSignal<TargetId>("android-compose");
   const [previewMode, setPreviewMode] = createSignal<"light" | "dark">("light");
@@ -300,6 +310,7 @@ export default function Configurator(props: Props) {
       addons: selectedAddons().filter((id) => !requiredAddons().includes(id)),
       out: projectSlug(form().projectName || "Demo App"),
       target: target(),
+      themeId: form().themeId || undefined,
     }),
   );
 
@@ -394,6 +405,7 @@ export default function Configurator(props: Props) {
         fontFamily: theme.typography.fontFamily,
         cornerRadius: theme.shape.cornerRadius,
         defaultMode: theme.defaultMode,
+        themeId: "",
       };
     });
   }
@@ -433,7 +445,18 @@ export default function Configurator(props: Props) {
       addons: selectedAddons(),
       target: target(),
       ...(presetId() ? { preset: presetId() } : {}),
+      ...(current.themeId ? { themeId: current.themeId } : {}),
     };
+  }
+
+  function chooseThemePreset(id: string): void {
+    resetResult();
+    const preset = id ? findThemePreset(id) : undefined;
+    setForm((previous) =>
+      preset
+        ? { ...previous, themeId: preset.id, seedColor: preset.light.primary ?? previous.seedColor, fontFamily: preset.fontFamily, cornerRadius: preset.cornerRadius }
+        : { ...previous, themeId: "" },
+    );
   }
 
   function applyError(payload: ApiError): void {
@@ -557,7 +580,7 @@ export default function Configurator(props: Props) {
   const manualCommands = createMemo(() => {
     const step = plan()?.steps[0];
     if (!step) return "";
-    return delegateSetupCommands({ target: target(), step, zipFileName: overlayZipFileName(form().projectName || "My App") }).join("\n");
+    return delegateSetupCommands({ target: target(), step, zipFileName: overlayZipFileName(form().projectName || "My App"), extraSteps: plan()?.steps.slice(1) }).join("\n");
   });
   const shownCommand = () => (isOwned() || commandMode() === "cli" ? cliCommand() : manualCommands());
   const hasScreenPack = () => selectedAddons().includes("ui/navigation");
@@ -867,23 +890,24 @@ export default function Configurator(props: Props) {
           <section hidden={step() !== 4} aria-labelledby="section-theme">
             <SectionHeader index={4} id="section-theme" title="Choose a look"
               description="A seed color generates the full Material 3 palette (DTCG tokens) for every platform. The preview updates live." />
-            <fieldset class="grid gap-3">
-              <legend class={cn(labelClass, "mb-3")}>Seed color</legend>
+            <ThemePresetPicker selected={form().themeId} onSelect={chooseThemePreset} />
+            <fieldset class="mt-6 grid gap-3">
+              <legend class={cn(labelClass, "mb-3")}>Seed color <span class="font-normal text-muted-foreground">{form().themeId ? "(replaced by the theme above; pick one to go back to a seed palette)" : ""}</span></legend>
               <div class="flex flex-wrap gap-2">
                 <For each={PALETTES}>{(palette) => (
                   <label class={cn(
                     "flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                    form().seedColor.toLowerCase() === palette.value.toLowerCase() && "border-primary ring-1 ring-primary",
+                    !form().themeId && form().seedColor.toLowerCase() === palette.value.toLowerCase() && "border-primary ring-1 ring-primary",
                   )}>
-                    <input type="radio" class="sr-only" name="seedPreset" value={palette.value} checked={form().seedColor.toLowerCase() === palette.value.toLowerCase()}
-                      onChange={() => update("seedColor", palette.value)} />
+                    <input type="radio" class="sr-only" name="seedPreset" value={palette.value} checked={!form().themeId && form().seedColor.toLowerCase() === palette.value.toLowerCase()}
+                      onChange={() => { update("themeId", ""); update("seedColor", palette.value); }} />
                     <span class="size-4 rounded-full border border-black/10" style={{ "background-color": palette.value }} aria-hidden="true" />
                     {palette.name}
                   </label>
                 )}</For>
                 <label class="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
                   <input type="color" name="seedColor" class="size-5 cursor-pointer rounded border-0 bg-transparent p-0" value={form().seedColor} aria-label="Custom seed color"
-                    onInput={(event) => update("seedColor", event.currentTarget.value)} />
+                    onInput={(event) => { update("themeId", ""); update("seedColor", event.currentTarget.value); }} />
                   Custom <code class="text-xs text-muted-foreground">{form().seedColor.toUpperCase()}</code>
                 </label>
               </div>
@@ -1069,11 +1093,74 @@ export default function Configurator(props: Props) {
             <dt class="text-muted-foreground">Template</dt><dd class="truncate text-right font-medium">{templateName()}</dd>
             <dt class="text-muted-foreground">Add-ons</dt><dd class="text-right font-medium">{selectedAddons().length}</dd>
             <dt class="text-muted-foreground">App ID</dt><dd class="truncate text-right font-mono" title={form().applicationId}>{form().applicationId}</dd>
+            <Show when={form().themeId}>
+              <dt class="text-muted-foreground">Theme</dt><dd class="text-right">{findThemePreset(form().themeId)?.label ?? form().themeId}</dd>
+            </Show>
             <dt class="text-muted-foreground">Seed</dt><dd class="flex items-center justify-end gap-1.5 font-mono"><span class="size-3 rounded-full border" style={{ "background-color": form().seedColor }} aria-hidden="true" />{form().seedColor.toUpperCase()}</dd>
           </dl>
           <p class="text-xs text-muted-foreground">Sample values in the preview ship as placeholders in the generated code. Replace them with your own data.</p>
         </div>
       </aside>
     </div>
+  );
+}
+
+/** Theme preset cards: swatches plus a light and dark mini preview, for the imported tweakcn themes. */
+function ThemePresetPicker(props: { selected: string; onSelect: (id: string) => void }) {
+  const [query, setQuery] = createSignal("");
+  const visible = createMemo(() => {
+    const q = query().trim().toLowerCase();
+    return THEME_PRESETS.filter((preset) => !q || preset.label.toLowerCase().includes(q) || preset.id.includes(q));
+  });
+  const mini = (colors: (typeof THEME_PRESETS)[number]["light"], radius: number) => (
+    <div class="flex h-14 flex-1 flex-col justify-between p-2" style={{ "background-color": colors.background, color: colors.onBackground }}>
+      <div class="h-1.5 w-3/4 rounded-full opacity-80" style={{ "background-color": colors.onBackground }} />
+      <div class="flex items-center gap-1">
+        <span class="h-4 w-9" style={{ "background-color": colors.primary, "border-radius": `${Math.min(radius, 8)}px` }} />
+        <span class="h-4 w-6" style={{ "background-color": colors.secondaryContainer ?? colors.surfaceVariant, "border-radius": `${Math.min(radius, 8)}px` }} />
+      </div>
+    </div>
+  );
+  return (
+    <fieldset class="grid gap-3">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <legend class={labelClass}>
+          Theme <span class="font-normal text-muted-foreground">({THEME_PRESETS.length} presets from tweakcn, Apache-2.0)</span>
+        </legend>
+        <input type="search" class={cn(inputClass, "h-8 w-44")} placeholder="Filter themes" aria-label="Filter themes" value={query()}
+          onInput={(event) => setQuery(event.currentTarget.value)} />
+      </div>
+      <div class="grid max-h-[22rem] grid-cols-2 gap-2 overflow-y-auto p-1 sm:grid-cols-3" role="radiogroup" aria-label="Theme presets">
+        <label class={cn(
+          "flex cursor-pointer flex-col justify-center gap-1 rounded-lg border bg-background p-3 text-sm transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+          !props.selected && "border-primary ring-1 ring-primary",
+        )}>
+          <input type="radio" class="sr-only" name="themePreset" value="" checked={!props.selected} onChange={() => props.onSelect("")} />
+          <span class="font-medium">Seed color</span>
+          <span class="text-xs text-muted-foreground">Material 3 palette from one color</span>
+        </label>
+        <For each={visible()}>{(preset) => (
+          <label class={cn(
+            "flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 text-sm transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+            props.selected === preset.id && "border-primary ring-1 ring-primary",
+          )}>
+            <input type="radio" class="sr-only" name="themePreset" value={preset.id} checked={props.selected === preset.id} onChange={() => props.onSelect(preset.id)} />
+            <div class="flex overflow-hidden rounded-md border" aria-hidden="true">
+              {mini(preset.light, preset.cornerRadius)}
+              {mini(preset.dark, preset.cornerRadius)}
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="truncate font-medium">{preset.label}</span>
+              <span class="flex shrink-0 -space-x-1" aria-hidden="true">
+                <For each={[preset.light.primary, preset.light.secondaryContainer, preset.light.surfaceVariant, preset.dark.primary]}>{(color) => (
+                  <span class="size-3 rounded-full border border-black/10" style={{ "background-color": color ?? "transparent" }} />
+                )}</For>
+              </span>
+            </div>
+          </label>
+        )}</For>
+      </div>
+      <p class={helpClass}>A theme sets light and dark colors, corner radius and font family for Compose, Expo, Flutter and this preview. Source: github.com/jnsahaj/tweakcn.</p>
+    </fieldset>
   );
 }

@@ -4,7 +4,7 @@ import { SDK_LIMITS } from "./limits";
 import { ToolingContributionSchema, toolingIsEmpty } from "./tooling";
 import { DEFAULT_TARGET, TARGET_IDS } from "./targets";
 
-export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling", "foundation"] as const;
+export const ADDON_CATEGORIES = ["storage", "network", "ui", "native", "tooling", "foundation"] as const;
 export const ADDON_STATUSES = ["stable", "beta", "experimental", "planned"] as const;
 
 export type AddonCategory = (typeof ADDON_CATEGORIES)[number];
@@ -15,7 +15,7 @@ const CAPABILITY = /^[a-z][a-z0-9-]*$/;
 const LOCAL_TEMPLATE_REF = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
 const HTTPS_URL = /^https:\/\/[a-z0-9.-]+\/[\w./%#?=&+:@!$'()*,-]*$/i;
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
-export const SLOT_IDS = ["settings-includes", "root-plugins", "app-plugins", "app-dependencies", "app-room-config", "app-imports", "app-routes", "app-entries", "main-content"] as const;
+export const SLOT_IDS = ["settings-includes", "root-plugins", "app-plugins", "app-dependencies", "app-room-config", "app-imports", "app-routes", "app-entries", "main-content", "manifest-permissions"] as const;
 export type SlotId = (typeof SLOT_IDS)[number];
 export const SLOT_FILE: Partial<Record<SlotId, string>> = {
   "settings-includes": "settings.gradle.kts",
@@ -23,6 +23,7 @@ export const SLOT_FILE: Partial<Record<SlotId, string>> = {
   "app-plugins": "app/build.gradle.kts",
   "app-dependencies": "app/build.gradle.kts",
   "app-room-config": "app/build.gradle.kts",
+  "manifest-permissions": "app/src/main/AndroidManifest.xml",
 };
 
 
@@ -55,6 +56,31 @@ export const AddonManifestSchema = z
     capabilities: z.array(z.string().regex(CAPABILITY)).max(16).default([]),
     /** Targets this addon may be applied to. Defaults to android-compose only. */
     targets: z.array(z.enum(TARGET_IDS)).min(1).max(8).default([DEFAULT_TARGET]),
+    /**
+     * Per-target dependency lists that replace `dependencies` on that target. Used when a port
+     * does not need an Android-only dependency (ui/notes needs Room on Compose, not on Expo).
+     */
+    targetDependencies: z.partialRecord(z.enum(TARGET_IDS), z.array(z.string().regex(ADDON_ID)).max(16)).default({}),
+    /**
+     * Pinned packages a delegate target installs for this addon, inside the generated project
+     * (`npx expo install name@version`, `flutter pub add name:version`). Exact versions only.
+     */
+    /**
+     * Files a delegate target copies for this addon, from templates/fragments/<target>/<path>.
+     * Dart test files are rendered with {{dartPackage}}; everything else is copied verbatim.
+     */
+    delegateFiles: z
+      .strictObject({
+        expo: z.array(z.string().regex(/^[A-Za-z0-9_.()/-]+$/)).max(16).optional(),
+        flutter: z.array(z.string().regex(/^[A-Za-z0-9_.()/-]+$/)).max(16).optional(),
+      })
+      .default({}),
+    delegatePackages: z
+      .strictObject({
+        expo: z.array(z.strictObject({ name: z.string().regex(/^(@[a-z0-9-]+\/)?[a-z0-9][a-z0-9._-]*$/), version: z.string().regex(/^\d+\.\d+\.\d+$/) })).max(8).optional(),
+        flutter: z.array(z.strictObject({ name: z.string().regex(/^[a-z][a-z0-9_]*$/), version: z.string().regex(/^\d+\.\d+\.\d+$/) })).max(8).optional(),
+      })
+      .default({}),
     requirements: AddonRequirementsSchema,
     fileOperations: z.array(FileOperationSchema).max(40).default([]),
     tooling: ToolingContributionSchema,

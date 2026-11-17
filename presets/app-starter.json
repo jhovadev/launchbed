@@ -80,22 +80,24 @@
   ],
   "targetAddons": {
     "expo": [
+      "tooling/github-actions",
+      "tooling/scrcpy",
       "ui/auth",
       "ui/dashboard",
       "ui/navigation",
       "ui/onboarding",
       "ui/profile",
-      "tooling/github-actions",
-      "tooling/scrcpy"
+      "ui/settings"
     ],
     "flutter": [
+      "tooling/github-actions",
+      "tooling/scrcpy",
       "ui/auth",
       "ui/dashboard",
       "ui/navigation",
       "ui/onboarding",
       "ui/profile",
-      "tooling/github-actions",
-      "tooling/scrcpy"
+      "ui/settings"
     ]
   }
 }

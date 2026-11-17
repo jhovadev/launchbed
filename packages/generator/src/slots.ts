@@ -6,6 +6,8 @@ const decoder = new TextDecoder("utf-8", { fatal: true });
 export const SLOT_MARKER_PREFIX = "// @launchbed-slot ";
 
 export function markerFor(slot: SlotId): string {
+  // XML files (AndroidManifest.xml) need a comment form that stays valid in the output.
+  if (SLOT_FILE[slot]?.endsWith(".xml")) return `<!-- @launchbed-slot ${slot} -->`;
   return `${SLOT_MARKER_PREFIX}${slot}`;
 }
 

@@ -54,10 +54,10 @@ class InMemoryAuthRepository {
   AuthResult updateProfile(AuthUser current, String displayName) {
     final key = current.email.toLowerCase();
     final account = _accounts[key];
-    if (account == null) return const AuthFailure('You are signed out');
     final name = displayName.trim().isEmpty ? current.displayName : displayName.trim();
     final user = AuthUser(email: current.email, displayName: name);
-    _accounts[key] = (password: account.password, user: user);
+    // A restored session may outlive the in-memory accounts (they reset on restart).
+    if (account != null) _accounts[key] = (password: account.password, user: user);
     return AuthSuccess(user);
   }
 }

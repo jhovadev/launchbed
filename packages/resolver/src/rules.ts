@@ -18,7 +18,7 @@ export interface CompatibilityContext {
  */
 export function incompatibleAddonMessage(addon: AddonManifest, target: TargetId): string {
   if (addon.category === "ui") {
-    return `Addon "${addon.id}" is a Jetpack Compose UI pack with no ${target} port yet. It applies to: ${addon.targets.join(", ")}. Ported to Expo and Flutter: ui/navigation, ui/onboarding, ui/auth, ui/profile, ui/dashboard.`;
+    return `Addon "${addon.id}" is a Jetpack Compose UI pack with no ${target} port yet. It applies to: ${addon.targets.join(", ")}. Ported to Expo and Flutter: ui/navigation, ui/onboarding, ui/auth, ui/profile, ui/dashboard, ui/notes, ui/settings.`;
   }
   if (addon.category === "storage") {
     return `Addon "${addon.id}" is an Android storage pack and does not apply to ${target}.`;

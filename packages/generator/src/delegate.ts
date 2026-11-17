@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { LaunchbedError, isPositional, type DelegateStep } from "@launchbed/schema";
 
-const SAFE_ARG = /^-{0,2}[A-Za-z0-9][A-Za-z0-9_@./=,+:-]*$/;
-const SAFE_COMMAND = /^(npx|flutter)$/;
+const SAFE_ARG = /^(?:-{0,2}|@)[A-Za-z0-9][A-Za-z0-9_@./=,+:-]*$/;
+const SAFE_COMMAND = /^(npx|flutter|dart)$/;
 
 /**
  * Validates a delegate step before any process is spawned. Arguments are

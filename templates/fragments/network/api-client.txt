@@ -1,0 +1,49 @@
+package {{packageName}}.data.network
+
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
+import kotlin.coroutines.cancellation.CancellationException
+
+/** Outcome of a request: no exceptions leak to the UI layer. */
+sealed interface ApiResult<out T> {
+    data class Success<T>(val value: T) : ApiResult<T>
+
+    data class HttpError(val status: Int, val body: String) : ApiResult<Nothing>
+
+    data class NetworkError(val cause: Throwable) : ApiResult<Nothing>
+}
+
+/**
+ * Provider-neutral HTTP client (Ktor). No base URL, keys or backend are bundled: pass your
+ * own base URL, and keep secrets out of the app binary.
+ */
+class ApiClient(
+    baseUrl: String,
+    engine: HttpClientEngine = Android.create(),
+    timeoutMillis: Long = 15_000,
+) : AutoCloseable {
+    private val client = HttpClient(engine) {
+        expectSuccess = false
+        install(HttpTimeout) { requestTimeoutMillis = timeoutMillis }
+        defaultRequest { url(baseUrl) }
+    }
+
+    suspend fun getText(path: String): ApiResult<String> =
+        try {
+            val response = client.get(path)
+            val body = response.bodyAsText()
+            if (response.status.isSuccess()) ApiResult.Success(body) else ApiResult.HttpError(response.status.value, body)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            ApiResult.NetworkError(error)
+        }
+
+    override fun close() = client.close()
+}

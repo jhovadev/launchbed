@@ -38,14 +38,19 @@ export function topLevelDestinations(addonIds: ReadonlySet<string> | readonly st
 }
 
 export interface DelegateTab {
-  id: "home" | "profile";
+  id: "home" | "notes" | "profile" | "settings";
   label: string;
 }
 
-/** Bottom tabs of the Expo and Flutter screen packs. */
+/**
+ * Bottom tabs of the Expo and Flutter screen packs. The home tab (Dashboard or Welcome) comes
+ * first, then the ported destinations in the Compose order (Notes, Profile, Settings).
+ */
 export function delegateTabs(addonIds: ReadonlySet<string> | readonly string[]): DelegateTab[] {
   const ids = idSet(addonIds);
   const tabs: DelegateTab[] = [{ id: "home", label: ids.has("ui/dashboard") ? "Home" : "Welcome" }];
+  if (ids.has("ui/notes")) tabs.push({ id: "notes", label: "Notes" });
   if (ids.has("ui/profile")) tabs.push({ id: "profile", label: "Profile" });
+  if (ids.has("ui/settings")) tabs.push({ id: "settings", label: "Settings" });
   return tabs;
 }

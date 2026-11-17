@@ -6,7 +6,7 @@ export interface Args {
   positionals: string[];
 }
 
-const VALUE_KEYS = new Set(["config", "out", "name", "app-id", "preset", "target"]);
+const VALUE_KEYS = new Set(["config", "out", "name", "app-id", "preset", "target", "theme"]);
 const LIST_KEYS = new Set(["addon"]);
 const FLAG_KEYS = new Set(["json", "force", "help", "yes"]);
 

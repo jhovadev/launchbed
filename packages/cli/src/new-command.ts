@@ -34,6 +34,8 @@ export interface NewOptions {
   outDir: string;
   force: boolean;
   target: string;
+  /** Imported theme preset id (see launchbed catalog --json). */
+  themeId?: string;
 }
 
 export function slugToApplicationId(projectName: string): string {
@@ -56,6 +58,7 @@ export async function resolveNewOptions(args: Args, interactive: boolean): Promi
   let projectName = args.values.get("name") ?? "";
   let applicationId = args.values.get("app-id") ?? "";
   let preset = args.values.get("preset") ?? "";
+  const themeId = args.values.get("theme") || undefined;
   let addons = [...(args.lists.get("addon") ?? [])];
   const target = args.values.get("target") ?? "android-compose";
 
@@ -94,7 +97,7 @@ export async function resolveNewOptions(args: Args, interactive: boolean): Promi
   }
 
   const outDir = resolve(args.values.get("out") ?? args.positionals[0] ?? projectSlug(projectName));
-  return { projectName, applicationId, preset: preset || undefined, addons, outDir, force, target };
+  return { projectName, applicationId, preset: preset || undefined, addons, outDir, force, target, ...(themeId ? { themeId } : {}) };
 }
 
 export function requestFromNewOptions(options: NewOptions): ProjectRequestInput {
@@ -113,6 +116,7 @@ export function requestFromNewOptions(options: NewOptions): ProjectRequestInput 
     applicationId: options.applicationId,
     namespace: options.applicationId,
     ...(options.preset ? { preset: options.preset } : {}),
+    ...(options.themeId ? { themeId: options.themeId } : {}),
     addons: options.addons,
     target: options.target as "android-compose" | "expo" | "flutter" | "tauri-solid",
   };
@@ -137,6 +141,10 @@ export async function writeGeneratedProject(
     }
     runDelegateStep(step, { cwd: dirname(root), outputPath: root });
     writeProjectTree(materialized.files, root, { force: true });
+    // Pinned dependency installs (for example AsyncStorage or shared_preferences) run inside the project.
+    for (const extra of materialized.plan.steps.slice(1)) {
+      runDelegateStep(extra, { cwd: root });
+    }
   }
   const directory = materialized.plan.strategy === "delegate"
     ? resolve(options.outDir)
@@ -164,6 +172,7 @@ export async function writeGeneratedProject(
     addons: options.addons,
     out: options.outDir,
     target: options.target,
+    themeId: options.themeId,
   });
   return {
     directory,

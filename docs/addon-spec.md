@@ -132,6 +132,34 @@ planned/experimental rejection.
 - No backend, payments or persistence.
 
 
+## Delegate targets (Expo, Flutter)
+
+An addon lists the stacks it supports in `targets`. Compose uses `fileOperations`. For the
+delegate stacks, three optional fields apply:
+
+- `delegateFiles: { expo?: string[], flutter?: string[] }`: overlay paths copied from
+  `templates/fragments/<target>/<path>`. Flutter `test/` files get the Dart package name
+  substituted. Files that the screen pack already writes are not written twice.
+- `delegatePackages: { expo?: [{name, version}], flutter?: [...] }`: exact versions only.
+  `launchbed new` installs them with the official tool (`npx expo install pkg@ver`,
+  `flutter pub add name:ver`) after the overlay is written. Two addons that pin the same package
+  to different versions fail before any file is written.
+- `targetDependencies: { <target>: [ids] }` replaces `dependencies` for that target (for
+  example, `ui/notes` needs only `ui/navigation` on Expo/Flutter, but `storage/room` and
+  `ui/navigation` on Compose).
+
+## Reference: cross-target addons (round 8)
+
+| Addon | Compose | Expo | Flutter |
+|---|---|---|---|
+| `storage/key-value` (beta) | Preferences DataStore 1.1.7 `KeyValueStore` + JVM test | AsyncStorage 2.2.0 `key-value.ts`, app store + tests | shared_preferences 2.5.6 store + tests |
+| `network/http-client` (beta) | Ktor 3.6.1 `ApiClient` + MockEngine test, `INTERNET` permission (slot `manifest-permissions`) | `fetch` client with timeout, typed `ApiResult` + tests | package:http 1.6.0 `ApiClient` + MockClient test |
+| `tooling/format` (beta) | ktlint 1.8.0 via mise, `just format` / `format-check`, `docs/FORMAT.md` | Prettier 3.10.1 (`.prettierrc.json`), runs once after generation | `dart format`, `analysis_options.yaml` with page width 120 |
+| `ui/notes`, `ui/settings` (beta) | Room-backed notes; settings screen (not persisted yet) | Screen pack tabs, persisted | Screen pack tabs, persisted |
+
+None of them define a base URL, an API key or a backend: the HTTP client takes the base URL
+from the caller.
+
 ## Tooling contributions (mise + just)
 
 Optional `tooling` on a generatable addon declares:

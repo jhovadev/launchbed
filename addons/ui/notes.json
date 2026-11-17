@@ -10,6 +10,19 @@
     "ui/navigation"
   ],
   "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
+  "targetDependencies": {
+    "expo": [
+      "ui/navigation"
+    ],
+    "flutter": [
+      "ui/navigation"
+    ]
+  },
   "capabilities": [
     "compose-ui",
     "notes",

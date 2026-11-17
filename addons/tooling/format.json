@@ -1,0 +1,71 @@
+{
+  "id": "tooling/format",
+  "version": "0.1.0",
+  "displayName": "Lint & format",
+  "description": "Formatter and lint recipes: ktlint on Compose, Prettier on Expo, dart format on Flutter. Pinned, no network at build time.",
+  "category": "tooling",
+  "status": "beta",
+  "dependencies": [],
+  "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
+  "capabilities": [
+    "formatting",
+    "lint"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "add",
+      "path": "docs/FORMAT.md",
+      "template": "tooling/format-docs"
+    }
+  ],
+  "tooling": {
+    "tools": [
+      {
+        "name": "ktlint",
+        "version": "1.8.0"
+      }
+    ],
+    "env": [],
+    "justRecipes": [
+      {
+        "name": "format",
+        "description": "Format Kotlin sources with ktlint (pinned in mise.toml)",
+        "lines": [
+          "ktlint --format \"app/src/**/*.kt\""
+        ],
+        "dependencies": []
+      },
+      {
+        "name": "format-check",
+        "description": "Check Kotlin formatting with ktlint without changing files",
+        "lines": [
+          "ktlint \"app/src/**/*.kt\""
+        ],
+        "dependencies": []
+      }
+    ]
+  },
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Compose: ktlint 1.8.0 via mise; android_studio code style and Composable naming come from the template .editorconfig.",
+      "Expo: Prettier 3.10.1 through npx with a pinned version; expo lint stays the linter.",
+      "Flutter: dart format and flutter analyze (flutter_lints from the official template).",
+      "Upstream licenses: MIT (ktlint, Prettier), BSD-3-Clause (Dart SDK)."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://pinterest.github.io/ktlint/"
+}

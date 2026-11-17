@@ -1,0 +1,38 @@
+package {{packageName}}.data.prefs
+
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+class KeyValueStoreTest {
+    @get:Rule
+    val folder = TemporaryFolder()
+
+    @Test
+    fun setGetRemoveAndSurviveReopen() = runBlocking {
+        val file = File(folder.root, "test.preferences_pb")
+        val firstScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        val store = KeyValueStore(PreferenceDataStoreFactory.create(scope = firstScope) { file })
+        assertNull(store.get("theme"))
+        store.set("theme", "dark")
+        store.set("draft", "hello")
+        assertEquals("dark", store.get("theme"))
+        store.remove("draft")
+        assertNull(store.get("draft"))
+        firstScope.cancel()
+
+        val secondScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        val reopened = KeyValueStore(PreferenceDataStoreFactory.create(scope = secondScope) { file })
+        assertEquals("dark", reopened.get("theme"))
+        secondScope.cancel()
+    }
+}

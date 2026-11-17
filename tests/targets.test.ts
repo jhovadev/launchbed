@@ -18,7 +18,7 @@ describe("multi-target domain", () => {
 
   test("rejects Compose UI addons on Expo with a stable code and a clear rule", async () => {
     try {
-      await materializeProject(baseRequest({ target: "expo", addons: ["ui/settings"] }));
+      await materializeProject(baseRequest({ target: "expo", addons: ["ui/catalog"] }));
       throw new Error("expected failure");
     } catch (error) {
       expect(error).toBeInstanceOf(LaunchbedError);

@@ -41,9 +41,9 @@ export function createInMemoryAuth(): AuthRepository {
     updateProfile(current, displayName) {
       const key = current.email.toLowerCase();
       const account = accounts.get(key);
-      if (!account) return { ok: false, message: "You are signed out" };
       const user = { ...current, displayName: displayName.trim() || current.displayName };
-      accounts.set(key, { ...account, user });
+      // A restored session may outlive the in-memory accounts (they reset on restart).
+      if (account) accounts.set(key, { ...account, user });
       return { ok: true, user };
     },
   };

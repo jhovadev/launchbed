@@ -35,6 +35,9 @@ import {
 } from "@launchbed/schema";
 import {
   resolveThemeTokens,
+  applyThemePreset,
+  findThemePreset,
+  THEME_PRESETS,
   themeTokensToDtcg,
   serializeDtcg,
   type ThemeTokens,
@@ -270,6 +273,15 @@ export async function materializeProject(
             : request.theme,
       }
     : request;
+  if (resolvedRequest.themeId) {
+    const themePreset = findThemePreset(resolvedRequest.themeId);
+    if (!themePreset) {
+      throw new LaunchbedError("INVALID_REQUEST", `Unknown theme "${resolvedRequest.themeId}". Run launchbed catalog --json for the theme ids.`, [
+        { path: "themeId", message: `unknown theme ${resolvedRequest.themeId}` },
+      ]);
+    }
+    resolvedRequest.theme = applyThemePreset(themePreset, resolvedRequest.theme);
+  }
   const resolution = resolveAddons(resolvedRequest, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
   const tokens = resolveThemeTokens(resolvedRequest.theme);
   const dtcg = themeTokensToDtcg(tokens);
@@ -363,6 +375,7 @@ export async function materializeProject(
       targetSdk: resolvedRequest.targetSdk,
       addons: resolution.addons.map((addon) => addon.id),
       preset: resolvedRequest.preset,
+      ...(resolvedRequest.themeId ? { themeId: resolvedRequest.themeId } : {}),
       target: "android-compose",
     },
     steps: [],
@@ -384,11 +397,11 @@ const TARGET_LABELS: Record<string, string> = { expo: "Expo", flutter: "Flutter"
 function overlayReadme(
   request: ProjectRequest,
   addons: readonly AddonManifest[],
-  material: { target: string; step: DelegateStep; warnings: readonly string[] },
+  material: { target: string; step: DelegateStep; extraSteps: readonly DelegateStep[]; warnings: readonly string[] },
 ): string {
   const label = TARGET_LABELS[material.target] ?? material.target;
   const zipFileName = overlayZipFileName(request.projectName);
-  const manual = delegateSetupCommands({ target: material.target, step: material.step, zipFileName });
+  const manual = delegateSetupCommands({ target: material.target, step: material.step, zipFileName, extraSteps: material.extraSteps });
   const cli = formatNewCommand({
     projectName: request.projectName,
     applicationId: request.applicationId,
@@ -482,9 +495,10 @@ function materializeDelegateProject(
       targetSdk: request.targetSdk,
       addons: addons.map((addon) => addon.id),
       preset: request.preset,
+      ...(request.themeId ? { themeId: request.themeId } : {}),
       target: material.target,
     },
-    steps: [material.step],
+    steps: [material.step, ...material.extraSteps],
     files: plannedFiles,
     operations: [],
     totals: { files: plannedFiles.length, bytes: totalBytes },
@@ -556,6 +570,23 @@ export async function generateProject(
   };
 }
 
+const SWATCH_ROLES = ["primary", "secondaryContainer", "surfaceVariant", "background", "onBackground"] as const;
+
+/** Catalog with the imported theme presets (ids for themeId / --theme, swatches for pickers). */
 export function getCatalog(): CatalogResponse {
-  return buildCatalog();
+  return {
+    ...buildCatalog(),
+    themes: THEME_PRESETS.map((preset) => ({
+      id: preset.id,
+      label: preset.label,
+      license: preset.source.license,
+      source: `${preset.source.repository}@${preset.source.commit.slice(0, 7)}`,
+      cornerRadius: preset.cornerRadius,
+      fontFamily: preset.fontFamily,
+      swatches: {
+        light: SWATCH_ROLES.map((role) => preset.light[role] ?? "#000000"),
+        dark: SWATCH_ROLES.map((role) => preset.dark[role] ?? "#000000"),
+      },
+    })),
+  };
 }

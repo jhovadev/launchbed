@@ -86,7 +86,7 @@ describe("Expo and Flutter screen packs", () => {
   });
 
   test("Compose-only screen add-ons are rejected on delegates", async () => {
-    await expect(materializeProject(baseRequest({ target: "flutter", addons: ["ui/navigation", "ui/settings"] }))).rejects.toBeInstanceOf(LaunchbedError);
+    await expect(materializeProject(baseRequest({ target: "flutter", addons: ["ui/navigation", "ui/catalog"] }))).rejects.toBeInstanceOf(LaunchbedError);
   });
 });
 
@@ -106,10 +106,10 @@ describe("web preview tabs mirror the generated app", () => {
     const expo = await files("expo", { preset: "app-starter" });
     const layout = decode(expo.get("src/app/(tabs)/_layout.tsx"));
     const titles = [...layout.matchAll(/title: "([^"]+)"/g)].map((match) => match[1]);
-    expect(previewTabs("expo", ["ui/navigation", "ui/dashboard", "ui/profile"]).map((tab) => tab.label)).toEqual(titles as string[]);
+    expect(previewTabs("expo", ["ui/navigation", "ui/dashboard", "ui/profile", "ui/settings"]).map((tab) => tab.label)).toEqual(titles as string[]);
     const flutter = await files("flutter", { preset: "app-starter" });
     const shell = decode(flutter.get("lib/launchbed/app_shell.dart"));
-    for (const tab of previewTabs("flutter", ["ui/navigation", "ui/dashboard", "ui/profile"])) expect(shell).toContain(`label: '${tab.label}'`);
+    for (const tab of previewTabs("flutter", ["ui/navigation", "ui/dashboard", "ui/profile", "ui/settings"])) expect(shell).toContain(`label: '${tab.label}'`);
     expect(previewTabs("expo", ["ui/navigation"]).map((tab) => tab.screen)).toEqual(["welcome"]);
   });
 });

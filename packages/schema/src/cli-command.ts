@@ -8,6 +8,7 @@ export function formatNewCommand(options: {
   addons?: readonly string[];
   out?: string;
   target?: string;
+  themeId?: string;
 }): string {
   const parts = ["launchbed new"];
   parts.push("--name", shellQuote(options.projectName));
@@ -17,6 +18,9 @@ export function formatNewCommand(options: {
   }
   if (options.preset) {
     parts.push("--preset", options.preset);
+  }
+  if (options.themeId) {
+    parts.push("--theme", options.themeId);
   }
   const addons = [...(options.addons ?? [])].sort();
   for (const addon of addons) {
@@ -81,9 +85,13 @@ export function delegateSetupCommands(options: {
   target: string;
   step: { command: string; argv: readonly string[] };
   zipFileName: string;
+  /** Extra steps that run inside the project after unzipping (pinned dependency installs). */
+  extraSteps?: readonly { command: string; argv: readonly string[] }[];
 }): string[] {
   const directory = delegateDirectory(options.step);
   const lines = [formatDelegateStep(options.step), `cd ${shellQuote(directory)}`, `unzip -o ../${shellQuote(options.zipFileName)}`];
-  if (options.target === "flutter") lines.push("flutter pub get");
+  const extra = options.extraSteps ?? [];
+  for (const step of extra) lines.push(formatDelegateStep(step));
+  if (options.target === "flutter" && !extra.some((step) => step.command === "flutter")) lines.push("flutter pub get");
   return lines;
 }

@@ -1,0 +1,88 @@
+{
+  "id": "storage/key-value",
+  "version": "0.1.0",
+  "displayName": "Key-value storage",
+  "description": "Small persistent key-value store: Preferences DataStore on Compose, AsyncStorage on Expo, shared_preferences on Flutter.",
+  "category": "storage",
+  "status": "beta",
+  "dependencies": [],
+  "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
+  "capabilities": [
+    "persistence",
+    "key-value"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "datastorepreferences",
+      "module": "androidx.datastore:datastore-preferences",
+      "version": "1.1.7"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "datastorepreferences"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/data/prefs/KeyValueStore.kt",
+      "template": "storage/key-value-store"
+    },
+    {
+      "type": "add",
+      "path": "app/src/test/java/{{packagePath}}/data/prefs/KeyValueStoreTest.kt",
+      "template": "storage/key-value-store-test"
+    }
+  ],
+  "delegateFiles": {
+    "expo": [
+      "src/launchbed/storage/key-value.ts",
+      "src/launchbed/storage/app-store.ts",
+      "src/launchbed/storage/key-value.test.js"
+    ],
+    "flutter": [
+      "lib/launchbed/storage/key_value_store.dart",
+      "lib/launchbed/storage/shared_preferences_store.dart",
+      "test/key_value_store_test.dart"
+    ]
+  },
+  "delegatePackages": {
+    "expo": [
+      {
+        "name": "@react-native-async-storage/async-storage",
+        "version": "2.2.0"
+      }
+    ],
+    "flutter": [
+      {
+        "name": "shared_preferences",
+        "version": "2.5.6"
+      }
+    ]
+  },
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Compose: androidx.datastore:datastore-preferences 1.1.7 (same pin as ui/onboarding); JVM unit test with a temporary file.",
+      "Expo: @react-native-async-storage/async-storage 2.2.0 (the version npx expo install resolves for SDK 58).",
+      "Flutter: shared_preferences 2.5.6.",
+      "Unencrypted on every target: no passwords or tokens.",
+      "Upstream licenses: Apache-2.0 (DataStore), MIT (AsyncStorage), BSD-3-Clause (shared_preferences)."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://developer.android.com/topic/libraries/architecture/datastore"
+}

@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { Text, View, useColorScheme } from "react-native";
 import { tokens } from "../../tokens/tokens";
 
 export type AvatarSize = "sm" | "md" | "lg";
@@ -13,6 +13,7 @@ const DIAMETER: Record<AvatarSize, number> = { sm: 28, md: 40, lg: 64 };
 const FONT: Record<AvatarSize, number> = { sm: 11, md: 14, lg: 22 };
 
 export function Avatar({ initials, label, size = "md" }: AvatarProps) {
+  const role = useRole();
   const diameter = DIAMETER[size];
   return (
     <View
@@ -23,14 +24,22 @@ export function Avatar({ initials, label, size = "md" }: AvatarProps) {
         width: diameter,
         height: diameter,
         borderRadius: diameter / 2,
-        backgroundColor: tokens.colorLightPrimaryContainer,
+        backgroundColor: role("PrimaryContainer"),
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <Text style={{ color: tokens.colorLightOnPrimaryContainer, fontSize: FONT[size], fontWeight: "600" }}>
+      <Text style={{ color: role("OnPrimaryContainer"), fontSize: FONT[size], fontWeight: "600" }}>
         {initials.slice(0, 2).toUpperCase()}
       </Text>
     </View>
   );
+}
+
+type ColorRole = { [K in keyof typeof tokens]: K extends `colorLight${infer R}` ? R : never }[keyof typeof tokens];
+
+/** Light or dark token for a Material color role, following the system color scheme. */
+function useRole(): (role: ColorRole) => string {
+  const dark = useColorScheme() === "dark";
+  return (role) => (dark ? tokens[`colorDark${role}`] : tokens[`colorLight${role}`]);
 }

@@ -1,0 +1,36 @@
+package {{packageName}}.data.prefs
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+private val Context.keyValueDataStore by preferencesDataStore(name = "launchbed_key_value")
+
+/**
+ * String key-value storage backed by Preferences DataStore. Values are not encrypted:
+ * never store passwords or tokens here.
+ */
+class KeyValueStore(private val dataStore: DataStore<Preferences>) {
+    fun observe(key: String): Flow<String?> = dataStore.data.map { prefs -> prefs[stringPreferencesKey(key)] }
+
+    suspend fun get(key: String): String? = observe(key).first()
+
+    suspend fun set(key: String, value: String) {
+        dataStore.edit { prefs -> prefs[stringPreferencesKey(key)] = value }
+    }
+
+    suspend fun remove(key: String) {
+        dataStore.edit { prefs -> prefs.remove(stringPreferencesKey(key)) }
+    }
+
+    companion object {
+        /** The app-wide store, file `launchbed_key_value.preferences_pb`. */
+        fun from(context: Context): KeyValueStore = KeyValueStore(context.applicationContext.keyValueDataStore)
+    }
+}

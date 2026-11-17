@@ -83,6 +83,8 @@ export const EXPO_PINS = {
   sdk: 58,
   node: "24.22.2",
   bun: "1.4.4",
+  /** Version `npx expo install` resolves for SDK 58 (verified 2026-11-16). */
+  asyncStorage: "2.2.0",
   templateId: "expo-default",
   templateVersion: "0.1.0",
 } as const;
@@ -93,6 +95,8 @@ export const FLUTTER_PINS = {
   template: "app",
   platforms: "android,ios,web",
   androidLanguage: "kotlin",
+  /** Latest shared_preferences that resolves on Flutter 3.50.0 (verified 2026-11-16). */
+  sharedPreferences: "2.5.6",
   templateId: "flutter-app",
   templateVersion: "0.1.0",
 } as const;

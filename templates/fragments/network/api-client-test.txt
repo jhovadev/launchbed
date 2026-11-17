@@ -1,0 +1,29 @@
+package {{packageName}}.data.network
+
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
+import java.io.IOException
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ApiClientTest {
+    private val engine = MockEngine { request ->
+        when (request.url.encodedPath) {
+            "/v1/status" -> respond("ok", HttpStatusCode.OK)
+            "/v1/offline" -> throw IOException("offline")
+            else -> respond("missing", HttpStatusCode.NotFound)
+        }
+    }
+
+    @Test
+    fun mapsSuccessHttpErrorsAndNetworkErrors() = runBlocking {
+        ApiClient("https://api.example.test/v1/", engine).use { client ->
+            assertEquals(ApiResult.Success("ok"), client.getText("status"))
+            assertEquals(ApiResult.HttpError(404, "missing"), client.getText("nope"))
+            assertTrue(client.getText("offline") is ApiResult.NetworkError)
+        }
+    }
+}

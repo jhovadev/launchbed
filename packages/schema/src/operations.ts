@@ -2,7 +2,7 @@ import { z } from "zod";
 import { validateRelativePath } from "./identifiers";
 
 const LOCAL_TEMPLATE_REF = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/;
-const SLOT_ID = /^(settings-includes|root-plugins|app-plugins|app-dependencies|app-room-config|app-imports|app-routes|app-entries|main-content)$/;
+const SLOT_ID = /^(settings-includes|root-plugins|app-plugins|app-dependencies|app-room-config|app-imports|app-routes|app-entries|main-content|manifest-permissions)$/;
 const ALIAS = /^[a-z][a-z0-9]*([.-][a-z0-9]+)*$/;
 const MODULE = /^[a-z][a-z0-9_.-]*:[a-z][a-z0-9_.-]*$/;
 const VERSION_ID = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;

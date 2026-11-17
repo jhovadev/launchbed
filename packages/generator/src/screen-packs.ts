@@ -9,14 +9,42 @@ import { LaunchbedError, delegateTabs, type DelegateTab } from "@launchbed/schem
 import { FRAGMENT_FILES } from "./templates.generated";
 import { componentSources, loadComponentCatalog } from "./components";
 import { renderText } from "./render";
+import { EXPO_PINS, FLUTTER_PINS } from "./versions";
 
 export type ScreenPackTarget = "expo" | "flutter";
 
 /** Add-ons that have an Expo and a Flutter port. Other ui/* packs stay Compose-only. */
-export const DELEGATE_SCREEN_ADDONS = ["ui/navigation", "ui/onboarding", "ui/auth", "ui/profile", "ui/dashboard"] as const;
+export const DELEGATE_SCREEN_ADDONS = [
+  "ui/navigation",
+  "ui/onboarding",
+  "ui/auth",
+  "ui/profile",
+  "ui/dashboard",
+  "ui/notes",
+  "ui/settings",
+] as const;
 
 /** Registry components the screen packs import. They are copied in and listed in launchbed.json. */
 export const SCREEN_PACK_COMPONENTS = ["app-bar", "avatar", "badge", "button", "card", "list-item", "text-field"] as const;
+
+/** Registry components only some screens need. */
+const FEATURE_COMPONENTS: Partial<Record<keyof ScreenPackFeatures, readonly string[]>> = {
+  settings: ["switch"],
+};
+
+export function screenPackComponents(features: ScreenPackFeatures): string[] {
+  const names = new Set<string>(SCREEN_PACK_COMPONENTS);
+  for (const [feature, components] of Object.entries(FEATURE_COMPONENTS)) {
+    if (features[feature as keyof ScreenPackFeatures]) for (const name of components) names.add(name);
+  }
+  return [...names].sort();
+}
+
+/** Pinned packages the screen pack installs inside the generated project (exact versions). */
+export const SCREEN_PACK_PACKAGES = {
+  expo: [{ name: "@react-native-async-storage/async-storage", version: EXPO_PINS.asyncStorage }],
+  flutter: [{ name: "shared_preferences", version: FLUTTER_PINS.sharedPreferences }],
+} as const;
 
 export interface ScreenPackFile {
   path: string;
@@ -34,6 +62,8 @@ export interface ScreenPackFeatures {
   auth: boolean;
   profile: boolean;
   dashboard: boolean;
+  notes: boolean;
+  settings: boolean;
 }
 
 export type ScreenPackTab = DelegateTab;
@@ -45,12 +75,15 @@ export function screenPackFeatures(addonIds: readonly string[]): ScreenPackFeatu
     auth: ids.has("ui/auth"),
     profile: ids.has("ui/profile"),
     dashboard: ids.has("ui/dashboard"),
+    notes: ids.has("ui/notes"),
+    settings: ids.has("ui/settings"),
   };
 }
 
 /** Bottom tabs shared by the Expo and Flutter shells (Compose uses topLevelDestinations). */
 export function screenPackTabs(features: ScreenPackFeatures): ScreenPackTab[] {
-  return delegateTabs([...(features.dashboard ? ["ui/dashboard"] : []), ...(features.profile ? ["ui/profile"] : [])]);
+  const ids = (["dashboard", "notes", "profile", "settings"] as const).filter((key) => features[key]).map((key) => `ui/${key}`);
+  return delegateTabs(ids);
 }
 
 const EXPO_FILES: Record<keyof ScreenPackFeatures | "core", readonly string[]> = {
@@ -61,6 +94,10 @@ const EXPO_FILES: Record<keyof ScreenPackFeatures | "core", readonly string[]> =
     "src/launchbed/screens/Screen.tsx",
     "src/launchbed/screens/WelcomeScreen.tsx",
     "src/launchbed/session.tsx",
+    "src/launchbed/storage/app-store.ts",
+    "src/launchbed/storage/key-value.ts",
+    "src/launchbed/storage/session-state.ts",
+    "src/launchbed/storage/storage.test.js",
     "src/launchbed/theme.ts",
   ],
   onboarding: ["src/app/onboarding.tsx", "src/launchbed/screens/OnboardingScreen.tsx"],
@@ -79,6 +116,16 @@ const EXPO_FILES: Record<keyof ScreenPackFeatures | "core", readonly string[]> =
     "src/launchbed/screens/ProfileScreen.tsx",
   ],
   dashboard: ["src/launchbed/screens/DashboardScreen.tsx"],
+  notes: [
+    "src/app/(tabs)/notes.tsx",
+    "src/app/note.tsx",
+    "src/launchbed/notes/notes-repository.ts",
+    "src/launchbed/notes/notes-store.ts",
+    "src/launchbed/notes/notes.test.js",
+    "src/launchbed/screens/NoteEditorScreen.tsx",
+    "src/launchbed/screens/NotesScreen.tsx",
+  ],
+  settings: ["src/app/(tabs)/settings.tsx", "src/launchbed/screens/SettingsScreen.tsx"],
 };
 
 const FLUTTER_FILES: Record<keyof ScreenPackFeatures | "core", readonly string[]> = {
@@ -86,8 +133,11 @@ const FLUTTER_FILES: Record<keyof ScreenPackFeatures | "core", readonly string[]
     "lib/launchbed/auth/fake_auth_repository.dart",
     "lib/launchbed/screens/welcome_screen.dart",
     "lib/launchbed/session.dart",
+    "lib/launchbed/storage/key_value_store.dart",
+    "lib/launchbed/storage/session_state.dart",
+    "lib/launchbed/storage/shared_preferences_store.dart",
     "lib/launchbed/theme.dart",
-    "lib/main.dart",
+    "test/session_persistence_test.dart",
   ],
   onboarding: ["lib/launchbed/screens/onboarding_screen.dart"],
   auth: [
@@ -99,6 +149,13 @@ const FLUTTER_FILES: Record<keyof ScreenPackFeatures | "core", readonly string[]
   ],
   profile: ["lib/launchbed/screens/profile_edit_screen.dart", "lib/launchbed/screens/profile_screen.dart"],
   dashboard: ["lib/launchbed/screens/dashboard_screen.dart"],
+  notes: [
+    "lib/launchbed/notes/notes_repository.dart",
+    "lib/launchbed/screens/note_editor_screen.dart",
+    "lib/launchbed/screens/notes_screen.dart",
+    "test/notes_repository_test.dart",
+  ],
+  settings: ["lib/launchbed/screens/settings_screen.dart"],
 };
 
 function fragment(target: ScreenPackTarget, path: string): string {
@@ -111,16 +168,16 @@ function fragment(target: ScreenPackTarget, path: string): string {
 
 function selectedPaths(table: Record<keyof ScreenPackFeatures | "core", readonly string[]>, features: ScreenPackFeatures): string[] {
   const paths = [...table.core];
-  for (const key of ["onboarding", "auth", "profile", "dashboard"] as const) {
+  for (const key of ["onboarding", "auth", "profile", "dashboard", "notes", "settings"] as const) {
     if (features[key]) paths.push(...table[key]);
   }
   return paths;
 }
 
-function registryFiles(target: ScreenPackTarget): ScreenPackFile[] {
+function registryFiles(target: ScreenPackTarget, features: ScreenPackFeatures): ScreenPackFile[] {
   const catalog = loadComponentCatalog();
   const files: ScreenPackFile[] = [];
-  for (const name of SCREEN_PACK_COMPONENTS) {
+  for (const name of screenPackComponents(features)) {
     const contract = catalog.components.find((component) => component.name === name);
     const source = contract ? componentSources(contract).find((file) => file.target === target) : undefined;
     if (!source) {
@@ -140,15 +197,16 @@ function usesScreenPack(addonIds: readonly string[]): boolean {
 /* ------------------------------------------------------------------ */
 
 function expoGate(features: ScreenPackFeatures): string {
-  const gated = features.onboarding || features.auth;
   const lines = [
     'import { Redirect } from "expo-router";',
-    ...(gated ? ['import { useSession } from "../launchbed/session";'] : []),
+    'import { useSession } from "../launchbed/session";',
     "",
     "// Route gate: onboarding first, then sign-in, then the tabs. Generated by Launchbed from the selected add-ons.",
     "export default function Index() {",
+    "  const session = useSession();",
+    "  // Wait until the saved session has been read from the device.",
+    "  if (!session.ready) return null;",
   ];
-  if (gated) lines.push("  const session = useSession();");
   if (features.onboarding) lines.push('  if (!session.onboardingSeen) return <Redirect href="/onboarding" />;');
   if (features.auth) lines.push('  if (!session.user) return <Redirect href="/login" />;');
   lines.push('  return <Redirect href="/home" />;', "}", "");
@@ -157,7 +215,9 @@ function expoGate(features: ScreenPackFeatures): string {
 
 const EXPO_TAB_SYMBOLS: Record<ScreenPackTab["id"], { ios: string; android: string }> = {
   home: { ios: "house.fill", android: "home" },
+  notes: { ios: "note.text", android: "edit_note" },
   profile: { ios: "person.crop.circle", android: "person" },
+  settings: { ios: "gearshape", android: "settings" },
 };
 
 function expoTabsLayout(tabs: readonly ScreenPackTab[]): string {
@@ -186,7 +246,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.onSecondaryContainer,
+        // onSurface, not primary: imported themes do not guarantee primary-on-surface contrast.
+        tabBarActiveTintColor: colors.onSurface,
         tabBarInactiveTintColor: colors.onSurfaceVariant,
         tabBarStyle: ${tabs.length >= 2 ? "{ backgroundColor: colors.surface }" : '{ display: "none" }'},
       }}
@@ -224,9 +285,9 @@ export function expoScreenPack(options: { addonIds: readonly string[]; projectNa
     { path: "src/app/index.tsx", contents: expoGate(features) },
     { path: "src/app/(tabs)/_layout.tsx", contents: expoTabsLayout(tabs) },
     { path: "src/app/(tabs)/home.tsx", contents: expoHomeTab(features) },
-    ...registryFiles("expo"),
+    ...registryFiles("expo", features),
   );
-  return { files: files.sort((a, b) => a.path.localeCompare(b.path)), components: [...SCREEN_PACK_COMPONENTS], features };
+  return { files: files.sort((a, b) => a.path.localeCompare(b.path)), components: screenPackComponents(features), features };
 }
 
 /* ------------------------------------------------------------------ */
@@ -241,7 +302,10 @@ function flutterApp(features: ScreenPackFeatures): string {
   const imports = ["import 'package:material_ui/material_ui.dart';", "", "import 'app_shell.dart';", "import 'config.dart';"];
   if (features.auth) imports.push("import 'screens/login_screen.dart';", "import 'screens/register_screen.dart';");
   if (features.onboarding) imports.push("import 'screens/onboarding_screen.dart';");
-  imports.push("import 'session.dart';", "import 'theme.dart';");
+  if (features.notes) imports.push("import 'notes/notes_repository.dart';");
+  imports.push("import 'session.dart';");
+  if (features.notes) imports.push("import 'storage/key_value_store.dart';");
+  imports.push("import 'theme.dart';");
   const gate: string[] = [];
   if (features.onboarding || features.auth) gate.push("    final session = SessionScope.of(context);");
   if (features.onboarding) {
@@ -266,20 +330,29 @@ function flutterApp(features: ScreenPackFeatures): string {
 /// Root widget generated by Launchbed: Material 3 theme from the DTCG tokens and a
 /// route gate (onboarding first, then sign-in, then the tabs) driven by [Session].
 class LaunchbedApp extends StatelessWidget {
-  const LaunchbedApp({super.key, required this.session});
+${features.notes ? `  LaunchbedApp({super.key, required this.session, NotesRepository? notes})
+      : notes = notes ?? NotesRepository(MemoryKeyValueStore());
 
   final Session session;
+  final NotesRepository notes;` : `  const LaunchbedApp({super.key, required this.session});
+
+  final Session session;`}
 
   @override
   Widget build(BuildContext context) {
-    return SessionScope(
-      session: session,
-      child: MaterialApp(
+    final app = ListenableBuilder(
+      listenable: session,
+      builder: (context, _) => MaterialApp(
         title: launchbedProjectName,
         theme: launchbedTheme(Brightness.light),
         darkTheme: launchbedTheme(Brightness.dark),
+        themeMode: session.themeMode,
         home: const LaunchbedGate(),
       ),
+    );
+    return SessionScope(
+      session: session,
+      child: ${features.notes ? "NotesScope(notes: notes, child: app)" : "app"},
     );
   }
 }
@@ -299,12 +372,22 @@ function flutterShell(features: ScreenPackFeatures, tabs: readonly ScreenPackTab
   const homeImport = features.dashboard ? "import 'screens/dashboard_screen.dart';" : "import 'screens/welcome_screen.dart';";
   const homeWidget = features.dashboard ? "DashboardScreen()" : "WelcomeScreen()";
   const imports = ["import 'package:material_ui/material_ui.dart';", "", homeImport];
+  if (features.notes) imports.push("import 'screens/notes_screen.dart';");
   if (features.profile) imports.push("import 'screens/profile_screen.dart';");
+  if (features.settings) imports.push("import 'screens/settings_screen.dart';");
   const icons: Record<ScreenPackTab["id"], { icon: string; selected: string }> = {
     home: { icon: "Icons.home_outlined", selected: "Icons.home" },
+    notes: { icon: "Icons.edit_note_outlined", selected: "Icons.edit_note" },
     profile: { icon: "Icons.person_outline", selected: "Icons.person" },
+    settings: { icon: "Icons.settings_outlined", selected: "Icons.settings" },
   };
-  const pages = tabs.map((tab) => (tab.id === "home" ? `      ${homeWidget},` : "      ProfileScreen(),"));
+  const widgets: Record<ScreenPackTab["id"], string> = {
+    home: homeWidget,
+    notes: "NotesScreen()",
+    profile: "ProfileScreen()",
+    settings: "SettingsScreen()",
+  };
+  const pages = tabs.map((tab) => `      ${widgets[tab.id]},`);
   const destinations = tabs.map(
     (tab) =>
       `          NavigationDestination(icon: Icon(${icons[tab.id].icon}), selectedIcon: Icon(${icons[tab.id].selected}), label: ${dartString(tab.label)}),`,
@@ -347,6 +430,27 @@ ${body}
 `;
 }
 
+function flutterMain(features: ScreenPackFeatures): string {
+  const imports = ["import 'package:material_ui/material_ui.dart';", "", "import 'launchbed/app.dart';"];
+  if (features.notes) imports.push("import 'launchbed/notes/notes_repository.dart';");
+  imports.push("import 'launchbed/session.dart';", "import 'launchbed/storage/shared_preferences_store.dart';");
+  const body = [
+    "  WidgetsFlutterBinding.ensureInitialized();",
+    "  final store = SharedPreferencesStore();",
+    "  final session = Session(store: store);",
+    "  await session.load();",
+  ];
+  if (features.notes) body.push("  final notes = NotesRepository(store);", "  await notes.load();");
+  body.push(`  runApp(LaunchbedApp(session: session${features.notes ? ", notes: notes" : ""}));`);
+  return `${imports.join("\n")}
+
+/// Generated by Launchbed: restores the saved session (shared_preferences) before the first frame.
+Future<void> main() async {
+${body.join("\n")}
+}
+`;
+}
+
 function flutterFlowTest(features: ScreenPackFeatures, tabs: readonly ScreenPackTab[], dartPackage: string): string {
   const steps: string[] = [];
   if (features.onboarding) {
@@ -371,11 +475,33 @@ function flutterFlowTest(features: ScreenPackFeatures, tabs: readonly ScreenPack
   steps.push(features.dashboard ? "    expect(find.text('Overview'), findsOneWidget);" : "    expect(find.text('Welcome'), findsWidgets);");
   if (tabs.length >= 2) {
     steps.push("    expect(find.byType(NavigationBar), findsOneWidget);");
+    if (features.notes) {
+      steps.push(
+        "    await tester.tap(find.text('Notes').last);",
+        "    await tester.pumpAndSettle();",
+        "    expect(find.text('No notes yet'), findsOneWidget);",
+        "    await tester.tap(find.byTooltip('New note'));",
+        "    await tester.pumpAndSettle();",
+        "    await tester.enterText(find.widgetWithText(TextField, 'Title'), 'Groceries');",
+        "    await tester.tap(find.widgetWithText(FilledButton, 'Save'));",
+        "    await tester.pumpAndSettle();",
+        "    expect(find.text('Groceries'), findsOneWidget);",
+      );
+    }
     if (features.profile) {
       steps.push(
         "    await tester.tap(find.text('Profile').last);",
         "    await tester.pumpAndSettle();",
         "    expect(find.text('Edit profile'), findsOneWidget);",
+      );
+    }
+    if (features.settings) {
+      steps.push(
+        "    await tester.tap(find.text('Settings').last);",
+        "    await tester.pumpAndSettle();",
+        "    await tester.tap(find.text('Dark'));",
+        "    await tester.pumpAndSettle();",
+        "    expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode, ThemeMode.dark);",
       );
     }
   } else {
@@ -413,8 +539,9 @@ export function flutterScreenPack(options: {
     { path: "lib/launchbed/config.dart", contents: `// Generated by Launchbed.\nconst String launchbedProjectName = ${dartString(options.projectName)};\n` },
     { path: "lib/launchbed/app.dart", contents: flutterApp(features) },
     { path: "lib/launchbed/app_shell.dart", contents: flutterShell(features, tabs) },
+    { path: "lib/main.dart", contents: flutterMain(features) },
     { path: "test/app_flow_test.dart", contents: flutterFlowTest(features, tabs, options.dartPackage) },
-    ...registryFiles("flutter"),
+    ...registryFiles("flutter", features),
   );
-  return { files: files.sort((a, b) => a.path.localeCompare(b.path)), components: [...SCREEN_PACK_COMPONENTS], features };
+  return { files: files.sort((a, b) => a.path.localeCompare(b.path)), components: screenPackComponents(features), features };
 }

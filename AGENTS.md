@@ -57,6 +57,25 @@ Generated apps: mise pins tools and env (no secrets). just is the command catalo
 - Web UI (`apps/web`): Tailwind v4 + shadcn-style tokens in `src/styles/global.css`; `Button`/`Badge` in `src/components/ui/` are copied from solid-ui (MIT). Tabs and segmented controls are hand-written WAI-ARIA (no Kobalte primitives in islands, they broke Astro hydration). The phone preview (`packages/preview`) is illustrative and must mirror the generated screens.
 - `launchbed doctor [--target <id>]` checks local prerequisites. The web/API never runs official CLIs for delegate targets; `/api/generate` returns an overlay-only ZIP (with `LAUNCHBED_OVERLAY.md`, plan/ZIP parity) plus the official command in `x-delegate-command`.
 
+## Themes, persistence and cross-target addons
+
+- `--theme <id>` / `themeId` applies one of the 42 tweakcn presets (Apache-2.0) committed in
+  `packages/design-tokens/themes/`. Never edit those JSON files by hand: regenerate them with
+  `bun scripts/import-tweakcn-themes.ts --source <tweakcn clone>` (add `--check` to verify).
+  Attribution and changes are in `docs/THIRD_PARTY.md`. `tests/themes.test.ts` checks parsing,
+  contrast, determinism and the token flow to every target.
+- The Expo/Flutter screen pack persists session and appearance (`launchbed.session.v1`) and notes
+  (`launchbed.notes.v1`) through a small `KeyValueStore`: AsyncStorage 2.2.0 on Expo,
+  shared_preferences 2.5.6 on Flutter. Passwords are never stored.
+- Addons can target delegate stacks with `delegateFiles` (fragments under
+  `templates/fragments/<target>/`), `delegatePackages` (exact versions, installed by the
+  official `npx expo install` / `flutter pub add` step) and `targetDependencies`. Cross-target
+  betas: `storage/key-value`, `network/http-client`, `tooling/format`.
+- The README support matrix is generated: after changing addons, presets or components, run
+  `bun scripts/readme-matrix.ts --write` (`tests/readme-matrix.test.ts` fails otherwise).
+- Expo `just test` typechecks only Launchbed files (`tsconfig.launchbed.json`); the official
+  template's own type errors are out of scope (`just typecheck-all` shows them).
+
 ## Device and scrcpy recipes
 
 Every generated Android project ships `just` recipes that use the existing
@@ -114,4 +133,5 @@ See `.agents/skills/update-compatibility/SKILL.md`. Change versions in `packages
 - Historical files under `patches/` (they document past reviews).
 - Business data, if any appears in a local environment.
 - A wholesale rename of `@launchbed/*` packages unless a dedicated, tested change is requested.
+- `packages/design-tokens/themes/*.json` (generated; see above).
 - Do not mark additional adapters (Tauri, RN community CLI) as implemented until they have tests and a generator path. Expo and Flutter are already generatable as delegates.

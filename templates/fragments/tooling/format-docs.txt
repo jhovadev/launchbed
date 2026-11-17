@@ -1,0 +1,11 @@
+# Lint and format (tooling/format)
+
+- `just format` rewrites Kotlin sources with ktlint 1.8.0 (pinned in `mise.toml`, installed by `mise install`).
+- `just format-check` reports violations without changing files; use it in CI.
+- Rules come from `.editorconfig`: `ktlint_code_style = android_studio`, 140 columns, and `@Composable`
+  functions may use PascalCase.
+- Android Lint still runs through Gradle (`./gradlew :app:lintDebug`).
+
+Launchbed's generated Kotlin is not ktlint-clean yet: run `just format` once after generating the
+project, then commit. On an app-starter project with every Compose add-on, `ktlint --format` fixes
+every reported violation, and `just format-check` passes afterwards.

@@ -18,7 +18,7 @@ import { resolveNewOptions, writeGeneratedProject } from "./new-command";
 export const USAGE = `launchbed - generate mobile starters from the command line
 
 Usage:
-  launchbed new [dir] [--name <name>] [--app-id <id>] [--target <id>] [--preset <id>] [--addon <id>]... [--out <dir>] [--yes] [--force]
+  launchbed new [dir] [--name <name>] [--app-id <id>] [--target <id>] [--preset <id>] [--theme <id>] [--addon <id>]... [--out <dir>] [--yes] [--force]
   launchbed catalog [--json]
   launchbed doctor [--target <id>] [--json]
   launchbed components [--json]
@@ -85,6 +85,9 @@ async function main(): Promise<void> {
         const suffix = addon.generatable ? "" : ` [${addon.status}]`;
         console.log(`- ${addon.id}${suffix}: ${addon.displayName}`);
       }
+      console.log("");
+      console.log(`Themes (--theme <id>, ${catalog.themes.length} from tweakcn, Apache-2.0):`);
+      console.log(`  ${catalog.themes.map((theme) => theme.id).join(", ")}`);
     }
     return;
   }
@@ -152,7 +155,8 @@ async function main(): Promise<void> {
       console.log(`Files: ${result.files}, bytes: ${result.bytes}`);
       console.log(`Equivalent command: ${result.command}`);
       for (const warning of result.warnings) console.log(`Warning: ${warning}`);
-      console.log("Next: cd into the directory, run `mise install`, then `just doctor` and `just build`.");
+      const finish = options.target === "android-compose" ? "`just build`" : "`just test` and `just dev`";
+      console.log(`Next: cd into the directory, run \`mise install\`, then \`just doctor\` and ${finish}.`);
     } catch (error) {
       if (error instanceof LaunchbedError) fail(error);
       console.error((error as Error).message);

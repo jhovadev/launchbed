@@ -1,0 +1,122 @@
+{
+  "id": "network/http-client",
+  "version": "0.1.0",
+  "displayName": "HTTP client",
+  "description": "Provider-neutral HTTP client with timeouts and typed results: Ktor on Compose, fetch on Expo, package:http on Flutter. No backend bundled.",
+  "category": "network",
+  "status": "beta",
+  "dependencies": [],
+  "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
+  "capabilities": [
+    "networking",
+    "http"
+  ],
+  "requirements": {
+    "minSdk": 24,
+    "compileSdk": 34,
+    "jdk": 17
+  },
+  "fileOperations": [
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "ktor",
+      "version": "3.6.1"
+    },
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "ktorclientcore",
+      "module": "io.ktor:ktor-client-core",
+      "versionRef": "ktor"
+    },
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "ktorclientandroid",
+      "module": "io.ktor:ktor-client-android",
+      "versionRef": "ktor"
+    },
+    {
+      "type": "merge",
+      "target": "version-catalog",
+      "alias": "ktorclientmock",
+      "module": "io.ktor:ktor-client-mock",
+      "versionRef": "ktor"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "ktorclientcore"
+    },
+    {
+      "type": "merge",
+      "target": "app-dependencies",
+      "alias": "ktorclientandroid"
+    },
+    {
+      "type": "insert",
+      "path": "app/build.gradle.kts",
+      "slot": "app-dependencies",
+      "template": "network/ktor-test-deps"
+    },
+    {
+      "type": "insert",
+      "path": "app/src/main/AndroidManifest.xml",
+      "slot": "manifest-permissions",
+      "template": "network/internet-permission"
+    },
+    {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/data/network/ApiClient.kt",
+      "template": "network/api-client"
+    },
+    {
+      "type": "add",
+      "path": "app/src/test/java/{{packagePath}}/data/network/ApiClientTest.kt",
+      "template": "network/api-client-test"
+    },
+    {
+      "type": "add",
+      "path": "docs/NETWORK.md",
+      "template": "network/docs"
+    }
+  ],
+  "delegateFiles": {
+    "expo": [
+      "src/launchbed/network/http-client.ts",
+      "src/launchbed/network/http-client.test.js"
+    ],
+    "flutter": [
+      "lib/launchbed/network/api_client.dart",
+      "test/api_client_test.dart"
+    ]
+  },
+  "delegatePackages": {
+    "flutter": [
+      {
+        "name": "http",
+        "version": "1.6.0"
+      }
+    ]
+  },
+  "compatibility": {
+    "android": [
+      "7.0+"
+    ],
+    "notes": [
+      "Compose: Ktor 3.6.1 (client-core + Android engine), MockEngine unit test, INTERNET permission.",
+      "Expo: the platform fetch with AbortController timeouts; no extra package.",
+      "Flutter: package:http 1.6.0 with MockClient tests.",
+      "No base URL, API key or backend is bundled.",
+      "Upstream licenses: Apache-2.0 (Ktor), BSD-3-Clause (package:http)."
+    ]
+  },
+  "license": "MIT",
+  "docsUrl": "https://ktor.io/docs/client-create-and-configure.html"
+}

@@ -79,3 +79,20 @@ the same resolved tokens. It is a **simulation**, not a Compose runtime: layout,
 text metrics, elevation rendering and system bars are approximate. The UI labels
 it as such. When Compose or Android tooling changes, the preview can lag without
 affecting generated code.
+
+## Imported themes (tweakcn)
+
+`ProjectRequest.themeId` (CLI `--theme <id>`, web Theme step) selects one of 42 presets imported
+from [tweakcn](https://github.com/jnsahaj/tweakcn) (Apache-2.0, see `docs/THIRD_PARTY.md`).
+`applyThemePreset` sets the seed to the preset's light primary, writes full light/dark
+`overrides` for the mapped roles, and takes the font family and corner radius from the preset
+unless the request already changed them from the defaults. Roles that tweakcn does not define
+(containers, tertiary, outline, ...) still come from the Material 3 scheme of the seed.
+
+The mapping from shadcn/ui variables to Material roles is `TWEAKCN_ROLE_MAP` in
+`packages/design-tokens/src/tweakcn.ts`: primary, secondary, accent → secondaryContainer,
+background/foreground, card → surface, muted → surfaceVariant, border → outlineVariant,
+destructive → error, and so on. oklch/hsl/rgb values are converted to sRGB hex with gamut
+clamping (`css-color.ts`). A foreground under 3:1 against its background is replaced with black
+or white and recorded in `contrastFixes`. Imported themes do not guarantee primary-on-surface
+contrast, so generated screens use `onSurface` for active navigation labels.

@@ -39,9 +39,9 @@ export function previewTabs(target: PreviewTarget, addons: readonly string[]): P
     return topLevelDestinations(addons).map((destination) => ({ ...COMPOSE_TAB_SCREENS[destination.route]!, label: destination.label }));
   }
   return delegateTabs(addons).map((tab) =>
-    tab.id === "profile"
-      ? { screen: "profile" as const, label: tab.label, icon: "profile" as const }
-      : { screen: addons.includes("ui/dashboard") ? ("dashboard" as const) : ("welcome" as const), label: tab.label, icon: "home" as const },
+    tab.id === "home"
+      ? { screen: addons.includes("ui/dashboard") ? ("dashboard" as const) : ("welcome" as const), label: tab.label, icon: "home" as const }
+      : { screen: tab.id, label: tab.label, icon: tab.id },
   );
 }
 

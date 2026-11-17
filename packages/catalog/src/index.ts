@@ -28,6 +28,9 @@ import dockerCompose from "../../../addons/tooling/docker-compose.json";
 import androidCli from "../../../addons/tooling/android-cli.json";
 import foundationCore from "../../../addons/tooling/foundation-core.json";
 import foundationUi from "../../../addons/ui/foundation-ui.json";
+import keyValue from "../../../addons/storage/key-value.json";
+import httpClient from "../../../addons/network/http-client.json";
+import format from "../../../addons/tooling/format.json";
 
 const RAW_MANIFESTS = [
   room,
@@ -52,14 +55,18 @@ const RAW_MANIFESTS = [
   androidCli,
   foundationCore,
   foundationUi,
+  keyValue,
+  httpClient,
+  format,
 ];
 
 const CATEGORY_ORDER: Record<AddonManifest["category"], number> = {
   storage: 0,
-  ui: 1,
-  native: 2,
-  tooling: 3,
-  foundation: 4,
+  network: 1,
+  ui: 2,
+  native: 3,
+  tooling: 4,
+  foundation: 5,
 };
 
 /**
@@ -120,6 +127,8 @@ export function buildCatalog(): CatalogResponse {
       prereqs: [...target.prereqs],
       notes: [...target.notes],
     })),
+    // Theme presets are attached by @launchbed/generator getCatalog() (they live in design-tokens).
+    themes: [],
     limits: {
       requestBytes: LIMITS.requestBytes,
       files: LIMITS.files,

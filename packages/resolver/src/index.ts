@@ -101,7 +101,8 @@ export function resolveAddons(
       );
     }
     stack.push(id);
-    for (const dependency of [...addon.dependencies].sort()) {
+    const dependencies = addon.targetDependencies[target] ?? addon.dependencies;
+    for (const dependency of [...dependencies].sort()) {
       visit(dependency, depth + 1, id);
     }
     stack.pop();

@@ -1,9 +1,9 @@
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { describe, expect, test } from "bun:test";
-import { loadComponentCatalog } from "@launchbed/generator";
+import { EXPO_PINS, loadComponentCatalog } from "@launchbed/generator";
 
 const enabled = process.env.LAUNCHBED_E2E_EXPO === "1";
 
@@ -25,6 +25,8 @@ describe.skipIf(!enabled)("expo e2e (LAUNCHBED_E2E_EXPO=1)", () => {
         "expo",
         "--preset",
         "app-starter",
+        "--addon",
+        "ui/notes",
         "--out",
         out,
         "--force",
@@ -39,6 +41,11 @@ describe.skipIf(!enabled)("expo e2e (LAUNCHBED_E2E_EXPO=1)", () => {
     expect(existsSync(join(out, "package.json"))).toBe(true);
     expect(existsSync(join(out, "src/app/(tabs)/_layout.tsx"))).toBe(true);
     expect(existsSync(join(out, "src/launchbed/screens/DashboardScreen.tsx"))).toBe(true);
+    expect(existsSync(join(out, "src/launchbed/screens/NotesScreen.tsx"))).toBe(true);
+    expect(existsSync(join(out, "src/launchbed/screens/SettingsScreen.tsx"))).toBe(true);
+    // The pinned dependency step ran inside the project.
+    const pkg = JSON.parse(readFileSync(join(out, "package.json"), "utf8"));
+    expect(pkg.dependencies["@react-native-async-storage/async-storage"]).toBe(EXPO_PINS.asyncStorage);
     // Copy every registry component so the toolchain checks them too.
     for (const component of loadComponentCatalog().components) {
       const added = spawnSync("bun", [join(import.meta.dir, "../packages/cli/src/index.ts"), "add", component.name], {
@@ -59,18 +66,17 @@ describe.skipIf(!enabled)("expo e2e (LAUNCHBED_E2E_EXPO=1)", () => {
     if (install.status !== 0) {
       throw new Error(`npm install failed:\n${install.stdout}\n${install.stderr}`);
     }
-    const check = spawnSync("npx", ["tsc", "--noEmit"], {
+    // `just test` typechecks only Launchbed files (tsconfig.launchbed.json), so errors in the
+    // official template cannot fail it. That scoped check must be clean.
+    const check = spawnSync("npx", ["tsc", "--noEmit", "-p", "tsconfig.launchbed.json"], {
       cwd: out,
       encoding: "utf8",
       timeout: 5 * 60 * 1000,
       shell: false,
     });
-    // Launchbed-owned files (registry components, tokens, the screen pack) must typecheck even
-    // when the official template's own files report errors.
-    const ownErrors = `${check.stdout}\n${check.stderr}`
-      .split("\n")
-      .filter((line) => /^(components\/ui|tokens|src\/launchbed|src\/app)\//.test(line));
-    expect(ownErrors).toEqual([]);
+    if (check.status !== 0) {
+      throw new Error(`scoped typecheck failed:\n${check.stdout}\n${check.stderr}`);
+    }
     const unit = spawnSync("bun", ["test", "src/launchbed"], { cwd: out, encoding: "utf8", timeout: 2 * 60 * 1000 });
     if (unit.status !== 0) {
       throw new Error(`screen pack tests failed:\n${unit.stdout}\n${unit.stderr}`);

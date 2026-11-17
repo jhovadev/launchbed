@@ -132,3 +132,5 @@ export function generateComposeTokens(tokens: ThemeTokens, packageName: string):
 }
 
 export { themeTokensToDtcg, dtcgToThemeTokens, serializeDtcg, type DtcgDocument, type DtcgToken } from "./dtcg";
+export { THEME_PRESETS, THEME_PRESET_IDS, applyThemePreset, findThemePreset, type ThemePreset } from "./theme-presets";
+export { contrastRatio, cssColorToHex, parseCssColor } from "./css-color";

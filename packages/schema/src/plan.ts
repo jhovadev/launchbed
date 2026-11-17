@@ -41,6 +41,8 @@ export const DelegateStepSchema = z.strictObject({
   command: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, "must be a bare executable name such as npx"),
   argv: z.array(z.string().min(1).max(200)).min(1).max(32),
   description: z.string().min(1).max(300),
+  /** Where the step runs: next to the new project (the official scaffold) or inside it (dependency installs). */
+  cwd: z.enum(["parent", "project"]).optional(),
 });
 
 export type DelegateStep = z.infer<typeof DelegateStepSchema>;
@@ -66,6 +68,7 @@ export const GenerationPlanSchema = z.strictObject({
     targetSdk: z.number().int(),
     addons: z.array(z.string()),
     preset: z.string().optional(),
+    themeId: z.string().optional(),
     target: z.enum(TARGET_IDS).default(DEFAULT_TARGET),
   }),
   /** Official CLI steps for delegate targets. Empty for the owned Android path. */
@@ -87,7 +90,7 @@ export const CatalogEntrySchema = z.strictObject({
   version: z.string(),
   displayName: z.string(),
   description: z.string(),
-  category: z.enum(["storage", "ui", "native", "tooling", "foundation"]),
+  category: z.enum(["storage", "network", "ui", "native", "tooling", "foundation"]),
   status: z.enum(["stable", "beta", "experimental", "planned"]),
   generatable: z.boolean(),
   capabilities: z.array(z.string()),
@@ -135,6 +138,23 @@ export const CatalogResponseSchema = z.strictObject({
       notes: z.array(z.string()),
     }),
   ).default([]),
+  /** Imported theme presets (tweakcn, Apache-2.0); pass an id as themeId / --theme. */
+  themes: z
+    .array(
+      z.strictObject({
+        id: z.string(),
+        label: z.string(),
+        license: z.string(),
+        source: z.string(),
+        cornerRadius: z.number().int(),
+        fontFamily: z.string(),
+        swatches: z.strictObject({
+          light: z.array(z.string()),
+          dark: z.array(z.string()),
+        }),
+      }),
+    )
+    .default([]),
   limits: z.strictObject({
     requestBytes: z.number().int(),
     files: z.number().int(),
