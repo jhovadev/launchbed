@@ -40,7 +40,7 @@ jobs:
       - name: SSR smoke (real homepage and ZIP API)
         run: bun run deploy:ssr-smoke
       - name: Build web app (Vercel SSR adapter)
-        run: bun run deploy:check && KOTLAUNCH_DEPLOY_TARGET=vercel bun run build
+        run: bun run deploy:check && LAUNCHBED_DEPLOY_TARGET=vercel bun run build
 
   android-smoke:
     runs-on: ubuntu-latest

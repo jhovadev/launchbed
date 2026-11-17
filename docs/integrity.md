@@ -61,7 +61,7 @@ Running a new device test updates device evidence, including any new failures.
 Use `just runtime-device-check` to check an authorized and booted Android device
 with API >= 26, before `ANDROID_SERIAL=<real-device> just android-test`. This
 preflight is read-only; the `android-test` command then installs isolated
-`dev.initializr.runtime.*` applications and runs the test APK. Do not use
+`dev.launchbed.runtime.*` applications and runs the test APK. Do not use
 personal devices with sensitive test data without checking test behavior first.
 
 Device results should be validated on hardware/emulator. A PASS from the

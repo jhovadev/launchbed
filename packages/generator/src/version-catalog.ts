@@ -1,4 +1,4 @@
-import { InitializrError } from "@android-initializr/schema";
+import { LaunchbedError } from "@launchbed/schema";
 import { parse } from "smol-toml";
 
 export { parse as parseToml } from "smol-toml";
@@ -16,7 +16,7 @@ type TomlValue = string | number | boolean | TomlValue[] | { [key: string]: Toml
 type TomlTable = Record<string, TomlValue>;
 
 function fail(message: string): never {
-  throw new InitializrError("RESOLUTION_ERROR", message);
+  throw new LaunchbedError("RESOLUTION_ERROR", message);
 }
 
 function formatKey(key: string): string {

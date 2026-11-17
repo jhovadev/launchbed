@@ -1,11 +1,10 @@
 {
-  "name": "@android-initializr/cli",
+  "name": "@launchbed/cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "launchbed": "./src/index.ts",
-    "android-initializr": "./src/index.ts"
+    "launchbed": "./src/index.ts"
   },
   "exports": {
     ".": {
@@ -14,8 +13,8 @@
     }
   },
   "dependencies": {
-    "@android-initializr/catalog": "workspace:*",
-    "@android-initializr/generator": "workspace:*",
-    "@android-initializr/schema": "workspace:*"
+    "@launchbed/catalog": "workspace:*",
+    "@launchbed/generator": "workspace:*",
+    "@launchbed/schema": "workspace:*"
   }
 }

@@ -15,13 +15,13 @@
     "packages/*"
   ],
   "devDependencies": {
-    "@android-initializr/catalog": "workspace:*",
-    "@android-initializr/cli": "workspace:*",
-    "@android-initializr/design-tokens": "workspace:*",
-    "@android-initializr/generator": "workspace:*",
-    "@android-initializr/preview": "workspace:*",
-    "@android-initializr/resolver": "workspace:*",
-    "@android-initializr/schema": "workspace:*",
+    "@launchbed/catalog": "workspace:*",
+    "@launchbed/cli": "workspace:*",
+    "@launchbed/design-tokens": "workspace:*",
+    "@launchbed/generator": "workspace:*",
+    "@launchbed/preview": "workspace:*",
+    "@launchbed/resolver": "workspace:*",
+    "@launchbed/schema": "workspace:*",
     "@types/bun": "1.4.4",
     "typescript": "7.0.2"
   },

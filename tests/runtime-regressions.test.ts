@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { materializeProject, generateProject } from '@android-initializr/generator';
+import { materializeProject, generateProject } from '@launchbed/generator';
 import { baseRequest } from './fixtures';
 
 function generatedText(preset: string, path: string): string {

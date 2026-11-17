@@ -14,7 +14,7 @@ import {
   parseRequest,
   readZip,
   verifyZipAgainstPlan,
-} from '@android-initializr/generator';
+} from '@launchbed/generator';
 import { parseBenchmarkArgs, summarize } from './performance/metrics.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -34,8 +34,8 @@ function requestFor(preset: string) {
     projectName: `Benchmark ${preset}`,
     preset,
     addons: [],
-    applicationId: `dev.initializr.benchmark.${preset.replaceAll('-', '')}`,
-    namespace: `dev.initializr.benchmark.${preset.replaceAll('-', '')}`,
+    applicationId: `dev.launchbed.benchmark.${preset.replaceAll('-', '')}`,
+    namespace: `dev.launchbed.benchmark.${preset.replaceAll('-', '')}`,
   });
 }
 function now() { return performance.now(); }

@@ -23,7 +23,7 @@
     "notes": [
       "Declarative entry for F0; not generatable yet.",
       "The base template already ships scrcpy recipes; this addon is for project variants that omit them.",
-      "scrcpy is never downloaded or redistributed by the Initializr."
+      "scrcpy is never downloaded or redistributed by Launchbed."
     ]
   },
   "license": "MIT",

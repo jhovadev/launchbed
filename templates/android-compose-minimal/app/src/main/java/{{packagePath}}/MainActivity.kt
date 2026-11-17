@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppTheme {
-                // @initializr-slot main-content
+                // @launchbed-slot main-content
             }
         }
     }

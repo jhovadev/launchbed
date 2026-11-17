@@ -1,5 +1,5 @@
-# Optional auxiliary service for the Initializr itself.
-# Docker is NOT required to build Android apps or to use the Initializr.
+# Optional auxiliary service for Launchbed itself.
+# Docker is NOT required to build Android apps or to use Launchbed.
 # Usage: docker compose --profile docker up --build
 services:
   web:

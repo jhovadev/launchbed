@@ -1,5 +1,5 @@
 {
-  "name": "@android-initializr/catalog",
+  "name": "@launchbed/catalog",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,6 +10,6 @@
     }
   },
   "dependencies": {
-    "@android-initializr/schema": "workspace:*"
+    "@launchbed/schema": "workspace:*"
   }
 }

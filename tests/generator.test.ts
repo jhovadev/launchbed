@@ -5,8 +5,8 @@ import {
   generateProject,
   readZip,
   verifyZipAgainstPlan,
-} from "@android-initializr/generator";
-import { InitializrError } from "@android-initializr/schema";
+} from "@launchbed/generator";
+import { LaunchbedError } from "@launchbed/schema";
 import { baseRequest } from "./fixtures";
 
 const defaultRequest = baseRequest();
@@ -134,8 +134,8 @@ describe("generator", () => {
   });
 
   test("rejects ZIP entries that try to escape the project root", () => {
-    expect(() => createZip([{ path: "../evil.txt", data: new Uint8Array([1]) }])).toThrow(InitializrError);
-    expect(() => createZip([{ path: "/etc/passwd", data: new Uint8Array([1]) }])).toThrow(InitializrError);
-    expect(() => createZip([{ path: "C:/Windows/evil", data: new Uint8Array([1]) }])).toThrow(InitializrError);
+    expect(() => createZip([{ path: "../evil.txt", data: new Uint8Array([1]) }])).toThrow(LaunchbedError);
+    expect(() => createZip([{ path: "/etc/passwd", data: new Uint8Array([1]) }])).toThrow(LaunchbedError);
+    expect(() => createZip([{ path: "C:/Windows/evil", data: new Uint8Array([1]) }])).toThrow(LaunchbedError);
   });
 });

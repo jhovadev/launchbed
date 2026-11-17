@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { InitializrError } from "@android-initializr/schema";
-import { resolveAddons } from "@android-initializr/resolver";
+import { LaunchbedError } from "@launchbed/schema";
+import { resolveAddons } from "@launchbed/resolver";
 import { baseRequest, stableAddon } from "./fixtures";
 
 const catalog = [
@@ -32,7 +32,7 @@ describe("resolveAddons", () => {
   });
 
   test("rejects unknown addons", () => {
-    expect(() => resolveAddons(requestWith(["storage/nope"]), catalog)).toThrow(InitializrError);
+    expect(() => resolveAddons(requestWith(["storage/nope"]), catalog)).toThrow(LaunchbedError);
   });
 
   test("rejects conflicts, reporting both ids", () => {

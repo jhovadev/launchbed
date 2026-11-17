@@ -1,10 +1,10 @@
 import {
-  InitializrError,
+  LaunchbedError,
   type AddonManifest,
   type PlannedOperation,
   SLOT_FILE,
   type SlotId,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 import { renderText, type TemplateVars } from "./render";
 import { insertIntoSlot, validateSlotLayout } from "./slots";
 import { mergeVersionCatalog, type CatalogEntry } from "./version-catalog";
@@ -31,7 +31,7 @@ function fragmentFor(
 ): string {
   const fragment = fragments[`${template}.txt`];
   if (fragment === undefined) {
-    throw new InitializrError(
+    throw new LaunchbedError(
       "TEMPLATE_ERROR",
       `Addon ${addon} references missing local fragment "${template}".`,
     );
@@ -43,7 +43,7 @@ function linesOf(content: string): string[] {
   const lines = content.replace(/\r\n/g, "\n").split("\n");
   while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
   if (lines.length === 0) {
-    throw new InitializrError("TEMPLATE_ERROR", "An addon fragment rendered to empty content.");
+    throw new LaunchbedError("TEMPLATE_ERROR", "An addon fragment rendered to empty content.");
   }
   return lines;
 }
@@ -76,13 +76,13 @@ export function applyComposition(
       if (operation.type === "add") {
         const addPath = renderText(operation.path, vars, `${addon.id} add path`);
         if (PROTECTED_PATHS.has(addPath)) {
-          throw new InitializrError(
+          throw new LaunchbedError(
             "RESOLUTION_ERROR",
             `Addon ${addon.id} cannot add the protected file ${addPath}.`,
           );
         }
         if (files.has(addPath)) {
-          throw new InitializrError("RESOLUTION_ERROR", `Addon ${addon.id} would overwrite ${addPath}.`);
+          throw new LaunchbedError("RESOLUTION_ERROR", `Addon ${addon.id} would overwrite ${addPath}.`);
         }
         const content = encoder.encode(fragmentFor(operation.template, addon.id, vars, fragments));
         files.set(addPath, content);
@@ -91,13 +91,13 @@ export function applyComposition(
         return;
       }
       if (operation.type === "modify") {
-        throw new InitializrError(
+        throw new LaunchbedError(
           "TEMPLATE_ERROR",
           `Addon ${addon.id} uses "modify", which is rejected in F1.0. Use insert or merge.`,
         );
       }
       if (operation.type === "append") {
-        throw new InitializrError(
+        throw new LaunchbedError(
           "TEMPLATE_ERROR",
           `Addon ${addon.id} uses legacy "append". Use insert with a declared slot.`,
         );
@@ -134,7 +134,7 @@ export function applyComposition(
             existing.versionRef !== entry.versionRef ||
             existing.version !== entry.version
           ) {
-            throw new InitializrError(
+            throw new LaunchbedError(
               "RESOLUTION_ERROR",
               `Addons ${existing.addon} and ${addon.id} define alias "${entry.alias}" with incompatible values.`,
             );
@@ -210,7 +210,7 @@ export function applyComposition(
     const path = "gradle/libs.versions.toml";
     const data = files.get(path);
     if (!data) {
-      throw new InitializrError("TEMPLATE_ERROR", `Required template file is missing: ${path}`);
+      throw new LaunchbedError("TEMPLATE_ERROR", `Required template file is missing: ${path}`);
     }
     const merged = mergeVersionCatalog(new TextDecoder().decode(data), [...catalogEntries.values()]);
     files.set(path, encoder.encode(merged));

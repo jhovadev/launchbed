@@ -7,14 +7,14 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 
-// @initializr-slot app-imports
+// @launchbed-slot app-imports
 
 @Serializable
 sealed interface AppRoute : NavKey {
     @Serializable
     data object Welcome : AppRoute
 
-    // @initializr-slot app-routes
+    // @launchbed-slot app-routes
 }
 
 @Composable
@@ -25,7 +25,7 @@ fun AppRoot() {
         onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
         entryProvider = entryProvider {
             entry<AppRoute.Welcome> { WelcomeScreen() }
-            // @initializr-slot app-entries
+            // @launchbed-slot app-entries
         },
     )
 }

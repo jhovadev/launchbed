@@ -5,10 +5,9 @@ the web, an HTTP API or the CLI. The generated project includes a Gradle wrapper
 a pinned `mise.toml` (tools and env) and a `justfile` (build, test, run and other
 complex commands). Android Studio is optional.
 
-This repository is the continuation of [Kotlaunch](https://github.com/jhovadev/kotlaunch)
-under a new name. Internal TypeScript packages remain `@android-initializr/*` for
-now so the workspace stays stable; the user-facing command is `launchbed`.
-`android-initializr` is kept as a compatible alias.
+This repository is the continuation of [Launchbed](https://github.com/jhovadev/launchbed)
+under a new name. Workspace packages are `@launchbed/*`; the user-facing
+command is `launchbed`.
 
 > **Current scope:** Native Compose presets, declarative addons, deterministic
 > ZIPs (and a project directory from `launchbed new`), mise + just in generated
@@ -161,4 +160,4 @@ not PASS. See `docs/integrity.md` for caveats.
 
 ## Pruebas Android sin Android Studio
 
-Con un SDK CLI instalado, consulta `just emulator-list` y `just emulator-images`. Si no hay AVD, `AVD_NAME=Initializr_API36 AVD_IMAGE='system-images;android-36;google_apis;x86_64' just emulator-create` crea uno **solo** si esa imagen ya está instalada; cambia el ID por uno que aparezca en tu equipo. Luego usa `AVD_NAME=Initializr_API36 just emulator-start`, `just runtime-devices`, `ANDROID_SERIAL=<serial-real> just android-test`. Detalles y requisitos en [F1.6F](docs/phases/F1.6F-cli-avd-provisioning.md).
+Con un SDK CLI instalado, consulta `just emulator-list` y `just emulator-images`. Si no hay AVD, `AVD_NAME=Launchbed_API36 AVD_IMAGE='system-images;android-36;google_apis;x86_64' just emulator-create` crea uno **solo** si esa imagen ya está instalada; cambia el ID por uno que aparezca en tu equipo. Luego usa `AVD_NAME=Launchbed_API36 just emulator-start`, `just runtime-devices`, `ANDROID_SERIAL=<serial-real> just android-test`. Detalles y requisitos en [F1.6F](docs/phases/F1.6F-cli-avd-provisioning.md).

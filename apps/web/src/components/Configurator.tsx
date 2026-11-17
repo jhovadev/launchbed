@@ -1,8 +1,8 @@
 import { For, Show, createMemo, createSignal } from "solid-js";
-import type { CatalogResponse, ProjectPresetManifest, ProjectRequest, ThemeConfig } from "@android-initializr/schema";
-import { resolveThemeTokens } from "@android-initializr/design-tokens";
-import { PreviewScreen } from "@android-initializr/preview";
-import { formatNewCommand, projectSlug } from "@android-initializr/schema";
+import type { CatalogResponse, ProjectPresetManifest, ProjectRequest, ThemeConfig } from "@launchbed/schema";
+import { resolveThemeTokens } from "@launchbed/design-tokens";
+import { PreviewScreen } from "@launchbed/preview";
+import { formatNewCommand, projectSlug } from "@launchbed/schema";
 
 interface Props {
   catalog: CatalogResponse;
@@ -164,15 +164,23 @@ export default function Configurator(props: Props) {
 
   async function copyCommand(): Promise<void> {
     const command = cliCommand();
-    try {
-      await navigator.clipboard.writeText(command);
-    } catch {
-      const field = document.createElement("textarea");
-      field.value = command;
-      document.body.append(field);
-      field.select();
-      document.execCommand("copy");
-      field.remove();
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(command);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
+        return;
+      } catch {
+        // Fall through to selecting the command so the user can copy it.
+      }
+    }
+    const pre = document.getElementById("cliCommand");
+    if (pre) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(pre);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
     }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
@@ -358,7 +366,6 @@ export default function Configurator(props: Props) {
   }
 
   const errorFor = (field: string) => fieldErrors()[field] ?? [];
-  const currentStep = () => STEPS[step()]!;
 
   return (
     <div class="builder" data-launchbed-ui="v1">

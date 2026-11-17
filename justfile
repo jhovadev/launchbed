@@ -158,9 +158,9 @@ vercel-preflight:
 
 # Verify that Vercel's SSR adapter can produce a deployment bundle locally.
 vercel-build: vercel-preflight
-    KOTLAUNCH_DEPLOY_TARGET=vercel bun run build
+    LAUNCHBED_DEPLOY_TARGET=vercel bun run build
 
-# Probe the live Vercel URL (KOTLAUNCH_DEPLOY_URL is required).
+# Probe the live Vercel URL (LAUNCHBED_DEPLOY_URL is required).
 vercel-smoke:
     node scripts/deployment/vercel-smoke.mjs
 

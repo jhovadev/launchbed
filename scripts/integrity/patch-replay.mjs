@@ -45,7 +45,7 @@ if (missing.length) {
 let base;
 try {base=cmd(['rev-parse','--verify','--quiet',`${data.baseCommit}^{commit}`]);}
 catch {console.error(`BLOCKED: Git base ${data.baseCommit} is unavailable in this repository`);process.exit(78);}
-const temp=mkdtempSync(join(tmpdir(),'android-initializr-replay-'));
+const temp=mkdtempSync(join(tmpdir(),'launchbed-replay-'));
 const clone=join(temp,'checkout');
 const omit=new Set(['.git','build','dist','.astro','node_modules','coverage','.gradle','.idea','patches']);
 // The historical replay ends at F1.6B. Later files are independently protected

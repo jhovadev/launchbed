@@ -30,14 +30,14 @@ export function parseArgs(argv) {
     }
     throw new Error(`Unknown or incomplete argument: ${arg}`);
   }
-  return { baseUrl: normalizeBaseUrl(url ?? process.env.KOTLAUNCH_DEPLOY_URL), timeoutMs };
+  return { baseUrl: normalizeBaseUrl(url ?? process.env.LAUNCHBED_DEPLOY_URL), timeoutMs };
 }
 
 const defaultRequest = {
   template: 'android-compose-minimal',
   projectName: 'Launchbed Deploy Smoke',
-  applicationId: 'dev.kotlaunch.smoke',
-  namespace: 'dev.kotlaunch.smoke',
+  applicationId: 'dev.launchbed.smoke',
+  namespace: 'dev.launchbed.smoke',
   minSdk: 26,
   compileSdk: 37,
   targetSdk: 36,

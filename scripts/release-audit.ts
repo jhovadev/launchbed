@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
-/** Opt-in optimized release build and APK inspection for Android Initializr presets. No device action. */
+/** Opt-in optimized release build and APK inspection for Launchbed presets. No device action. */
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {dirname, isAbsolute, join, relative, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {generateProject, parseRequest, readZip, verifyZipAgainstPlan} from '@android-initializr/generator';
+import {generateProject, parseRequest, readZip, verifyZipAgainstPlan} from '@launchbed/generator';
 import {PRESETS} from './integrity/gates.mjs';
 import {inspectApk} from './release/native-apk.mjs';
 
@@ -57,7 +57,7 @@ function checkPolicy(files:Map<string,Uint8Array>):{r8:Check;backup:Check} {
 function unpack(preset:string,dir:string) {
   const suffix=preset.replaceAll('-','');
   const project=generateProject(parseRequest({...seed,preset,addons:[],projectName:`Release Audit ${preset}`,
-    applicationId:`dev.initializr.release.${suffix}`,namespace:`dev.initializr.release.${suffix}`}));
+    applicationId:`dev.launchbed.release.${suffix}`,namespace:`dev.launchbed.release.${suffix}`}));
   verifyZipAgainstPlan(project.zip,project.plan);
   const entries=readZip(project.zip);
   const files=new Map(entries.map(e=>[e.path,e.data]));

@@ -1,4 +1,4 @@
-import { InitializrError, validateRelativePath } from "@android-initializr/schema";
+import { LaunchbedError, validateRelativePath } from "@launchbed/schema";
 
 const LOCAL_HEADER = 0x04034b50;
 const CENTRAL_HEADER = 0x02014b50;
@@ -70,10 +70,10 @@ export function createZip(entries: readonly ZipInput[]): Uint8Array {
   for (const entry of sorted) {
     const problems = validateRelativePath(entry.path, "zip entry");
     if (problems.length > 0) {
-      throw new InitializrError("ZIP_ERROR", problems.join("; "));
+      throw new LaunchbedError("ZIP_ERROR", problems.join("; "));
     }
     if (seen.has(entry.path)) {
-      throw new InitializrError("ZIP_ERROR", `Duplicate ZIP entry: ${entry.path}`);
+      throw new LaunchbedError("ZIP_ERROR", `Duplicate ZIP entry: ${entry.path}`);
     }
     seen.add(entry.path);
 
@@ -168,7 +168,7 @@ export interface ZipEntry {
 }
 
 function fail(message: string): never {
-  throw new InitializrError("ZIP_ERROR", message);
+  throw new LaunchbedError("ZIP_ERROR", message);
 }
 
 /**

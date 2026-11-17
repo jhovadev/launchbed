@@ -79,7 +79,7 @@ class NoteDaoTest {
     @Test
     fun fileDatabasePersistsAcrossCloseAndReopen() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val name = "initializr-test-${java.util.UUID.randomUUID()}.db"
+        val name = "launchbed-test-${java.util.UUID.randomUUID()}.db"
         var fileDatabase: AppDatabase? = null
         try {
             fileDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name).build()

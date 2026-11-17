@@ -25,8 +25,8 @@ Post-processing adds the Launchbed `mise.toml`, `justfile`, design tokens and sh
 
 ## Design tokens and screens
 
-- One DTCG token source, compiled with Style Dictionary to Compose, Flutter and CSS so the products share color, type and spacing.
-- Shared screen contracts first: login, onboarding, list/detail, settings, profile. Same information architecture; not pixel-perfect across engines.
+- One DTCG token source. Android Compose already receives a generated `design-tokens.json` (W3C DTCG) and the Kotlin theme is derived from it with a deterministic transformer. Style Dictionary (or the same transformer) will later emit Flutter and CSS from that same document so products share color, type and spacing.
+- Shared screen contracts first: login, onboarding, list/detail, settings, profile. Same information architecture; not pixel-perfect across engines. Today, catalog/notes (list/detail) and settings are generated addons; login, onboarding, register and a dedicated profile screen stay planned.
 - Auth and FFI come after the visual pack is stable. Planned FFI paths: UniFFI on Kotlin, `flutter_rust_bridge` on Flutter, official Tauri plugins on Tauri.
 
 ## Suggested order

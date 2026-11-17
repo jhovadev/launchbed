@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { InitializrError, toErrorPayload } from "@android-initializr/schema";
-import { getCatalog } from "@android-initializr/generator";
+import { LaunchbedError, toErrorPayload } from "@launchbed/schema";
+import { getCatalog } from "@launchbed/generator";
 
 export const prerender = false;
 
@@ -23,7 +23,7 @@ export const GET: APIRoute = () => {
 };
 
 export const ALL: APIRoute = () =>
-  new Response(JSON.stringify(new InitializrError("INVALID_REQUEST", "Use GET.").toJSON()), {
+  new Response(JSON.stringify(new LaunchbedError("INVALID_REQUEST", "Use GET.").toJSON()), {
     status: 405,
     headers: { allow: "GET", "content-type": "application/json; charset=utf-8" },
   });

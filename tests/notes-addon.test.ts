@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { generateProject, materializeProject } from "@android-initializr/generator";
+import { generateProject, materializeProject } from "@launchbed/generator";
 import { baseRequest } from "./fixtures";
 
 function text(files: Map<string, Uint8Array>, path: string): string {

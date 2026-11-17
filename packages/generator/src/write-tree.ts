@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { InitializrError } from "@android-initializr/schema";
+import { LaunchbedError } from "@launchbed/schema";
 import { isExecutablePath } from "./plan";
 
 /**
@@ -16,11 +16,11 @@ export function writeProjectTree(
   if (existsSync(root)) {
     const stat = lstatSync(root);
     if (!stat.isDirectory()) {
-      throw new InitializrError("IO_ERROR", "Refusing to overwrite a file with a project directory. Pass a directory to --out.");
+      throw new LaunchbedError("IO_ERROR", "Refusing to overwrite a file with a project directory. Pass a directory to --out.");
     }
     const entries = readdirSync(root);
     if (entries.length > 0 && !options.force) {
-      throw new InitializrError(
+      throw new LaunchbedError(
         "IO_ERROR",
         `Refusing to overwrite ${directory} because it is not empty. Pass --force to replace files.`,
       );

@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "bun:test";
-import { formatNewCommand } from "@android-initializr/generator";
+import { formatNewCommand } from "@launchbed/generator";
 import { parseArgs } from "../packages/cli/src/args";
 import { requestFromNewOptions, resolveNewOptions, slugToApplicationId, writeGeneratedProject } from "../packages/cli/src/new-command";
 

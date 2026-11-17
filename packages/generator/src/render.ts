@@ -1,4 +1,4 @@
-import { InitializrError } from "@android-initializr/schema";
+import { LaunchbedError } from "@launchbed/schema";
 
 export type TemplateVars = Record<string, string>;
 
@@ -12,7 +12,7 @@ export function renderText(source: string, vars: TemplateVars, context: string):
   const rendered = source.replace(PLACEHOLDER, (_match, key: string) => {
     const value = vars[key];
     if (value === undefined) {
-      throw new InitializrError(
+      throw new LaunchbedError(
         "TEMPLATE_ERROR",
         `Unknown template variable "${key}" in ${context}.`,
       );
@@ -20,7 +20,7 @@ export function renderText(source: string, vars: TemplateVars, context: string):
     return value;
   });
   if (rendered.includes("{{")) {
-    throw new InitializrError("TEMPLATE_ERROR", `Unresolved template placeholder in ${context}.`);
+    throw new LaunchbedError("TEMPLATE_ERROR", `Unresolved template placeholder in ${context}.`);
   }
   return rendered;
 }

@@ -17,7 +17,7 @@ F0 is intentionally small. Each later phase is a reviewable patch series.
 
 - Official Android CLI integration (`android sdk`, `android create`) where it
   reduces custom scripting.
-- `android-initializr doctor` and project upgrade command.
+- `launchbed doctor` and project upgrade command.
 - Multi-module template (app + core + feature modules).
 - Acceptance: documented CLI parity; no Android Studio assumptions.
 

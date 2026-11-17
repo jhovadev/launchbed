@@ -2,16 +2,16 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import {
-  InitializrError,
+  LaunchbedError,
   projectSlug,
   toErrorPayload,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 import {
   createPlan,
   generateProject,
   getCatalog,
   parseRequestJson,
-} from "@android-initializr/generator";
+} from "@launchbed/generator";
 import { parseArgs } from "./args";
 import { resolveNewOptions, writeGeneratedProject } from "./new-command";
 
@@ -27,7 +27,7 @@ Usage:
 
 \`launchbed new\` writes a project directory and a sibling ZIP, using the same
 deterministic engine as the web API. Pass --yes to skip prompts (required when
-stdin is not a TTY). The android-initializr command is kept as a compatible alias.
+stdin is not a TTY).
 
 Config files used by validate/plan/generate are JSON ProjectRequest documents.
 Use "-" to read from stdin.
@@ -39,7 +39,7 @@ function readConfig(path: string): string {
   }
   const resolved = resolve(path);
   if (!existsSync(resolved)) {
-    throw new InitializrError("IO_ERROR", `Config file not found: ${path}`);
+    throw new LaunchbedError("IO_ERROR", `Config file not found: ${path}`);
   }
   return readFileSync(resolved, "utf8");
 }
@@ -93,7 +93,7 @@ async function main(): Promise<void> {
       for (const warning of result.warnings) console.log(`Warning: ${warning}`);
       console.log("Next: cd into the directory, run `mise install`, then `just doctor` and `just build`.");
     } catch (error) {
-      if (error instanceof InitializrError) fail(error);
+      if (error instanceof LaunchbedError) fail(error);
       console.error((error as Error).message);
       console.error(USAGE);
       process.exit(2);
@@ -137,7 +137,7 @@ async function main(): Promise<void> {
       const project = generateProject(request);
       const out = resolve(args.values.get("out") ?? `${projectSlug(project.plan.request.projectName)}.zip`);
       if (existsSync(out) && !args.flags.has("force")) {
-        throw new InitializrError("IO_ERROR", `Refusing to overwrite ${out}. Pass --force to replace it.`);
+        throw new LaunchbedError("IO_ERROR", `Refusing to overwrite ${out}. Pass --force to replace it.`);
       }
       mkdirSync(dirname(out), { recursive: true });
       const temporary = `${out}.tmp-${process.pid}`;

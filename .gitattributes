@@ -1,3 +1,6 @@
+# Text is LF in the worktree, except Windows entry points (.bat, .cmd, .ps1)
+# which must be CRLF so generated projects run on Windows.
+# scripts/embed-templates.ts canonicalizes to these endings before embedding.
 * text=auto eol=lf
 
 *.bat           text eol=crlf

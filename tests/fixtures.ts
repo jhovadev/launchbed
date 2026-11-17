@@ -8,7 +8,7 @@ import {
   validatePackageId,
   validateRelativePath,
   type ProjectRequest,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 
 export function baseRequest(overrides: Partial<ProjectRequest> = {}): ProjectRequest {
   return normalizeRequest(

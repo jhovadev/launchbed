@@ -1,6 +1,6 @@
 # Launchbed — guide for humans and coding agents
 
-Launchbed generates **native Android** starters (Kotlin + Jetpack Compose Material 3) from a shared TypeScript engine used by the web UI, HTTP API and CLI. This repository used to be published as Kotlaunch / Android Initializr. User-facing branding is Launchbed; workspace packages are still named `@android-initializr/*`.
+Launchbed generates **native Android** starters (Kotlin + Jetpack Compose Material 3) from a shared TypeScript engine used by the web UI, HTTP API and CLI. This repository used to be published as Launchbed / Launchbed. User-facing branding is Launchbed; workspace packages are still named `@launchbed/*`.
 
 Do not invent commands. The lists below exist in this repo today.
 
@@ -29,9 +29,9 @@ bun packages/cli/src/index.ts catalog
 bun packages/cli/src/index.ts plan --config examples/basic.json --json
 ```
 
-`android-initializr` is an alias of the `launchbed` bin. `new` writes a directory and a sibling ZIP. `--addon` is repeatable. `--yes` is required when stdin is not a TTY. `generate` still writes a ZIP only.
+`new` writes a directory and a sibling ZIP. `--addon` is repeatable. `--yes` is required when stdin is not a TTY. `generate` still writes a ZIP only.
 
-Optional Android / integrity recipes also exist: `just runtime-parser-test`, `just integrity-check`, `just runtime-devices`, `just emulator-list`, `just android-test` (needs `ANDROID_SERIAL`). See `just --list`. Deploy smokes: `just vercel-preflight`, `just vercel-smoke` (the script still reads `KOTLAUNCH_DEPLOY_URL`).
+Optional Android / integrity recipes also exist: `just runtime-parser-test`, `just integrity-check`, `just runtime-devices`, `just emulator-list`, `just android-test` (needs `ANDROID_SERIAL`). See `just --list`. Deploy smokes: `just vercel-preflight`, `just vercel-smoke` (the script still reads `LAUNCHBED_DEPLOY_URL`).
 
 ## Architecture
 
@@ -81,5 +81,5 @@ See `.agents/skills/update-compatibility/SKILL.md`. Change versions in `packages
 - Real devices, production keystores, or secrets.
 - Historical files under `patches/` (they document past reviews).
 - Business data, if any appears in a local environment.
-- A wholesale rename of `@android-initializr/*` packages unless a dedicated, tested change is requested.
+- A wholesale rename of `@launchbed/*` packages unless a dedicated, tested change is requested.
 - Do not mark multi-target adapters (Expo/Flutter/Tauri/RN) as implemented until they have tests and a generator path.

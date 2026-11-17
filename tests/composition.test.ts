@@ -5,8 +5,8 @@ import {
   materializeProject,
   parseToml as parse,
   readZip,
-} from "@android-initializr/generator";
-import { InitializrError, type ErrorCode } from "@android-initializr/schema";
+} from "@launchbed/generator";
+import { LaunchbedError, type ErrorCode } from "@launchbed/schema";
 import { baseRequest, stableAddon } from "./fixtures";
 import {
   allFixtureAddons,
@@ -31,11 +31,11 @@ function expectCode(fn: () => unknown, code: ErrorCode): void {
   try {
     fn();
   } catch (error) {
-    expect(error).toBeInstanceOf(InitializrError);
-    expect((error as InitializrError).code).toBe(code);
+    expect(error).toBeInstanceOf(LaunchbedError);
+    expect((error as LaunchbedError).code).toBe(code);
     return;
   }
-  throw new Error("expected InitializrError");
+  throw new Error("expected LaunchbedError");
 }
 
 describe("safe addon composition", () => {
@@ -110,7 +110,7 @@ describe("safe addon composition", () => {
     project.files.set(
       "app/build.gradle.kts",
       new TextEncoder().encode(
-        text(project.files, "app/build.gradle.kts").replace("// @initializr-slot app-dependencies", ""),
+        text(project.files, "app/build.gradle.kts").replace("// @launchbed-slot app-dependencies", ""),
       ),
     );
     expectCode(

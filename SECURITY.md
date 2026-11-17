@@ -15,7 +15,7 @@ No bounty program is offered.
 
 Protected assets:
 
-- the host running the Initializr (filesystem, process, credentials);
+- the host running Launchbed (filesystem, process, credentials);
 - users of generated projects (no injected malicious code);
 - repository integrity (templates and catalog).
 

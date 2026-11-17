@@ -1,5 +1,5 @@
 {
-  "name": "@android-initializr/preview",
+  "name": "@launchbed/preview",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
     "./styles.css": "./src/preview.css"
   },
   "dependencies": {
-    "@android-initializr/design-tokens": "workspace:*",
-    "@android-initializr/schema": "workspace:*"
+    "@launchbed/design-tokens": "workspace:*",
+    "@launchbed/schema": "workspace:*"
   },
   "peerDependencies": {
     "solid-js": "^1.9.19"

@@ -32,8 +32,10 @@ generation and the browser preview.
 ## Code generation
 
 `resolveThemeTokens` returns light/dark semantic colors plus typography, shape,
-spacing and component tokens. The generator emits:
+spacing and component tokens. Those tokens are written as a W3C Design Tokens
+(DTCG) document, and the Kotlin files are derived from it:
 
+- `design-tokens.json` — DTCG source of truth for the generated project.
 - `ui/theme/GeneratedColors.kt` — 58 `Color(0xFF......)` constants.
 - `ui/theme/GeneratedTokens.kt` — font family, base radius, `Spacing`,
   `ComponentTokens`.

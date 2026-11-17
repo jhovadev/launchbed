@@ -3,15 +3,15 @@ import test from 'node:test';
 import { normalizeBaseUrl, parseArgs, runSmoke } from './vercel-smoke.mjs';
 
 test('rejects unsafe URLs and accepts HTTPS or localhost HTTP', () => {
-  assert.equal(normalizeBaseUrl('https://kotlaunch.vercel.app/'), 'https://kotlaunch.vercel.app');
+  assert.equal(normalizeBaseUrl('https://launchbed.vercel.app/'), 'https://launchbed.vercel.app');
   assert.equal(normalizeBaseUrl('http://127.0.0.1:4321/'), 'http://127.0.0.1:4321');
-  for (const bad of ['http://kotlaunch.vercel.app/', 'javascript:alert(1)', 'https://test:token@example.com/', 'https://example.com/path', 'https://example.com/?x=1']) {
+  for (const bad of ['http://launchbed.vercel.app/', 'javascript:alert(1)', 'https://test:token@example.com/', 'https://example.com/path', 'https://example.com/?x=1']) {
     assert.throws(() => normalizeBaseUrl(bad));
   }
 });
 
 test('validates timeout and arguments strictly', () => {
-  assert.deepEqual(parseArgs(['--url', 'https://kotlaunch.vercel.app', '--timeout-ms', '1000']), { baseUrl: 'https://kotlaunch.vercel.app', timeoutMs: 1000 });
+  assert.deepEqual(parseArgs(['--url', 'https://launchbed.vercel.app', '--timeout-ms', '1000']), { baseUrl: 'https://launchbed.vercel.app', timeoutMs: 1000 });
   for (const argv of [['--unknown'], ['--url'], ['--url', 'https://test.com', '--timeout-ms', '0'], ['--url', 'https://test.com', '--timeout-ms', 'Infinity']]) {
     assert.throws(() => parseArgs(argv));
   }
@@ -37,15 +37,15 @@ function mockResponses({ corruptZip = false, mismatchHash = false, oldBuilder = 
 }
 
 test('verifies homepage, API contracts and repeat ZIP determinism', async () => {
-  const result = await runSmoke('https://kotlaunch.vercel.app', mockResponses());
+  const result = await runSmoke('https://launchbed.vercel.app', mockResponses());
   assert.equal(result.presets, 4);
   assert.equal(result.files, 3);
   assert.ok(result.zipSha256.length === 64);
 });
 
 test('rejects invalid ZIP and mismatched request hash', async () => {
-  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ corruptZip: true })), /invalid ZIP/);
-  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ mismatchHash: true })), /request hash/);
+  await assert.rejects(runSmoke('https://launchbed.vercel.app', mockResponses({ corruptZip: true })), /invalid ZIP/);
+  await assert.rejects(runSmoke('https://launchbed.vercel.app', mockResponses({ mismatchHash: true })), /request hash/);
 });
 
 test('does not accept a shell-only SSR response with missing Solid form', async () => {
@@ -55,11 +55,11 @@ test('does not accept a shell-only SSR response with missing Solid form', async 
     }
     return mockResponses()(url, init);
   };
-  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', onlyShell), /Solid configurator form missing/);
+  await assert.rejects(runSmoke('https://launchbed.vercel.app', onlyShell), /Solid configurator form missing/);
 });
 
 test('rejects an older builder despite HTTP 200 and a complete form', async () => {
-  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', mockResponses({ oldBuilder: true })), /outdated project builder/);
+  await assert.rejects(runSmoke('https://launchbed.vercel.app', mockResponses({ oldBuilder: true })), /outdated project builder/);
 });
 
 test('identifies unrelated HTML rather than reporting a generic SSR failure', async () => {
@@ -67,5 +67,5 @@ test('identifies unrelated HTML rather than reporting a generic SSR failure', as
     if (new URL(url).pathname === '/') return new Response('<title>Other site</title><main>Hello</main>', { headers: { 'content-type': 'text/html' } });
     return mockResponses()(url, init);
   };
-  await assert.rejects(runSmoke('https://kotlaunch.vercel.app', unrelated), /page title: Other site/);
+  await assert.rejects(runSmoke('https://launchbed.vercel.app', unrelated), /page title: Other site/);
 });

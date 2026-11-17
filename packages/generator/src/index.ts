@@ -20,8 +20,8 @@ export { TEMPLATE_FILES, FRAGMENT_FILES, TEMPLATE_ID, TEMPLATE_VERSION } from ".
 export { applyComposition, type CompositionResult } from "./composition";
 export { insertIntoSlot, validateSlotLayout, SLOT_MARKER_PREFIX } from "./slots";
 export { mergeVersionCatalog, parseToml, serializeCatalog, type CatalogEntry } from "./version-catalog";
-export { ALL_PRESETS, findPreset, isPresetGeneratable } from "@android-initializr/catalog";
+export { ALL_PRESETS, findPreset, isPresetGeneratable } from "@launchbed/catalog";
 export { applyTooling, mergeTooling, serializeMiseToml, JUST_RECIPE_SLOT } from "./tooling";
 export { writeProjectTree } from "./write-tree";
-export { formatNewCommand } from "@android-initializr/schema";
+export { formatNewCommand } from "@launchbed/schema";
 export { GENERATED_MISE, RESERVED_JUST_RECIPES } from "./versions";

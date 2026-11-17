@@ -1,5 +1,5 @@
 {
-  "name": "@android-initializr/generator",
+  "name": "@launchbed/generator",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,10 +10,10 @@
     }
   },
   "dependencies": {
-    "@android-initializr/catalog": "workspace:*",
-    "@android-initializr/design-tokens": "workspace:*",
-    "@android-initializr/resolver": "workspace:*",
-    "@android-initializr/schema": "workspace:*",
+    "@launchbed/catalog": "workspace:*",
+    "@launchbed/design-tokens": "workspace:*",
+    "@launchbed/resolver": "workspace:*",
+    "@launchbed/schema": "workspace:*",
     "smol-toml": "1.9.1"
   }
 }

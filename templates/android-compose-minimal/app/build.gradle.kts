@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
-    // @initializr-slot app-plugins
+    // @launchbed-slot app-plugins
 }
 
 android {
@@ -35,7 +35,7 @@ android {
     buildFeatures {
         compose = true
     }
-    // @initializr-slot app-room-config
+    // @launchbed-slot app-room-config
 }
 
 dependencies {
@@ -51,5 +51,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
-    // @initializr-slot app-dependencies
+    // @launchbed-slot app-dependencies
 }

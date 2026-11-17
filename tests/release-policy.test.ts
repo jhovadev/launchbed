@@ -1,5 +1,5 @@
 import {describe,expect,test} from 'bun:test';
-import {materializeProject} from '@android-initializr/generator';
+import {materializeProject} from '@launchbed/generator';
 import {baseRequest} from './fixtures';
 
 const decode=(bytes:Uint8Array)=>new TextDecoder().decode(bytes);

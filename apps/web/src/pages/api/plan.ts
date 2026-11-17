@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { LIMITS, toErrorPayload } from "@android-initializr/schema";
-import { createPlan, parseRequestJson } from "@android-initializr/generator";
+import { LIMITS, toErrorPayload } from "@launchbed/schema";
+import { createPlan, parseRequestJson } from "@launchbed/generator";
 
 export const prerender = false;
 

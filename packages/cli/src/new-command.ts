@@ -1,15 +1,15 @@
 import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import {
-  InitializrError,
+  LaunchbedError,
   projectSlug,
   type ProjectRequestInput,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 import {
   ALL_PRESETS,
   findPreset,
   isPresetGeneratable,
-} from "@android-initializr/catalog";
+} from "@launchbed/catalog";
 import {
   createZip,
   formatNewCommand,
@@ -18,7 +18,7 @@ import {
   materializeProject,
   verifyZipAgainstPlan,
   writeProjectTree,
-} from "@android-initializr/generator";
+} from "@launchbed/generator";
 import type { Args } from "./args";
 import { promptLine, promptList } from "./prompt";
 
@@ -98,10 +98,10 @@ export function requestFromNewOptions(options: NewOptions): ProjectRequestInput 
   if (options.preset) {
     const preset = findPreset(options.preset);
     if (!preset) {
-      throw new InitializrError("INVALID_REQUEST", `Unknown project preset "${options.preset}".`);
+      throw new LaunchbedError("INVALID_REQUEST", `Unknown project preset "${options.preset}".`);
     }
     if (!isPresetGeneratable(preset)) {
-      throw new InitializrError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
+      throw new LaunchbedError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
     }
   }
   return {
@@ -122,7 +122,7 @@ export function writeGeneratedProject(
   const directory = writeProjectTree(materialized.files, options.outDir, { force: options.force });
   const zipPath = `${directory}.zip`;
   if (existsSync(zipPath) && !options.force) {
-    throw new InitializrError("IO_ERROR", `Refusing to overwrite ${zipPath}. Pass --force to replace it.`);
+    throw new LaunchbedError("IO_ERROR", `Refusing to overwrite ${zipPath}. Pass --force to replace it.`);
   }
   const zip = createZip(
     [...materialized.files.entries()].map(([path, data]) => ({

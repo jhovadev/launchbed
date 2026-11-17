@@ -84,7 +84,7 @@ the files on disk, so the two cannot silently diverge.
 
 The ZIP contains its own Gradle wrapper (with `distributionSha256Sum`), version
 catalog, `mise.toml`, `justfile` and scripts. It has no runtime dependency on the
-Initializr server or this monorepo. `just android-smoke` proves this by extracting
+Launchbed server or this monorepo. `just android-smoke` proves this by extracting
 a ZIP into `build/android-smoke` and running `assembleDebug` and
 `testDebugUnitTest` there.
 
@@ -95,7 +95,7 @@ Addons describe changes with typed operations:
 - `add`: create a new file from a trusted local fragment. Protected template
   files cannot be added or overwritten.
 - `insert`: insert rendered lines into a declared template slot. Slot markers
-  (`// @initializr-slot <id>`) are fixed, server-owned strings, never user
+  (`// @launchbed-slot <id>`) are fixed, server-owned strings, never user
   regular expressions.
 - `merge`: structured updates for Gradle files and the version catalog.
   Gradle targets are `settings-includes`, `root-plugins`, `app-plugins`,

@@ -662,7 +662,24 @@ body { line-height: 1.55; }
 .builder .form-panel section[hidden] { display: none; }
 @media (max-width: 390px) {
   .site-header, .site-footer, main { width: min(100% - 1rem, 1220px); }
-  .stepper button { width: 100%; }
+  .stepper { margin-bottom: 1rem; padding-bottom: 0.75rem; }
+  .stepper ol {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .stepper li { flex: 1 1 0; min-width: 0; }
+  .stepper button {
+    width: 100%;
+    min-height: 36px;
+    padding: 0.25rem 0.25rem;
+    font-size: 0.68rem;
+    gap: 0.2rem;
+    justify-content: center;
+  }
+  .stepper-index { font-size: 0.62rem; }
   .step-actions .button, .builder .actions .button { width: 100%; }
   .builder .field-grid, .builder .field-grid.three { grid-template-columns: 1fr; }
   .cli-copy-head { flex-direction: column; align-items: stretch; }
@@ -671,4 +688,16 @@ body { line-height: 1.55; }
   body { font-size: 15px; }
   .brand-sub { display: none; }
   .site-nav { gap: 0.7rem; font-size: 0.8rem; }
+  .stepper-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .stepper button { min-width: 36px; padding: 0.25rem 0; }
 }

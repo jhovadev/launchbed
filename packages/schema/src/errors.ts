@@ -20,13 +20,13 @@ export interface IssueDetail {
  * Typed, user-presentable error. Code is stable and safe to branch on;
  * message is written for humans and never contains stack traces or absolute paths.
  */
-export class InitializrError extends Error {
+export class LaunchbedError extends Error {
   readonly code: ErrorCode;
   readonly issues: IssueDetail[];
 
   constructor(code: ErrorCode, message: string, issues: IssueDetail[] = []) {
     super(message);
-    this.name = "InitializrError";
+    this.name = "LaunchbedError";
     this.code = code;
     this.issues = issues;
   }
@@ -46,7 +46,7 @@ export function issuesFromZod(error: z.ZodError): IssueDetail[] {
 export function toErrorPayload(error: unknown): {
   error: { code: ErrorCode; message: string; issues: IssueDetail[] };
 } {
-  if (error instanceof InitializrError) {
+  if (error instanceof LaunchbedError) {
     return error.toJSON();
   }
   return {

@@ -13,7 +13,7 @@ import {
   type SemanticColorKey,
   type SemanticColors,
   type ThemeConfig,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 
 export type SchemeVariant = ThemeConfig["schemeVariant"];
 
@@ -185,3 +185,5 @@ export function generateComposeTokens(tokens: ThemeTokens, packageName: string):
   ];
   return lines.join("\n");
 }
+
+export { themeTokensToDtcg, dtcgToThemeTokens, serializeDtcg, type DtcgDocument, type DtcgToken } from "./dtcg";

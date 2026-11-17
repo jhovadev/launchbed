@@ -5,7 +5,7 @@ import solidJs from "@astrojs/solid-js";
 
 // Vercel exports VERCEL=1 during its build. Explicit override is useful for CI.
 // Outside Vercel keep the Node adapter for the existing Docker/standalone workflow.
-const deployToVercel = process.env.VERCEL === "1" || process.env.KOTLAUNCH_DEPLOY_TARGET === "vercel";
+const deployToVercel = process.env.VERCEL === "1" || process.env.LAUNCHBED_DEPLOY_TARGET === "vercel";
 
 export default defineConfig({
   output: "server",

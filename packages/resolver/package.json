@@ -1,5 +1,5 @@
 {
-  "name": "@android-initializr/resolver",
+  "name": "@launchbed/resolver",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     }
   },
   "dependencies": {
-    "@android-initializr/catalog": "workspace:*",
-    "@android-initializr/schema": "workspace:*"
+    "@launchbed/catalog": "workspace:*",
+    "@launchbed/schema": "workspace:*"
   }
 }

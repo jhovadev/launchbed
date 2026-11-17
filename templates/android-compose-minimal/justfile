@@ -60,4 +60,4 @@ apk: build
     @find app/build/outputs/apk/debug -name '*.apk' -type f -print
 
 # Addon just recipes are inserted above this marker. Do not remove it.
-# @initializr-slot just-recipes
+# @launchbed-slot just-recipes

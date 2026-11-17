@@ -1,10 +1,10 @@
 import {
-  InitializrError,
+  LaunchbedError,
   LIMITS,
   isGeneratable,
   type AddonManifest,
   type ProjectRequest,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 
 export interface ResolvedRequirements {
   minSdk: number;
@@ -28,7 +28,7 @@ function indexCatalog(catalog: readonly AddonManifest[]): Map<string, AddonManif
   const index = new Map<string, AddonManifest>();
   for (const addon of catalog) {
     if (index.has(addon.id)) {
-      throw new InitializrError("RESOLUTION_ERROR", `Duplicate addon manifest id: ${addon.id}`);
+      throw new LaunchbedError("RESOLUTION_ERROR", `Duplicate addon manifest id: ${addon.id}`);
     }
     index.set(addon.id, addon);
   }
@@ -36,7 +36,7 @@ function indexCatalog(catalog: readonly AddonManifest[]): Map<string, AddonManif
 }
 
 function generateError(message: string, issues: { path: string; message: string }[] = []): never {
-  throw new InitializrError("RESOLUTION_ERROR", message, issues);
+  throw new LaunchbedError("RESOLUTION_ERROR", message, issues);
 }
 
 export function resolveAddons(

@@ -5,40 +5,40 @@ import {
   parseRequestJson,
   renderText,
   requestHash,
-} from "@android-initializr/generator";
+} from "@launchbed/generator";
 import {
-  InitializrError,
+  LaunchbedError,
   LIMITS,
   ProjectRequestSchema,
   normalizeRequest,
   toErrorPayload,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 import { baseRequest } from "./fixtures";
 
-function expectInitializrError(fn: () => unknown, code: "INVALID_REQUEST" | "LIMIT_EXCEEDED" | "RESOLUTION_ERROR" | "TEMPLATE_ERROR" | "SECURITY_ERROR" | "ZIP_ERROR" | "IO_ERROR" | "UNKNOWN_ADDON" | "INTERNAL_ERROR"): void {
+function expectLaunchbedError(fn: () => unknown, code: "INVALID_REQUEST" | "LIMIT_EXCEEDED" | "RESOLUTION_ERROR" | "TEMPLATE_ERROR" | "SECURITY_ERROR" | "ZIP_ERROR" | "IO_ERROR" | "UNKNOWN_ADDON" | "INTERNAL_ERROR"): void {
   try {
     fn();
   } catch (error) {
-    expect(error).toBeInstanceOf(InitializrError);
-    expect((error as InitializrError).code).toBe(code);
+    expect(error).toBeInstanceOf(LaunchbedError);
+    expect((error as LaunchbedError).code).toBe(code);
     return;
   }
-  throw new Error("Expected an InitializrError");
+  throw new Error("Expected an LaunchbedError");
 }
 
 describe("request validation and limits", () => {
   test("rejects bodies above the request limit before parsing", () => {
     const body = "x".repeat(LIMITS.requestBytes + 1);
-    expectInitializrError(() => parseRequestJson(body), "LIMIT_EXCEEDED");
+    expectLaunchbedError(() => parseRequestJson(body), "LIMIT_EXCEEDED");
   });
 
   test("rejects malformed JSON", () => {
-    expectInitializrError(() => parseRequestJson("{not json"), "INVALID_REQUEST");
+    expectLaunchbedError(() => parseRequestJson("{not json"), "INVALID_REQUEST");
   });
 
   test("rejects unknown addons at generation time", () => {
     const request = baseRequest({ addons: ["storage/does-not-exist"] });
-    expectInitializrError(() => materializeProject(request), "RESOLUTION_ERROR");
+    expectLaunchbedError(() => materializeProject(request), "RESOLUTION_ERROR");
   });
 
   test("rejects planned catalog addons with a clear message", () => {
@@ -47,8 +47,8 @@ describe("request validation and limits", () => {
       materializeProject(request);
       throw new Error("expected failure");
     } catch (error) {
-      expect(error).toBeInstanceOf(InitializrError);
-      expect((error as InitializrError).message).toContain("planned");
+      expect(error).toBeInstanceOf(LaunchbedError);
+      expect((error as LaunchbedError).message).toContain("planned");
     }
   });
 
@@ -75,11 +75,11 @@ describe("request validation and limits", () => {
 
 describe("template rendering", () => {
   test("fails closed on unknown variables", () => {
-    expectInitializrError(() => renderText("hello {{unknown}}", {}, "test"), "TEMPLATE_ERROR");
+    expectLaunchbedError(() => renderText("hello {{unknown}}", {}, "test"), "TEMPLATE_ERROR");
   });
 
   test("fails on unresolved placeholders", () => {
-    expectInitializrError(() => renderText("{{ a b }}", {}, "test"), "TEMPLATE_ERROR");
+    expectLaunchbedError(() => renderText("{{ a b }}", {}, "test"), "TEMPLATE_ERROR");
   });
 });
 
@@ -104,7 +104,7 @@ describe("generated project security", () => {
   });
 
   test("error payloads do not leak stack traces or absolute paths", () => {
-    const payload = toErrorPayload(new InitializrError("INVALID_REQUEST", "Bad input."));
+    const payload = toErrorPayload(new LaunchbedError("INVALID_REQUEST", "Bad input."));
     expect(payload.error.message).toBe("Bad input.");
     expect(JSON.stringify(payload)).not.toContain("/home/");
     expect(JSON.stringify(payload)).not.toContain("at ");

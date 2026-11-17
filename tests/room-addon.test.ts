@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { parseToml as parse } from "@android-initializr/generator";
-import { generateProject, materializeProject, parseToml } from "@android-initializr/generator";
-import { InitializrError } from "@android-initializr/schema";
-import { buildCatalog } from "@android-initializr/catalog";
+import { parseToml as parse } from "@launchbed/generator";
+import { generateProject, materializeProject, parseToml } from "@launchbed/generator";
+import { LaunchbedError } from "@launchbed/schema";
+import { buildCatalog } from "@launchbed/catalog";
 import { baseRequest } from "./fixtures";
 
 const roomRequest = baseRequest({
@@ -25,7 +25,7 @@ describe("storage/room addon", () => {
   test("resolver accepts room and rejects incompatible minSdk", () => {
     expect(() => baseRequest({ addons: ["storage/room"], minSdk: 23 })).toThrow();
     expect(() => materializeProject(baseRequest({ addons: ["storage/room", "storage/sqlite-direct"] }))).toThrow(
-      InitializrError,
+      LaunchbedError,
     );
   });
 

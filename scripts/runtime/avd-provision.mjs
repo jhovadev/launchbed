@@ -6,14 +6,14 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-const USAGE = `Android Initializr CLI AVD provisioning (no Android Studio required)
+const USAGE = `Launchbed CLI AVD provisioning (no Android Studio required)
   node scripts/runtime/avd-provision.mjs images
       List system images already installed in the Android SDK (read-only).
-  AVD_NAME=Initializr_API36 AVD_IMAGE='system-images;android-36;google_apis;x86_64' \\
+  AVD_NAME=Launchbed_API36 AVD_IMAGE='system-images;android-36;google_apis;x86_64' \\
       node scripts/runtime/avd-provision.mjs create
       Create one named AVD from an ALREADY INSTALLED image (explicit action).
       Optional AVD_PROFILE=pixel_7, if your avdmanager supports that device ID.
-  just emulator-list; AVD_NAME=Initializr_API36 just emulator-start
+  just emulator-list; AVD_NAME=Launchbed_API36 just emulator-start
       Start and inspect; neither action downloads packages.
 If no images are installed, use the official Android SDK manager manually:
   sdkmanager --list | grep system-images

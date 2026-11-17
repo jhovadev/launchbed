@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { FRAGMENT_FILES, TEMPLATE_FILES } from "@android-initializr/generator";
+import { FRAGMENT_FILES, TEMPLATE_FILES } from "@launchbed/generator";
 
 const ROOT = join(import.meta.dir, "..");
 const TEMPLATE_DIR = join(ROOT, "templates", "android-compose-minimal");
@@ -18,6 +18,35 @@ function walkFragments(directory: string, base = directory): string[] {
 }
 
 const BINARY = new Set([".jar", ".png"]);
+const CRLF_EXTENSIONS = new Set([".ps1", ".bat", ".cmd"]);
+
+function extensionOf(path: string): string {
+  const dot = path.lastIndexOf(".");
+  return dot >= 0 ? path.slice(dot).toLowerCase() : "";
+}
+
+function eolKind(text: string): "CRLF" | "LF" | "CR" | "MIXED" | "NONE" {
+  const crlf = (text.match(/\r\n/g) ?? []).length;
+  const cr = (text.match(/\r/g) ?? []).length - crlf;
+  const lf = (text.match(/\n/g) ?? []).length - crlf;
+  if (crlf + cr + lf === 0) return "NONE";
+  if (crlf > 0 && cr === 0 && lf === 0) return "CRLF";
+  if (lf > 0 && crlf === 0 && cr === 0) return "LF";
+  if (cr > 0 && crlf === 0 && lf === 0) return "CR";
+  return "MIXED";
+}
+
+function stripEol(text: string): string {
+  return text.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+}
+
+function describeTextDiff(path: string, embedded: string, disk: string): string {
+  if (embedded === disk) return "";
+  if (stripEol(embedded) === stripEol(disk)) {
+    return `${path} differs only by line endings: disk=${eolKind(disk)} (${disk.length} bytes), embedded=${eolKind(embedded)} (${embedded.length} bytes)`;
+  }
+  return `${path} content differs (disk ${disk.length} bytes ${eolKind(disk)}, embedded ${embedded.length} bytes ${eolKind(embedded)})`;
+}
 
 function walk(directory: string): string[] {
   const found: string[] = [];
@@ -38,18 +67,34 @@ describe("embedded template bundle", () => {
     const diskPaths = walk(TEMPLATE_DIR);
     expect(Object.keys(TEMPLATE_FILES).sort()).toEqual(diskPaths);
 
+    const mismatches: string[] = [];
+    const eolProblems: string[] = [];
     for (const path of diskPaths) {
-      const extension = path.slice(path.lastIndexOf("."));
+      const extension = extensionOf(path);
       const raw = readFileSync(join(TEMPLATE_DIR, path));
       const embedded = TEMPLATE_FILES[path]!;
       if (BINARY.has(extension)) {
-        expect(embedded.encoding).toBe("base64");
-        expect(Buffer.from(embedded.content, "base64").equals(raw)).toBe(true);
-      } else {
-        expect(embedded.encoding).toBe("utf8");
-        expect(embedded.content).toBe(raw.toString("utf8"));
+        if (embedded.encoding !== "base64") mismatches.push(`${path} should be embedded as base64`);
+        else if (!Buffer.from(embedded.content, "base64").equals(raw)) {
+          mismatches.push(`${path} binary content differs (disk ${raw.length} bytes, embedded ${Buffer.from(embedded.content, "base64").length} bytes)`);
+        }
+        continue;
+      }
+      if (embedded.encoding !== "utf8") {
+        mismatches.push(`${path} should be embedded as utf8`);
+        continue;
+      }
+      const diskText = raw.toString("utf8");
+      const expected = CRLF_EXTENSIONS.has(extension) ? "CRLF" : "LF";
+      const kind = eolKind(diskText);
+      if (kind !== "NONE" && kind !== expected) {
+        eolProblems.push(`${path} has ${kind} line endings; expected ${expected} (see .gitattributes)`);
+      }
+      if (embedded.content !== diskText) {
+        mismatches.push(describeTextDiff(path, embedded.content, diskText));
       }
     }
+    expect({ mismatches, eolProblems }).toEqual({ mismatches: [], eolProblems: [] });
   });
 
   test("ships an authentic Gradle wrapper JAR", () => {
@@ -66,8 +111,12 @@ describe("embedded template bundle", () => {
       .filter((name) => !name.endsWith("README.md"))
       .sort();
     expect(Object.keys(FRAGMENT_FILES).sort()).toEqual(disk);
+    const mismatches: string[] = [];
     for (const name of disk) {
-      expect(FRAGMENT_FILES[name]).toBe(readFileSync(join(FRAGMENTS_DIR, name), "utf8"));
+      const diskText = readFileSync(join(FRAGMENTS_DIR, name), "utf8");
+      const embedded = FRAGMENT_FILES[name]!;
+      if (embedded !== diskText) mismatches.push(describeTextDiff(name, embedded, diskText));
     }
+    expect(mismatches).toEqual([]);
   });
 });

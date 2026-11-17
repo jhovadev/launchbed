@@ -1,5 +1,5 @@
 {
-  "name": "@android-initializr/design-tokens",
+  "name": "@launchbed/design-tokens",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     }
   },
   "dependencies": {
-    "@android-initializr/schema": "workspace:*",
+    "@launchbed/schema": "workspace:*",
     "@material/material-color-utilities": "0.4.0"
   }
 }

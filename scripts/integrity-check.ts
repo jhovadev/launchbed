@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateProject, parseRequest, readZip, verifyZipAgainstPlan } from '@android-initializr/generator';
-import { LIMITS, validateRelativePath } from '@android-initializr/schema';
+import { generateProject, parseRequest, readZip, verifyZipAgainstPlan } from '@launchbed/generator';
+import { LIMITS, validateRelativePath } from '@launchbed/schema';
 import { checkReleaseApks, checkReleaseEvidence, PRESETS, sensitivePath } from './integrity/gates.mjs';
 import { runtimeSourceFingerprint } from './runtime/source-fingerprint.mjs';
 
@@ -32,8 +32,8 @@ for (const preset of PRESETS) {
   try {
     const suffix=preset.replaceAll('-','');
     const request=parseRequest({...seed, preset, projectName:`Integrity ${preset}`, addons:[],
-      applicationId:`dev.initializr.integrity.${suffix}`,namespace:`dev.initializr.generated.${suffix}`,
-      packageName:`dev.initializr.generated.${suffix}`});
+      applicationId:`dev.launchbed.integrity.${suffix}`,namespace:`dev.launchbed.generated.${suffix}`,
+      packageName:`dev.launchbed.generated.${suffix}`});
     const output=generateProject(request);
     verifyZipAgainstPlan(output.zip,output.plan);
     const repeated=generateProject(request);

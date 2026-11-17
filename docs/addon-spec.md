@@ -71,7 +71,7 @@ Creates a file. Fails if it exists or targets a protected template path
 { "type": "insert", "path": "app/build.gradle.kts", "slot": "app-dependencies", "template": "storage/room-dependency" }
 ```
 
-Slots are declared in trusted templates as `// @initializr-slot <id>`. All four
+Slots are declared in trusted templates as `// @launchbed-slot <id>`. All four
 slots must exist exactly once; a missing, duplicated or moved marker is a
 `TEMPLATE_ERROR`. Contributions are ordered by addon id, so selection order does
 not change bytes.
@@ -138,7 +138,7 @@ Optional `tooling` on a generatable addon declares:
 
 - `tools`: pinned mise tool names and versions (merged into generated `mise.toml`)
 - `env`: non-secret environment keys (rejected if the key looks like a secret)
-- `justRecipes`: named just recipes inserted above `# @initializr-slot just-recipes`
+- `justRecipes`: named just recipes inserted above `# @launchbed-slot just-recipes`
 
 The generator always writes a canonical `mise.toml` with the Java and just
 versions from `docs/compatibility.md`, plus optional `[tasks]` that only call

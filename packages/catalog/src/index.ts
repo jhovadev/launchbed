@@ -3,8 +3,8 @@ import {
   type AddonManifest,
   type CatalogEntry,
   type CatalogResponse,
-} from "@android-initializr/schema";
-import { DEFAULT_SDK, LIMITS, TEMPLATE_ID, TEMPLATE_VERSION } from "@android-initializr/schema";
+} from "@launchbed/schema";
+import { DEFAULT_SDK, LIMITS, TEMPLATE_ID, TEMPLATE_VERSION } from "@launchbed/schema";
 
 import room from "../../../addons/storage/room.json";
 import sqliteDirect from "../../../addons/storage/sqlite-direct.json";

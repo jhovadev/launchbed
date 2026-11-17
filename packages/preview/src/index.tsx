@@ -1,4 +1,4 @@
-import type { ThemeTokens } from "@android-initializr/design-tokens";
+import type { ThemeTokens } from "@launchbed/design-tokens";
 
 export interface PreviewScreenProps {
   tokens: ThemeTokens;

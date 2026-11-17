@@ -1,9 +1,9 @@
-import { InitializrError, SLOT_FILE, SLOT_IDS, type SlotId } from "@android-initializr/schema";
+import { LaunchbedError, SLOT_FILE, SLOT_IDS, type SlotId } from "@launchbed/schema";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
-export const SLOT_MARKER_PREFIX = "// @initializr-slot ";
+export const SLOT_MARKER_PREFIX = "// @launchbed-slot ";
 
 export function markerFor(slot: SlotId): string {
   return `${SLOT_MARKER_PREFIX}${slot}`;
@@ -12,7 +12,7 @@ export function markerFor(slot: SlotId): string {
 function textOf(files: Map<string, Uint8Array>, path: string): string {
   const data = files.get(path);
   if (!data) {
-    throw new InitializrError("TEMPLATE_ERROR", `Required template file is missing: ${path}`);
+    throw new LaunchbedError("TEMPLATE_ERROR", `Required template file is missing: ${path}`);
   }
   return decoder.decode(data);
 }
@@ -28,7 +28,7 @@ export function validateSlotLayout(files: Map<string, Uint8Array>): void {
     if (!path || !files.has(path)) continue;
     const count = slotCount(textOf(files, path), slot);
     if (count !== 1) {
-      throw new InitializrError(
+      throw new LaunchbedError(
         "TEMPLATE_ERROR",
         `Template slot "${slot}" must appear exactly once in ${path} (found ${count}).`,
       );
@@ -48,7 +48,7 @@ export function insertIntoSlot(
 ): void {
   const expected = SLOT_FILE[slot];
   if (expected !== undefined && expected !== path) {
-    throw new InitializrError(
+    throw new LaunchbedError(
       "RESOLUTION_ERROR",
       `Slot "${slot}" belongs to ${expected}, not ${path}.`,
     );
@@ -57,7 +57,7 @@ export function insertIntoSlot(
   const all = content.split("\n");
   const index = all.findIndex((line) => line.trim() === markerFor(slot));
   if (index < 0) {
-    throw new InitializrError("TEMPLATE_ERROR", `Slot "${slot}" is not defined in ${path}.`);
+    throw new LaunchbedError("TEMPLATE_ERROR", `Slot "${slot}" is not defined in ${path}.`);
   }
   all.splice(index, 0, ...lines);
   files.set(path, encoder.encode(all.join("\n")));

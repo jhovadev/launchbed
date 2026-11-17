@@ -7,7 +7,7 @@
 import { spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { generateProject, parseRequestJson, readZip } from "@android-initializr/generator";
+import { generateProject, parseRequestJson, readZip } from "@launchbed/generator";
 
 const root = join(import.meta.dir, "..");
 const outDir = join(root, "build", "android-smoke");

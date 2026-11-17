@@ -4,10 +4,10 @@ import {
   buildCatalog,
   findPreset,
   isPresetGeneratable,
-} from "@android-initializr/catalog";
-import { resolveAddons } from "@android-initializr/resolver";
+} from "@launchbed/catalog";
+import { resolveAddons } from "@launchbed/resolver";
 import {
-  InitializrError,
+  LaunchbedError,
   GENERATION_SCHEMA_VERSION,
   LIMITS,
   ProjectRequestSchema,
@@ -23,13 +23,16 @@ import {
   type GenerationPlan,
   type ProjectRequest,
   type ProjectRequestInput,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 import {
   generateComposeColors,
   generateComposeTokens,
   resolveThemeTokens,
+  themeTokensToDtcg,
+  dtcgToThemeTokens,
+  serializeDtcg,
   type ThemeTokens,
-} from "@android-initializr/design-tokens";
+} from "@launchbed/design-tokens";
 import { renderText, type TemplateVars } from "./render";
 import { FRAGMENT_FILES, TEMPLATE_FILES } from "./templates.generated";
 import { TOOLCHAIN, sdkPlatformPackage } from "./versions";
@@ -51,7 +54,7 @@ const encoder = new TextEncoder();
 export function parseRequest(input: unknown): ProjectRequest {
   const result = ProjectRequestSchema.safeParse(input);
   if (!result.success) {
-    throw new InitializrError("INVALID_REQUEST", "The project request is invalid.", issuesFromZod(result.error));
+    throw new LaunchbedError("INVALID_REQUEST", "The project request is invalid.", issuesFromZod(result.error));
   }
   return normalizeRequest(result.data);
 }
@@ -60,7 +63,7 @@ export function parseRequest(input: unknown): ProjectRequest {
 export function parseRequestJson(text: string): ProjectRequest {
   const bytes = encoder.encode(text).length;
   if (bytes > LIMITS.requestBytes) {
-    throw new InitializrError(
+    throw new LaunchbedError(
       "LIMIT_EXCEEDED",
       `Request body is ${bytes} bytes; the limit is ${LIMITS.requestBytes} bytes.`,
     );
@@ -69,7 +72,7 @@ export function parseRequestJson(text: string): ProjectRequest {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new InitializrError("INVALID_REQUEST", "Request body must be valid JSON.");
+    throw new LaunchbedError("INVALID_REQUEST", "Request body must be valid JSON.");
   }
   return parseRequest(json);
 }
@@ -152,13 +155,13 @@ function addFile(
 ): void {
   const problems = validateRelativePath(path, `${origin} path`);
   if (problems.length > 0) {
-    throw new InitializrError("SECURITY_ERROR", problems.join("; "));
+    throw new LaunchbedError("SECURITY_ERROR", problems.join("; "));
   }
   if (files.has(path)) {
-    throw new InitializrError("TEMPLATE_ERROR", `Two sources produce the same file: ${path}`);
+    throw new LaunchbedError("TEMPLATE_ERROR", `Two sources produce the same file: ${path}`);
   }
   if (data.length > MAX_FILE_BYTES) {
-    throw new InitializrError(
+    throw new LaunchbedError(
       "LIMIT_EXCEEDED",
       `Generated file ${path} is larger than the per-file limit of ${MAX_FILE_BYTES} bytes.`,
     );
@@ -183,10 +186,10 @@ export function materializeProject(
   const request = parseRequest(input);
   const preset = request.preset ? findPreset(request.preset) : undefined;
   if (request.preset && !preset) {
-    throw new InitializrError("INVALID_REQUEST", `Unknown project preset "${request.preset}".`);
+    throw new LaunchbedError("INVALID_REQUEST", `Unknown project preset "${request.preset}".`);
   }
   if (preset && !isPresetGeneratable(preset)) {
-    throw new InitializrError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
+    throw new LaunchbedError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
   }
   const defaultTheme = ThemeConfigSchema.parse({});
   const resolvedRequest = preset
@@ -201,6 +204,7 @@ export function materializeProject(
     : request;
   const resolution = resolveAddons(resolvedRequest, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
   const tokens = resolveThemeTokens(resolvedRequest.theme);
+  const dtcg = themeTokensToDtcg(tokens);
   const vars = buildTemplateVars(resolvedRequest, tokens);
   const files = new Map<string, Uint8Array>();
   const origins = new Map<string, "template" | "generated" | "addon">();
@@ -217,18 +221,21 @@ export function materializeProject(
   }
 
   const sourceRoot = `app/src/main/java/${vars.packagePath}`;
+  // Compose theme files are derived from the DTCG document so it stays the source of truth.
+  const themeFromDtcg = dtcgToThemeTokens(dtcg);
+  addFile(files, origins, "design-tokens.json", encoder.encode(serializeDtcg(dtcg)), "generated");
   addFile(
     files,
     origins,
     `${sourceRoot}/ui/theme/GeneratedColors.kt`,
-    encoder.encode(generateComposeColors(tokens, request.packageName!)),
+    encoder.encode(generateComposeColors(themeFromDtcg, request.packageName!)),
     "generated",
   );
   addFile(
     files,
     origins,
     `${sourceRoot}/ui/theme/GeneratedTokens.kt`,
-    encoder.encode(generateComposeTokens(tokens, request.packageName!)),
+    encoder.encode(generateComposeTokens(themeFromDtcg, request.packageName!)),
     "generated",
   );
 
@@ -243,7 +250,7 @@ export function materializeProject(
   applyTooling(files, resolution.addons);
 
   if (files.size > LIMITS.files) {
-    throw new InitializrError("LIMIT_EXCEEDED", `Generated ${files.size} files; the limit is ${LIMITS.files}.`);
+    throw new LaunchbedError("LIMIT_EXCEEDED", `Generated ${files.size} files; the limit is ${LIMITS.files}.`);
   }
 
   const paths = [...files.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
@@ -260,7 +267,7 @@ export function materializeProject(
   });
 
   if (totalBytes > LIMITS.totalBytes) {
-    throw new InitializrError(
+    throw new LaunchbedError(
       "LIMIT_EXCEEDED",
       `Generated project is ${totalBytes} bytes; the limit is ${LIMITS.totalBytes}.`,
     );
@@ -312,7 +319,7 @@ export interface GeneratedProject {
 export function verifyZipAgainstPlan(zip: Uint8Array, plan: GenerationPlan): void {
   const entries = readZip(zip);
   if (entries.length !== plan.files.length) {
-    throw new InitializrError(
+    throw new LaunchbedError(
       "ZIP_ERROR",
       `ZIP has ${entries.length} files but the plan announces ${plan.files.length}.`,
     );
@@ -321,16 +328,16 @@ export function verifyZipAgainstPlan(zip: Uint8Array, plan: GenerationPlan): voi
   for (const planned of plan.files) {
     const entry = byPath.get(planned.path);
     if (!entry) {
-      throw new InitializrError("ZIP_ERROR", `Planned file is missing from the ZIP: ${planned.path}`);
+      throw new LaunchbedError("ZIP_ERROR", `Planned file is missing from the ZIP: ${planned.path}`);
     }
     if (entry.size !== planned.size) {
-      throw new InitializrError("ZIP_ERROR", `Size mismatch for ${planned.path}.`);
+      throw new LaunchbedError("ZIP_ERROR", `Size mismatch for ${planned.path}.`);
     }
     if (sha256(entry.data) !== planned.sha256) {
-      throw new InitializrError("ZIP_ERROR", `Content hash mismatch for ${planned.path}.`);
+      throw new LaunchbedError("ZIP_ERROR", `Content hash mismatch for ${planned.path}.`);
     }
     if (entry.executable !== isExecutablePath(planned.path)) {
-      throw new InitializrError("ZIP_ERROR", `Unexpected executable bit for ${planned.path}.`);
+      throw new LaunchbedError("ZIP_ERROR", `Unexpected executable bit for ${planned.path}.`);
     }
   }
 }

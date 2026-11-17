@@ -1,7 +1,7 @@
 import {
   ProjectPresetManifestSchema,
   type ProjectPresetManifest,
-} from "@android-initializr/schema";
+} from "@launchbed/schema";
 
 import composeMinimal from "../../../presets/compose-minimal.json";
 import composeStarter from "../../../presets/compose-starter.json";

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { toErrorPayload } from "@android-initializr/schema";
-import { ALL_PRESETS, isPresetGeneratable } from "@android-initializr/catalog";
+import { toErrorPayload } from "@launchbed/schema";
+import { ALL_PRESETS, isPresetGeneratable } from "@launchbed/catalog";
 
 export const prerender = false;
 

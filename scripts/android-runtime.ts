@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync
 import { homedir } from 'node:os';
 import { join, dirname, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateProject, parseRequest, readZip, verifyZipAgainstPlan } from '@android-initializr/generator';
+import { generateProject, parseRequest, readZip, verifyZipAgainstPlan } from '@launchbed/generator';
 import { parseAdbDevices, selectOnlineDevice, parseInstrumentationReports, parseInstrumentationOutput, instrumentationArgs } from './runtime/devices.mjs';
 import { parseDeviceReadiness } from './runtime/device-readiness.mjs';
 import { runtimeSourceFingerprint } from './runtime/source-fingerprint.mjs';
@@ -126,8 +126,8 @@ function checkOutput(label: string, result: ReturnType<typeof runCmd>): Check {
 function unzipGeneratedProject(preset: Preset, out: string): {zipBytes: number; files: number; instrumented: boolean} {
   const seed = JSON.parse(readFileSync(join(ROOT, 'examples/basic.json'), 'utf8')) as Record<string, unknown>;
   const input = parseRequest({ ...seed, projectName: `Runtime ${preset}`, preset, addons: [],
-    applicationId: `dev.initializr.runtime.${preset.replaceAll('-', '')}`,
-    namespace: `dev.initializr.runtime.${preset.replaceAll('-', '')}` });
+    applicationId: `dev.launchbed.runtime.${preset.replaceAll('-', '')}`,
+    namespace: `dev.launchbed.runtime.${preset.replaceAll('-', '')}` });
   const project = generateProject(input);
   verifyZipAgainstPlan(project.zip, project.plan);
   const entries = readZip(project.zip);
@@ -204,7 +204,7 @@ function runPreset(preset: Preset, sdk: string, serial?: string): PresetReport {
     checks[`install-${label}`] = checkOutput(`${preset} install ${label} on ${serial}`, installed);
     if (!installed.ok) {checks.instrumented={status:'FAIL',detail:`Installation failed: ${label}`};return report;}
   }
-  const testPackage = `dev.initializr.runtime.${preset.replaceAll('-', '')}.test`;
+  const testPackage = `dev.launchbed.runtime.${preset.replaceAll('-', '')}.test`;
   const execution=runCmd(adb,instrumentationArgs(serial, testPackage),{timeout:15*60_000});
   const log=join(dir,'instrumentation-output.txt');
   writeFileSync(log, `${execution.stdout}\n${execution.stderr}`);

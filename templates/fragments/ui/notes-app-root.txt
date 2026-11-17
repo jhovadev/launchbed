@@ -17,14 +17,14 @@ import {{packageName}}.feature.notes.NotesViewModel
 import {{packageName}}.feature.notes.NotesViewModelFactory
 import {{packageName}}.data.local.DatabaseProvider
 
-// @initializr-slot app-imports
+// @launchbed-slot app-imports
 
 @Serializable
 sealed interface AppRoute : NavKey {
     @Serializable
     data object Welcome : AppRoute
 
-    // @initializr-slot app-routes
+    // @launchbed-slot app-routes
 }
 
 @Composable
@@ -38,7 +38,7 @@ fun AppRoot() {
         onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
         entryProvider = entryProvider {
             entry<AppRoute.Welcome> { WelcomeScreen() }
-            // @initializr-slot app-entries
+            // @launchbed-slot app-entries
         },
     )
 }
