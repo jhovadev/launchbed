@@ -1,0 +1,45 @@
+{
+  "name": "card",
+  "displayName": "Card",
+  "description": "Surface container for grouping related content.",
+  "variants": [
+    "elevated"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "default"
+  ],
+  "tokens": [
+    "color.light.surface",
+    "color.light.onSurface",
+    "spacing.md",
+    "shape.cornerRadius"
+  ],
+  "props": [
+    {
+      "name": "children",
+      "type": "slot",
+      "required": true
+    }
+  ],
+  "a11y": "The card is a generic grouping; put the heading in the child content.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedCard.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedCard.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/Card.tsx",
+      "destination": "components/ui/Card.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/card.dart",
+      "destination": "lib/ui/components/card.dart"
+    }
+  }
+}

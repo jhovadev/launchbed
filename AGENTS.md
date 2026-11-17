@@ -52,7 +52,9 @@ Generated apps: mise pins tools and env (no secrets). just is the command catalo
 - Keep changes small. Conventional Commits, subject ≤ 72 characters.
 - Do not use `git am` or `git apply` when preparing a delivery for the maintainer; prefer a ZIP of changed files plus a `.patch` for inspection, applied by unzip + `git add`.
 - Do not push or write to remotes unless the user explicitly asked for that exact action.
-- Multi-target stacks in `docs/roadmap-multi-target.md` are a **plan**, not implemented generators.
+- Multi-target: `android-compose` is owned; `expo` and `flutter` are beta delegate adapters (`launchbed new --target …`). Tauri and the RN community CLI are still planned. See `docs/roadmap-multi-target.md`.
+- Component registry: `launchbed components --json` and `launchbed add <component>` copy shadcn-style sources (Button, TextField, Card, ListItem, Badge, Switch) into a project that has `launchbed.json`.
+- `launchbed doctor [--target <id>]` checks local prerequisites. The web/API never runs official CLIs for delegate targets; it returns the plan and command.
 
 ## Device and scrcpy recipes
 
@@ -72,11 +74,15 @@ Do not invent scrcpy flags: use the official ones (`--record`, `--no-audio`,
 ## Generated project CI
 
 The beta `tooling/github-actions` addon writes `.github/workflows/ci.yml` and
-`docs/CI.md`. The workflow uses Temurin 21, installs platform `android-37.0` and
-build-tools `36.0.0`, then runs `./gradlew :app:testDebugUnitTest`,
-`:app:assembleDebug`, and `:app:lintDebug`. It does not use GitHub expressions
-or secrets and does not sign a release APK. `compose-starter` and `app-starter`
-include it; other presets can pass `--addon tooling/github-actions`.
+`docs/CI.md`. The workflow pins Actions by commit SHA, validates the Gradle
+wrapper, uses `setup-gradle` for the dependency cache, and sets concurrency
+with a safe `${{ github.workflow }}-${{ github.ref }}` group. It uses Temurin
+21, installs platform `android-37.0` and build-tools `36.0.0`, then runs
+`./gradlew :app:testDebugUnitTest`, `:app:assembleDebug`, and `:app:lintDebug`.
+It does not interpolate secrets and does not sign a release APK.
+`compose-starter` and `app-starter` include it; other presets can pass
+`--addon tooling/github-actions`. Delegate targets write their own overlay
+workflows (Expo export / Flutter analyze).
 
 ## How to add an addon
 
@@ -107,4 +113,4 @@ See `.agents/skills/update-compatibility/SKILL.md`. Change versions in `packages
 - Historical files under `patches/` (they document past reviews).
 - Business data, if any appears in a local environment.
 - A wholesale rename of `@launchbed/*` packages unless a dedicated, tested change is requested.
-- Do not mark multi-target adapters (Expo/Flutter/Tauri/RN) as implemented until they have tests and a generator path.
+- Do not mark additional adapters (Tauri, RN community CLI) as implemented until they have tests and a generator path. Expo and Flutter are already generatable as delegates.

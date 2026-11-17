@@ -55,10 +55,13 @@ Outputs written into every generated project:
 - `ui/theme/GeneratedColors.kt` — 58 `Color(0xFF......)` constants.
 - `ui/theme/GeneratedTokens.kt` — font family, base radius, `Spacing`,
   `ComponentTokens`.
-- `tokens/tokens.css` — CSS custom properties, prepared for a future web
-  target. The generated Android app does not load this file.
-- `tokens/tokens.dart` — Dart/Flutter constants, prepared for a future Flutter
-  target. The generated Android app does not load this file.
+- `tokens/tokens.css` — CSS custom properties. Written for every target;
+  Android apps do not load this file. Expo and Flutter overlays include it.
+- `tokens/tokens.ts` — TypeScript token object plus CSS-variable map for Expo
+  (and other JS/TS targets).
+- `tokens/tokens.dart` — Dart/Flutter constants. On Flutter projects this is
+  written to `lib/tokens/tokens.dart` so the app can import it. Android apps
+  do not load this file.
 
 `generateComposeColors` / `generateComposeTokens` are thin wrappers around the
 same custom formatters, so tests can assert Style Dictionary output equals the

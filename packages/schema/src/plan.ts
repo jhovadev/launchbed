@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { GENERATION_SCHEMA_VERSION, TEMPLATE_ID } from "./limits";
+import { DEFAULT_TARGET, TARGET_IDS, TARGET_STRATEGIES } from "./targets";
 import { validateRelativePath } from "./identifiers";
 
 export const PlannedFileSchema = z
@@ -15,7 +16,7 @@ export const PlannedFileSchema = z
     /** Lowercase hex SHA-256 of the exact bytes written to the ZIP. */
     sha256: z.string().regex(/^[0-9a-f]{64}$/),
     /** Where the file came from. */
-    origin: z.enum(["template", "generated", "addon"]),
+    origin: z.enum(["template", "generated", "addon", "overlay"]),
   })
   .superRefine((file, ctx) => {
     if (file.path.endsWith("/")) {
@@ -34,12 +35,25 @@ export const PlannedOperationSchema = z.strictObject({
 
 export type PlannedOperation = z.infer<typeof PlannedOperationSchema>;
 
+/** Official CLI invocation. argv is an allowlisted array; it is never passed to a shell. */
+export const DelegateStepSchema = z.strictObject({
+  type: z.literal("delegate"),
+  command: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, "must be a bare executable name such as npx"),
+  argv: z.array(z.string().min(1).max(200)).min(1).max(32),
+  description: z.string().min(1).max(300),
+});
+
+export type DelegateStep = z.infer<typeof DelegateStepSchema>;
+
+
 export const GenerationPlanSchema = z.strictObject({
   schemaVersion: z.literal(GENERATION_SCHEMA_VERSION),
   template: z.strictObject({
-    id: z.literal(TEMPLATE_ID),
+    id: z.string().min(1).max(80),
     version: z.string().regex(/^\d+\.\d+\.\d+$/),
   }),
+  target: z.enum(TARGET_IDS).default(DEFAULT_TARGET),
+  strategy: z.enum(TARGET_STRATEGIES).default("owned"),
   request: z.strictObject({
     /** SHA-256 over the canonical normalized request. */
     hash: z.string().regex(/^[0-9a-f]{64}$/),
@@ -52,7 +66,10 @@ export const GenerationPlanSchema = z.strictObject({
     targetSdk: z.number().int(),
     addons: z.array(z.string()),
     preset: z.string().optional(),
+    target: z.enum(TARGET_IDS).default(DEFAULT_TARGET),
   }),
+  /** Official CLI steps for delegate targets. Empty for the owned Android path. */
+  steps: z.array(DelegateStepSchema).default([]),
   files: z.array(PlannedFileSchema),
   operations: z.array(PlannedOperationSchema),
   totals: z.strictObject({
@@ -85,6 +102,7 @@ export const CatalogEntrySchema = z.strictObject({
     android: z.array(z.string()),
     notes: z.array(z.string()),
   }),
+  targets: z.array(z.enum(TARGET_IDS)).default([DEFAULT_TARGET]),
   license: z.string(),
 });
 
@@ -100,6 +118,23 @@ export const CatalogResponseSchema = z.strictObject({
     targetSdk: z.number().int(),
   }),
   addons: z.array(CatalogEntrySchema),
+  targets: z.array(
+    z.strictObject({
+      id: z.enum(TARGET_IDS),
+      displayName: z.string(),
+      strategy: z.enum(TARGET_STRATEGIES),
+      status: z.enum(["stable", "beta", "experimental", "planned"]),
+      officialCli: z.string().optional(),
+      prereqs: z.array(
+        z.strictObject({
+          id: z.string(),
+          label: z.string(),
+          optional: z.boolean(),
+        }),
+      ),
+      notes: z.array(z.string()),
+    }),
+  ).default([]),
   limits: z.strictObject({
     requestBytes: z.number().int(),
     files: z.number().int(),

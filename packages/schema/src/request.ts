@@ -2,6 +2,7 @@ import { z } from "zod";
 import { validatePackageId, validateProjectName } from "./identifiers";
 import { DEFAULT_SDK, LIMITS, SDK_LIMITS, TEMPLATE_ID } from "./limits";
 import { ThemeConfigSchema } from "./theme";
+import { DEFAULT_TARGET, TARGET_IDS } from "./targets";
 
 const sdkLevel = (bounds: { min: number; max: number }, label: string) =>
   z
@@ -21,6 +22,8 @@ const packageId = z
 export const ProjectRequestSchema = z
   .strictObject({
     template: z.literal(TEMPLATE_ID).default(TEMPLATE_ID),
+    /** Generation target. Defaults to android-compose for backward compatibility. */
+    target: z.enum(TARGET_IDS).default(DEFAULT_TARGET),
     projectName: z.string().superRefine((value, ctx) => {
       for (const problem of validateProjectName(value)) {
         ctx.addIssue({ code: "custom", message: problem });

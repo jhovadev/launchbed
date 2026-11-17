@@ -25,3 +25,9 @@ export { applyTooling, mergeTooling, serializeMiseToml, JUST_RECIPE_SLOT } from 
 export { writeProjectTree } from "./write-tree";
 export { formatNewCommand } from "@launchbed/schema";
 export { GENERATED_MISE, RESERVED_JUST_RECIPES } from "./versions";
+export { collectDoctorReport, type DoctorCheck, type DoctorReport } from "./doctor";
+export { runDelegateStep, validateDelegateStep, dartPackageName, npmProjectSlug, withDelegateOutputPath } from "./delegate";
+export { buildExpoDelegate, buildFlutterDelegate, projectConfigJson } from "./overlays";
+export { ACTION_PINS, EXPO_PINS, FLUTTER_PINS } from "./versions";
+export { renderGhaExpression } from "./render";
+export { loadComponentCatalog, contractProblems, addComponent, findLaunchbedConfig, type ComponentCatalog, type ComponentContract } from "./components";

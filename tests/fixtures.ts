@@ -55,6 +55,7 @@ describe("ProjectRequestSchema", () => {
     expect(request.compileSdk).toBe(DEFAULT_SDK.compile);
     expect(request.targetSdk).toBe(DEFAULT_SDK.target);
     expect(request.addons).toEqual([]);
+    expect(request.target).toBe("android-compose");
     expect(request.theme.seedColor).toBe("#6750A4");
     expect(request.packageName).toBeUndefined();
   });

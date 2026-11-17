@@ -2,6 +2,7 @@ import { z } from "zod";
 import { FileOperationSchema } from "./operations";
 import { SDK_LIMITS } from "./limits";
 import { ToolingContributionSchema, toolingIsEmpty } from "./tooling";
+import { DEFAULT_TARGET, TARGET_IDS } from "./targets";
 
 export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling", "foundation"] as const;
 export const ADDON_STATUSES = ["stable", "beta", "experimental", "planned"] as const;
@@ -52,6 +53,8 @@ export const AddonManifestSchema = z
     dependencies: z.array(z.string().regex(ADDON_ID)).max(16).default([]),
     conflicts: z.array(z.string().regex(ADDON_ID)).max(16).default([]),
     capabilities: z.array(z.string().regex(CAPABILITY)).max(16).default([]),
+    /** Targets this addon may be applied to. Defaults to android-compose only. */
+    targets: z.array(z.enum(TARGET_IDS)).min(1).max(8).default([DEFAULT_TARGET]),
     requirements: AddonRequirementsSchema,
     fileOperations: z.array(FileOperationSchema).max(40).default([]),
     tooling: ToolingContributionSchema,

@@ -5,10 +5,14 @@ export function formatNewCommand(options: {
   preset?: string;
   addons?: readonly string[];
   out?: string;
+  target?: string;
 }): string {
   const parts = ["launchbed new"];
   parts.push("--name", shellQuote(options.projectName));
   parts.push("--app-id", options.applicationId);
+  if (options.target && options.target !== "android-compose") {
+    parts.push("--target", options.target);
+  }
   if (options.preset) {
     parts.push("--preset", options.preset);
   }

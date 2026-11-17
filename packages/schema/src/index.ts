@@ -9,3 +9,5 @@ export * from "./plan";
 export * from "./preset";
 export * from "./tooling";
 export * from "./cli-command";
+export * from "./targets";
+export * from "./project-config";

@@ -33,6 +33,7 @@ describe("Style Dictionary compilation", () => {
     expect(first.composeTokens).toBe(second.composeTokens);
     expect(first.css).toBe(second.css);
     expect(first.flutter).toBe(second.flutter);
+    expect(first.ts).toBe(second.ts);
     expect(first.composeColors).toContain("Color(0xFF");
     expect(first.composeColors).toContain("via Style Dictionary 5");
     expect(first.composeTokens).toContain("internal object Spacing");
@@ -46,10 +47,15 @@ describe("Style Dictionary compilation", () => {
     expect(compiled.css).toContain("--dimension-spacing-md: 16px;");
     expect(compiled.css).toContain("--font-family-plain: sansSerif;");
     expect(compiled.css).toContain("--meta-scheme-variant: tonalSpot;");
+    expect(compiled.flutter).toContain("import 'dart:ui' show Color;");
     expect(compiled.flutter).toContain("class LaunchbedTokens");
     expect(compiled.flutter).toMatch(/static const Color colorLightPrimary = Color\(0xFF[0-9A-F]{6}\);/);
     expect(compiled.flutter).toContain("static const double dimensionSpacingMd = 16.0;");
     expect(compiled.flutter).toContain('static const String fontFamilyPlain = "sansSerif";');
+    expect(compiled.ts).toContain("export const tokens = {");
+    expect(compiled.ts).toContain("export const cssVars = {");
+    expect(compiled.ts).toMatch(/colorLightPrimary: "#[0-9A-F]{6}",/);
+    expect(compiled.ts).toContain('colorLightPrimary: "var(--color-light-primary)"');
     // Sorted, no timestamps.
     expect(compiled.css.indexOf("--color-dark-primary")).toBeLessThan(compiled.css.indexOf("--color-light-primary"));
     expect(compiled.css).not.toMatch(/\d{4}-\d{2}-\d{2}/);

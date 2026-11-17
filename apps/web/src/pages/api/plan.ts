@@ -7,7 +7,7 @@ export const prerender = false;
 function errorStatus(code: string): number {
   if (code === "LIMIT_EXCEEDED") return 413;
   if (code === "SECURITY_ERROR") return 422;
-  if (code === "INVALID_REQUEST" || code === "RESOLUTION_ERROR" || code === "UNKNOWN_ADDON") return 400;
+  if (code === "INVALID_REQUEST" || code === "RESOLUTION_ERROR" || code === "UNKNOWN_ADDON" || code === "UNKNOWN_TARGET" || code === "INCOMPATIBLE_ADDON" || code === "DELEGATE_ERROR" || code === "PREREQUISITE_MISSING") return 400;
   if (code === "TEMPLATE_ERROR") return 500;
   return 500;
 }

@@ -1,0 +1,62 @@
+{
+  "name": "list-item",
+  "displayName": "ListItem",
+  "description": "One row in a list, with title, optional subtitle, and a press handler.",
+  "variants": [
+    "default"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "default",
+    "pressed",
+    "disabled"
+  ],
+  "tokens": [
+    "color.light.onSurface",
+    "color.light.onSurfaceVariant",
+    "spacing.md"
+  ],
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "subtitle",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "onPress",
+      "type": "callback",
+      "required": false
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "required": false,
+      "default": "false"
+    }
+  ],
+  "a11y": "The row is a button when onPress is set; title is the accessible name, subtitle the hint.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedListItem.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedListItem.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/ListItem.tsx",
+      "destination": "components/ui/ListItem.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/list_item.dart",
+      "destination": "lib/ui/components/list_item.dart"
+    }
+  }
+}

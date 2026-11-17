@@ -1,0 +1,61 @@
+{
+  "name": "switch",
+  "displayName": "Switch",
+  "description": "Boolean toggle with an associated label.",
+  "variants": [
+    "default"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "on",
+    "off",
+    "disabled"
+  ],
+  "tokens": [
+    "color.light.primary",
+    "color.light.outline"
+  ],
+  "props": [
+    {
+      "name": "label",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "checked",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "name": "onChange",
+      "type": "callback",
+      "required": true
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "required": false,
+      "default": "false"
+    }
+  ],
+  "a11y": "Exposes a switch role, the label as the name, and the checked state.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedSwitch.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedSwitch.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/SwitchRow.tsx",
+      "destination": "components/ui/SwitchRow.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/launchbed_switch.dart",
+      "destination": "lib/ui/components/launchbed_switch.dart"
+    }
+  }
+}

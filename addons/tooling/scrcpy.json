@@ -44,5 +44,10 @@
     ]
   },
   "license": "MIT",
-  "docsUrl": "https://github.com/Genymobile/scrcpy"
+  "docsUrl": "https://github.com/Genymobile/scrcpy",
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ]
 }

@@ -37,6 +37,8 @@ import { TOOLCHAIN, sdkPlatformPackage } from "./versions";
 import { createZip, readZip } from "./zip";
 import { applyComposition } from "./composition";
 import { applyTooling } from "./tooling";
+import { buildExpoDelegate, buildFlutterDelegate, projectConfigJson } from "./overlays";
+import { LAUNCHBED_PROJECT_FILE, type LaunchbedProjectConfig } from "@launchbed/schema";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
@@ -180,10 +182,10 @@ function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens, resolve
 
 function addFile(
   files: Map<string, Uint8Array>,
-  origins: Map<string, "template" | "generated" | "addon">,
+  origins: Map<string, "template" | "generated" | "addon" | "overlay">,
   path: string,
   data: Uint8Array,
-  origin: "template" | "generated" | "addon",
+  origin: "template" | "generated" | "addon" | "overlay",
 ): void {
   const problems = validateRelativePath(path, `${origin} path`);
   if (problems.length > 0) {
@@ -223,6 +225,13 @@ export async function materializeProject(
   if (preset && !isPresetGeneratable(preset)) {
     throw new LaunchbedError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
   }
+  if (preset && request.target !== "android-compose") {
+    throw new LaunchbedError(
+      "INCOMPATIBLE_ADDON",
+      `Preset "${preset.id}" only applies to the android-compose target, not ${request.target}.`,
+      [{ path: "preset", message: `${preset.id} is android-compose only` }],
+    );
+  }
   const defaultTheme = ThemeConfigSchema.parse({});
   const resolvedRequest = preset
     ? {
@@ -237,9 +246,13 @@ export async function materializeProject(
   const resolution = resolveAddons(resolvedRequest, options.addons ?? ALL_ADDONS, { baseJdk: TOOLCHAIN.jdk });
   const tokens = resolveThemeTokens(resolvedRequest.theme);
   const dtcg = themeTokensToDtcg(tokens);
+  const compiled = await compileDesignTokens(dtcg, { packageName: resolvedRequest.packageName! });
+  if (resolvedRequest.target === "expo" || resolvedRequest.target === "flutter") {
+    return materializeDelegateProject(resolvedRequest, resolution.addons, resolution.warnings, compiled, dtcg);
+  }
   const vars = buildTemplateVars(resolvedRequest, tokens, resolution.addons.map((addon) => addon.id));
   const files = new Map<string, Uint8Array>();
-  const origins = new Map<string, "template" | "generated" | "addon">();
+  const origins = new Map<string, "template" | "generated" | "addon" | "overlay">();
 
   for (const [templatePath, file] of Object.entries(TEMPLATE_FILES)) {
     const path = renderText(templatePath, vars, `template path ${templatePath}`);
@@ -254,7 +267,6 @@ export async function materializeProject(
 
   const sourceRoot = `app/src/main/java/${vars.packagePath}`;
   // Style Dictionary compiles the DTCG document at generator time (not in the app).
-  const compiled = await compileDesignTokens(dtcg, { packageName: request.packageName! });
   addFile(files, origins, "design-tokens.json", encoder.encode(serializeDtcg(dtcg)), "generated");
   addFile(files, origins, `${sourceRoot}/ui/theme/GeneratedColors.kt`, encoder.encode(compiled.composeColors), "generated");
   addFile(files, origins, `${sourceRoot}/ui/theme/GeneratedTokens.kt`, encoder.encode(compiled.composeTokens), "generated");
@@ -270,6 +282,17 @@ export async function materializeProject(
   );
 
   applyTooling(files, resolution.addons);
+
+  const projectConfig: LaunchbedProjectConfig = {
+    schemaVersion: 1,
+    target: "android-compose",
+    projectName: resolvedRequest.projectName,
+    applicationId: resolvedRequest.applicationId,
+    packageName: resolvedRequest.packageName!,
+    addons: resolution.addons.map((addon) => addon.id),
+    components: [],
+  };
+  addFile(files, origins, LAUNCHBED_PROJECT_FILE, encoder.encode(projectConfigJson(projectConfig)), "generated");
 
   if (files.size > LIMITS.files) {
     throw new LaunchbedError("LIMIT_EXCEEDED", `Generated ${files.size} files; the limit is ${LIMITS.files}.`);
@@ -300,6 +323,8 @@ export async function materializeProject(
   const plan: GenerationPlan = {
     schemaVersion: GENERATION_SCHEMA_VERSION,
     template: { id: TEMPLATE_ID, version: TEMPLATE_VERSION },
+    target: "android-compose",
+    strategy: "owned",
     request: {
       hash: requestHash(resolvedRequest),
       projectName: resolvedRequest.projectName,
@@ -311,7 +336,9 @@ export async function materializeProject(
       targetSdk: resolvedRequest.targetSdk,
       addons: resolution.addons.map((addon) => addon.id),
       preset: resolvedRequest.preset,
+      target: "android-compose",
     },
+    steps: [],
     files: plannedFiles,
     operations: composition.operations,
     totals: { files: plannedFiles.length, bytes: totalBytes },
@@ -319,6 +346,70 @@ export async function materializeProject(
   };
 
   return { plan, files, warnings };
+}
+
+
+function materializeDelegateProject(
+  request: ProjectRequest,
+  addons: readonly AddonManifest[],
+  resolutionWarnings: readonly string[],
+  compiled: Awaited<ReturnType<typeof compileDesignTokens>>,
+  dtcg: ReturnType<typeof themeTokensToDtcg>,
+): MaterializedProject {
+  const material =
+    request.target === "flutter"
+      ? buildFlutterDelegate({
+          projectName: request.projectName,
+          applicationId: request.applicationId,
+          packageName: request.packageName!,
+          addons,
+          tokens: compiled,
+        })
+      : buildExpoDelegate({
+          projectName: request.projectName,
+          applicationId: request.applicationId,
+          packageName: request.packageName!,
+          addons,
+          tokens: compiled,
+        });
+  const files = new Map<string, Uint8Array>();
+  const origins = new Map<string, "template" | "generated" | "addon" | "overlay">();
+  addFile(files, origins, "design-tokens.json", encoder.encode(serializeDtcg(dtcg)), "overlay");
+  for (const overlay of material.overlays) {
+    addFile(files, origins, overlay.path, encoder.encode(overlay.contents), "overlay");
+  }
+  const paths = [...files.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  let totalBytes = 0;
+  const plannedFiles = paths.map((path) => {
+    const data = files.get(path)!;
+    totalBytes += data.length;
+    return { path, size: data.length, sha256: sha256(data), origin: origins.get(path) ?? ("overlay" as const) };
+  });
+  const plan: GenerationPlan = {
+    schemaVersion: GENERATION_SCHEMA_VERSION,
+    template: { id: material.templateId, version: material.templateVersion },
+    target: material.target,
+    strategy: "delegate",
+    request: {
+      hash: requestHash(request),
+      projectName: request.projectName,
+      applicationId: request.applicationId,
+      namespace: request.namespace,
+      packageName: request.packageName!,
+      minSdk: request.minSdk,
+      compileSdk: request.compileSdk,
+      targetSdk: request.targetSdk,
+      addons: addons.map((addon) => addon.id),
+      preset: request.preset,
+      target: material.target,
+    },
+    steps: [material.step],
+    files: plannedFiles,
+    operations: [],
+    totals: { files: plannedFiles.length, bytes: totalBytes },
+    warnings: [...resolutionWarnings, ...material.warnings],
+  };
+  return { plan, files, warnings: plan.warnings };
 }
 
 export async function createPlan(

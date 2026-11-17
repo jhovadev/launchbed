@@ -190,7 +190,7 @@ export function formatFlutterDart(tokens: readonly TokenValue[]): string {
   const hasColor = sorted.some((token) => token.type === "color");
   const lines = [
     GENERATED_HEADER,
-    ...(hasColor ? ["import 'package:flutter/material.dart';", ""] : []),
+    ...(hasColor ? ["import 'dart:ui' show Color;", ""] : []),
     "class LaunchbedTokens {",
     "  LaunchbedTokens._();",
     ...sorted.map((token) => {
@@ -200,6 +200,29 @@ export function formatFlutterDart(tokens: readonly TokenValue[]): string {
       return `  static const String ${name} = ${flutterValue(token)};`;
     }),
     "}",
+    "",
+  ];
+  return lines.join("\n");
+}
+
+function jsIdentFromPath(path: readonly string[]): string {
+  return camelFromPath(path);
+}
+
+/** Deterministic TypeScript CSS-in-JS module for Expo and other JS targets. */
+export function formatTsCssInJs(tokens: readonly TokenValue[]): string {
+  const sorted = [...tokens].sort((a, b) => tokenKey(a.path).localeCompare(tokenKey(b.path)));
+  const lines = [
+    GENERATED_HEADER.replace(/^\/\//, "//"),
+    "export const tokens = {",
+    ...sorted.map((token) => `  ${jsIdentFromPath(token.path)}: ${JSON.stringify(cssValue(token))},`),
+    "} as const;",
+    "",
+    "export const cssVars = {",
+    ...sorted.map((token) => `  ${jsIdentFromPath(token.path)}: ${JSON.stringify(`var(--${kebabFromPath(token.path)})`)},`),
+    "} as const;",
+    "",
+    "export type LaunchbedToken = keyof typeof tokens;",
     "",
   ];
   return lines.join("\n");

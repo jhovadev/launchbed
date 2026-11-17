@@ -4,7 +4,7 @@ import {
   type CatalogEntry,
   type CatalogResponse,
 } from "@launchbed/schema";
-import { DEFAULT_SDK, LIMITS, TEMPLATE_ID, TEMPLATE_VERSION } from "@launchbed/schema";
+import { DEFAULT_SDK, LIMITS, TEMPLATE_ID, TEMPLATE_VERSION, TARGETS } from "@launchbed/schema";
 
 import room from "../../../addons/storage/room.json";
 import sqliteDirect from "../../../addons/storage/sqlite-direct.json";
@@ -95,6 +95,7 @@ export function toCatalogEntry(addon: AddonManifest): CatalogEntry {
     conflicts: addon.conflicts,
     requirements: addon.requirements,
     compatibility: addon.compatibility,
+    targets: addon.targets,
     license: addon.license,
   };
 }
@@ -110,6 +111,15 @@ export function buildCatalog(): CatalogResponse {
       targetSdk: DEFAULT_SDK.target,
     },
     addons: ALL_ADDONS.map(toCatalogEntry),
+    targets: TARGETS.map((target) => ({
+      id: target.id,
+      displayName: target.displayName,
+      strategy: target.strategy,
+      status: target.status,
+      officialCli: target.officialCli,
+      prereqs: [...target.prereqs],
+      notes: [...target.notes],
+    })),
     limits: {
       requestBytes: LIMITS.requestBytes,
       files: LIMITS.files,

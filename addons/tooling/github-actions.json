@@ -41,5 +41,10 @@
     ]
   },
   "license": "MIT",
-  "docsUrl": "https://docs.github.com/en/actions"
+  "docsUrl": "https://docs.github.com/en/actions",
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ]
 }

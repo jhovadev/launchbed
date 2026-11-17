@@ -25,9 +25,17 @@ describe("tooling/github-actions", () => {
     expect(workflow).toContain("./gradlew :app:testDebugUnitTest");
     expect(workflow).toContain("./gradlew :app:assembleDebug");
     expect(workflow).toContain("./gradlew :app:lintDebug");
-    expect(workflow).toContain("actions/upload-artifact@v4");
-    expect(workflow).not.toContain("${{");
-    expect(workflow).not.toContain("{{");
+    expect(workflow).toContain("actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a");
+    expect(workflow).toContain("gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c");
+    expect(workflow).toContain("gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c");
+    expect(workflow).toContain("actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1");
+    expect(workflow).toContain("actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880");
+    expect(workflow).toContain("android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd");
+    expect(workflow).toContain("concurrency:");
+    expect(workflow).toContain("${{ github.workflow }}");
+    expect(workflow).toContain("${{ github.ref }}");
+    expect(workflow).not.toContain("{{gha:");
+    expect(workflow).not.toContain("secrets");
 
     const docs = new TextDecoder().decode(withAddon.files.get("docs/CI.md")!);
     expect(docs).toContain("android-37.0");

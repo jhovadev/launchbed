@@ -4,7 +4,9 @@ import {
   isGeneratable,
   type AddonManifest,
   type ProjectRequest,
+  type TargetId,
 } from "@launchbed/schema";
+import { assertAddonsForTarget, assertTargetGeneratable } from "./rules";
 
 export interface ResolvedRequirements {
   minSdk: number;
@@ -47,6 +49,8 @@ export function resolveAddons(
   const index = indexCatalog(catalog);
   const selected = [...new Set(request.addons)].sort();
   const warnings: string[] = [];
+  const target = request.target as TargetId;
+  assertTargetGeneratable(target);
 
   if (selected.length > LIMITS.addons) {
     generateError(`At most ${LIMITS.addons} addons can be selected.`);
@@ -56,7 +60,11 @@ export function resolveAddons(
   for (const id of selected) {
     const addon = index.get(id);
     if (!addon) {
-      generateError(`Unknown addon "${id}".`, [{ path: "addons", message: `unknown addon ${id}` }]);
+      throw new LaunchbedError(
+        "UNKNOWN_ADDON",
+        `Unknown addon "${id}".`,
+        [{ path: "addons", message: `unknown addon ${id}` }],
+      );
     }
     if (!isGeneratable(addon)) {
       generateError(
@@ -103,6 +111,9 @@ export function resolveAddons(
   for (const id of selected) visit(id, 0);
 
   const ordered = [...included].sort().map((id) => index.get(id)!);
+
+  // 2b. Target compatibility (centralized rules; addon's targets list is the allowlist).
+  assertAddonsForTarget(ordered, target);
 
   // 3. Conflicts: explicit and transitive selections are all checked.
   for (const addon of ordered) {
@@ -161,3 +172,5 @@ export function resolveAddons(
 
   return { addons: ordered, requirements, warnings };
 }
+
+export { addonAppliesTo, incompatibleAddonMessage, assertAddonsForTarget, assertTargetGeneratable } from "./rules";

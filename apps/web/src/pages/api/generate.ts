@@ -1,13 +1,13 @@
 import type { APIRoute } from "astro";
 import { LIMITS, toErrorPayload } from "@launchbed/schema";
-import { generateProject, parseRequestJson } from "@launchbed/generator";
+import { createPlan, formatNewCommand, generateProject, parseRequestJson } from "@launchbed/generator";
 
 export const prerender = false;
 
 function errorStatus(code: string): number {
   if (code === "LIMIT_EXCEEDED") return 413;
   if (code === "SECURITY_ERROR") return 422;
-  if (code === "INVALID_REQUEST" || code === "RESOLUTION_ERROR" || code === "UNKNOWN_ADDON") return 400;
+  if (code === "INVALID_REQUEST" || code === "RESOLUTION_ERROR" || code === "UNKNOWN_ADDON" || code === "UNKNOWN_TARGET" || code === "INCOMPATIBLE_ADDON" || code === "DELEGATE_ERROR" || code === "PREREQUISITE_MISSING") return 400;
   return 500;
 }
 
@@ -30,7 +30,22 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.text();
-    const project = await generateProject(parseRequestJson(body));
+    const parsed = parseRequestJson(body);
+    if (parsed.target !== "android-compose") {
+      const plan = await createPlan(parsed);
+      const command = formatNewCommand({
+        projectName: parsed.projectName,
+        applicationId: parsed.applicationId,
+        preset: parsed.preset,
+        addons: parsed.addons,
+        target: parsed.target,
+      });
+      return new Response(JSON.stringify({ strategy: plan.strategy, plan, command }), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+      });
+    }
+    const project = await generateProject(parsed);
     const zipBytes = new Uint8Array(project.zip.length);
     zipBytes.set(project.zip);
 

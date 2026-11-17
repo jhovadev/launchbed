@@ -76,6 +76,7 @@ describe("launchbed new", () => {
         addons: [],
         outDir: "x",
         force: false,
+        target: "android-compose",
       }),
     ).toThrow(/cannot be generated/);
   });

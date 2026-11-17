@@ -1,0 +1,53 @@
+{
+  "name": "badge",
+  "displayName": "Badge",
+  "description": "Compact status or count label.",
+  "variants": [
+    "neutral",
+    "accent"
+  ],
+  "sizes": [
+    "sm",
+    "md"
+  ],
+  "states": [
+    "default"
+  ],
+  "tokens": [
+    "color.light.primary",
+    "color.light.onPrimary",
+    "color.light.surfaceVariant",
+    "spacing.xs"
+  ],
+  "props": [
+    {
+      "name": "label",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "variant",
+      "type": "neutral | accent",
+      "required": false,
+      "default": "neutral"
+    }
+  ],
+  "a11y": "The badge text is the accessible name.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedBadge.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedBadge.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/Badge.tsx",
+      "destination": "components/ui/Badge.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/badge.dart",
+      "destination": "lib/ui/components/badge.dart"
+    }
+  }
+}

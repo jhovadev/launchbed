@@ -55,7 +55,7 @@ export interface CompositionResult {
 export function applyComposition(
   addons: readonly AddonManifest[],
   files: Map<string, Uint8Array>,
-  origins: Map<string, "template" | "generated" | "addon">,
+  origins: Map<string, "template" | "generated" | "addon" | "overlay" | "overlay">,
   vars: TemplateVars,
   fragments: Readonly<Record<string, string>> = FRAGMENT_FILES,
 ): CompositionResult {

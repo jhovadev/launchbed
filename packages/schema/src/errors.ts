@@ -3,7 +3,11 @@ import { z } from "zod";
 export type ErrorCode =
   | "INVALID_REQUEST"
   | "UNKNOWN_ADDON"
+  | "UNKNOWN_TARGET"
+  | "INCOMPATIBLE_ADDON"
+  | "PREREQUISITE_MISSING"
   | "RESOLUTION_ERROR"
+  | "DELEGATE_ERROR"
   | "TEMPLATE_ERROR"
   | "SECURITY_ERROR"
   | "LIMIT_EXCEEDED"

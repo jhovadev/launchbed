@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import {
   LaunchbedError,
@@ -18,6 +18,7 @@ import {
   materializeProject,
   verifyZipAgainstPlan,
   writeProjectTree,
+  runDelegateStep,
 } from "@launchbed/generator";
 import type { Args } from "./args";
 import { promptLine, promptList } from "./prompt";
@@ -32,6 +33,7 @@ export interface NewOptions {
   addons: string[];
   outDir: string;
   force: boolean;
+  target: string;
 }
 
 export function slugToApplicationId(projectName: string): string {
@@ -55,6 +57,7 @@ export async function resolveNewOptions(args: Args, interactive: boolean): Promi
   let applicationId = args.values.get("app-id") ?? "";
   let preset = args.values.get("preset") ?? "";
   let addons = [...(args.lists.get("addon") ?? [])];
+  const target = args.values.get("target") ?? "android-compose";
 
   if (!yes && interactive) {
     if (!projectName) projectName = await promptLine("Project name", DEFAULT_NAME);
@@ -87,11 +90,11 @@ export async function resolveNewOptions(args: Args, interactive: boolean): Promi
   projectName = projectName || DEFAULT_NAME;
   applicationId = applicationId || slugToApplicationId(projectName);
   if (preset === "") {
-    preset = yes ? DEFAULT_PRESET : "";
+    preset = yes && target === "android-compose" ? DEFAULT_PRESET : "";
   }
 
   const outDir = resolve(args.values.get("out") ?? args.positionals[0] ?? projectSlug(projectName));
-  return { projectName, applicationId, preset: preset || undefined, addons, outDir, force };
+  return { projectName, applicationId, preset: preset || undefined, addons, outDir, force, target };
 }
 
 export function requestFromNewOptions(options: NewOptions): ProjectRequestInput {
@@ -111,6 +114,7 @@ export function requestFromNewOptions(options: NewOptions): ProjectRequestInput 
     namespace: options.applicationId,
     ...(options.preset ? { preset: options.preset } : {}),
     addons: options.addons,
+    target: options.target as "android-compose" | "expo" | "flutter" | "tauri-solid",
   };
 }
 
@@ -119,7 +123,24 @@ export async function writeGeneratedProject(
 ): Promise<{ directory: string; zipPath: string; command: string; files: number; bytes: number; warnings: string[] }> {
   const request = requestFromNewOptions(options);
   const materialized = await materializeProject(request);
-  const directory = writeProjectTree(materialized.files, options.outDir, { force: options.force });
+  if (materialized.plan.strategy === "delegate") {
+    const root = resolve(options.outDir);
+    if (existsSync(root)) {
+      if (!options.force) {
+        throw new LaunchbedError("IO_ERROR", `Refusing to overwrite ${options.outDir} because it already exists. Pass --force to replace it.`);
+      }
+      rmSync(root, { recursive: true, force: true });
+    }
+    const step = materialized.plan.steps[0];
+    if (!step) {
+      throw new LaunchbedError("DELEGATE_ERROR", "Delegate plan is missing the official CLI step.");
+    }
+    runDelegateStep(step, { cwd: dirname(root), outputPath: root });
+    writeProjectTree(materialized.files, root, { force: true });
+  }
+  const directory = materialized.plan.strategy === "delegate"
+    ? resolve(options.outDir)
+    : writeProjectTree(materialized.files, options.outDir, { force: options.force });
   const zipPath = `${directory}.zip`;
   if (existsSync(zipPath) && !options.force) {
     throw new LaunchbedError("IO_ERROR", `Refusing to overwrite ${zipPath}. Pass --force to replace it.`);
@@ -142,6 +163,7 @@ export async function writeGeneratedProject(
     preset: options.preset,
     addons: options.addons,
     out: options.outDir,
+    target: options.target,
   });
   return {
     directory,

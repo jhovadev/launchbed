@@ -48,9 +48,11 @@ dynamic `+` versions. The generated template matrix lives in
 | typescript | 7.0.2 | `tsc --noEmit` |
 | zod | 4.6.7 | Strict contracts |
 | @material/material-color-utilities | 0.4.0 | HCT palettes (Apache-2.0) |
-| style-dictionary | 5.8.0 | DTCG compile at generate time (custom Compose/CSS/Flutter formats) |
+| style-dictionary | 5.8.0 | DTCG compile at generate time (custom Compose/CSS/Flutter/TS formats) |
+| create-expo-app | 5.0.0 | Expo delegate; template `default@sdk-58` (SDK 58). Node 24.22.2 / bun 1.4.4 in generated mise.toml |
+| Flutter SDK | 3.50.0 | Flutter delegate; pinned via mise. Official `flutter create` |
 | scrcpy | 5.0.1 | Optional; pinned by tooling/scrcpy as github:Genymobile/scrcpy (mise GitHub and aqua backends verified) |
-| GitHub Actions (generated) | checkout@v4, setup-java@v4, setup-android@v3, upload-artifact@v4 | Optional tooling/github-actions workflow: Temurin 21, unit tests, assembleDebug, lintDebug |
+| GitHub Actions (generated Android) | SHA-pinned actions (checkout v7.0.1, setup-java v6.3.0, setup-gradle/wrapper-validation v6.4.1, setup-android v4.0.4, upload-artifact v7.0.1) | Optional tooling/github-actions workflow: concurrency, wrapper validation, Gradle cache via setup-gradle, Temurin 21, unit tests, assembleDebug, lintDebug. Safe `${{ github.workflow }}` / `${{ github.ref }}` only; no secrets |
 
 ## Known issues and decisions
 

@@ -1,0 +1,69 @@
+{
+  "name": "text-field",
+  "displayName": "TextField",
+  "description": "Single-line text input with a label and optional error.",
+  "variants": [
+    "outlined"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "default",
+    "focused",
+    "disabled",
+    "error"
+  ],
+  "tokens": [
+    "color.light.primary",
+    "color.light.error",
+    "spacing.sm",
+    "spacing.md"
+  ],
+  "props": [
+    {
+      "name": "label",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "value",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "onChange",
+      "type": "callback",
+      "required": true
+    },
+    {
+      "name": "error",
+      "type": "string | null",
+      "required": false
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "required": false,
+      "default": "false"
+    }
+  ],
+  "a11y": "Label is associated with the field. Error text is exposed as an accessibility hint.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedTextField.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedTextField.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/TextField.tsx",
+      "destination": "components/ui/TextField.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/text_field.dart",
+      "destination": "lib/ui/components/text_field.dart"
+    }
+  }
+}

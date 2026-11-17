@@ -15,6 +15,7 @@ import {
   formatComposeTokens,
   formatCssVariables,
   formatFlutterDart,
+  formatTsCssInJs,
   themeTokensFromValueMap,
   type TokenValue,
 } from "./formats";
@@ -26,6 +27,7 @@ export interface CompiledDesignTokens {
   composeTokens: string;
   css: string;
   flutter: string;
+  ts: string;
 }
 
 function asTokenValue(token: TransformedToken): TokenValue {
@@ -70,6 +72,10 @@ function flutterDartFormat({ dictionary }: { dictionary: Dictionary }): string {
   return formatFlutterDart(tokensFromDictionary(dictionary));
 }
 
+function tsCssInJsFormat({ dictionary }: { dictionary: Dictionary }): string {
+  return formatTsCssInJs(tokensFromDictionary(dictionary));
+}
+
 /** DTCG document minus non-token metadata that Style Dictionary should not parse. */
 export function styleDictionaryTokens(document: DtcgDocument): DesignTokens {
   const { $schema: _schema, $description: _description, ...tokens } = document;
@@ -94,6 +100,7 @@ export async function compileDesignTokens(
         "launchbed/compose-tokens": composeTokensFormat,
         "launchbed/css-variables": cssVariablesFormat,
         "launchbed/flutter-dart": flutterDartFormat,
+        "launchbed/ts-css-in-js": tsCssInJsFormat,
       },
     },
     platforms: {
@@ -111,6 +118,10 @@ export async function compileDesignTokens(
       flutter: {
         options: { showFileHeader: false },
         files: [{ destination: "tokens.dart", format: "launchbed/flutter-dart" }],
+      },
+      ts: {
+        options: { showFileHeader: false },
+        files: [{ destination: "tokens.ts", format: "launchbed/ts-css-in-js" }],
       },
     },
   });
@@ -132,5 +143,6 @@ export async function compileDesignTokens(
     composeTokens: read("compose", "GeneratedTokens.kt"),
     css: read("css", "tokens.css"),
     flutter: read("flutter", "tokens.dart"),
+    ts: read("ts", "tokens.ts"),
   };
 }

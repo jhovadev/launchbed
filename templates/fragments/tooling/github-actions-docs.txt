@@ -1,16 +1,16 @@
 # Continuous integration
 
 This project opted into the Launchbed `tooling/github-actions` addon. It adds
-`.github/workflows/ci.yml`, which on every push to `main` and every pull request:
+`.github/workflows/ci.yml`. Actions are pinned to verified commit SHAs (with a tag comment). On every push to `main` and every pull request the workflow:
 
-1. Checks out the repository with `actions/checkout@v4` (contents: read only)
-2. Installs Temurin JDK 21 and caches the Gradle user home
+1. Checks out the repository with SHA-pinned `actions/checkout` (contents: read only)
+2. Installs Temurin JDK 21, validates the Gradle Wrapper, and caches Gradle via `gradle/actions/setup-gradle`
 3. Installs Android SDK platform `android-{{compileSdkPackage}}`, build-tools
    `{{buildToolsVersion}}`, and platform-tools
 4. Runs `./gradlew :app:testDebugUnitTest`, `:app:assembleDebug`, and `:app:lintDebug`
 5. Uploads the debug APK as the `app-debug` artifact
 
-The workflow does not use GitHub expressions or secrets. Do not add signing
+Concurrency cancels in-progress runs on the same ref. Expressions are limited to `github.workflow` and `github.ref`. The workflow does not use secrets. Do not add signing
 keys, keystores, or tokens to this file. Release signing is out of scope.
 
 Local equivalent (with `JAVA_HOME` and `ANDROID_HOME` set):

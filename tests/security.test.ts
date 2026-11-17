@@ -38,7 +38,7 @@ describe("request validation and limits", () => {
 
   test("rejects unknown addons at generation time", async () => {
     const request = baseRequest({ addons: ["storage/does-not-exist"] });
-    await expectLaunchbedError(() => materializeProject(request), "RESOLUTION_ERROR");
+    await expectLaunchbedError(() => materializeProject(request), "UNKNOWN_ADDON");
   });
 
   test("rejects planned catalog addons with a clear message", async () => {

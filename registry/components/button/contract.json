@@ -1,0 +1,75 @@
+{
+  "name": "button",
+  "displayName": "Button",
+  "description": "Primary action control with filled, outlined and text variants.",
+  "variants": [
+    "filled",
+    "outlined",
+    "text"
+  ],
+  "sizes": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "states": [
+    "default",
+    "pressed",
+    "disabled"
+  ],
+  "tokens": [
+    "color.light.primary",
+    "color.light.onPrimary",
+    "spacing.sm",
+    "spacing.md",
+    "shape.cornerRadius"
+  ],
+  "props": [
+    {
+      "name": "label",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "onPress",
+      "type": "callback",
+      "required": true
+    },
+    {
+      "name": "variant",
+      "type": "filled | outlined | text",
+      "required": false,
+      "default": "filled"
+    },
+    {
+      "name": "size",
+      "type": "sm | md | lg",
+      "required": false,
+      "default": "md"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "required": false,
+      "default": "false"
+    }
+  ],
+  "a11y": "Exposes a button role and the label as the accessible name. Disabled state is announced.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedButton.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedButton.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/Button.tsx",
+      "destination": "components/ui/Button.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/button.dart",
+      "destination": "lib/ui/components/button.dart"
+    }
+  }
+}

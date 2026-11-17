@@ -1,0 +1,39 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { loadComponentCatalog } from "@launchbed/generator";
+
+const catalog = loadComponentCatalog();
+---
+
+<Layout title="Launchbed components">
+  <section class="hero" aria-labelledby="components-title">
+    <div class="hero-copy">
+      <p class="eyebrow">Component registry</p>
+      <h1 id="components-title">Copied into your project.</h1>
+      <p class="lede">
+        A shadcn-style registry: Launchbed copies source for the selected target
+        (Compose, Expo, or Flutter). Not a runtime dependency.
+        Use <code>launchbed components --json</code> and <code>launchbed add &lt;name&gt;</code>.
+      </p>
+      <p><a href="/">Back to the project builder</a></p>
+    </div>
+  </section>
+  <section id="catalog" aria-label="Component catalog">
+    {catalog.components.map((component) => (
+      <article>
+        <h2>{component.displayName} <code>{component.name}</code></h2>
+        <p>{component.description}</p>
+        <p>Variants: {component.variants.join(", ")}. Sizes: {component.sizes.join(", ")}.</p>
+        <p>Accessibility: {component.a11y}</p>
+        <ul>
+          {Object.entries(component.targets).map(([id, support]) => (
+            <li>
+              <strong>{id}</strong>: {support.status}
+              {support.status === "unsupported" && support.reason ? ` — ${support.reason}` : ""}
+            </li>
+          ))}
+        </ul>
+      </article>
+    ))}
+  </section>
+</Layout>

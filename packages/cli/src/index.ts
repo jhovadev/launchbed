@@ -18,8 +18,11 @@ import { resolveNewOptions, writeGeneratedProject } from "./new-command";
 export const USAGE = `launchbed - generate mobile starters from the command line
 
 Usage:
-  launchbed new [dir] [--name <name>] [--app-id <id>] [--preset <id>] [--addon <id>]... [--out <dir>] [--yes] [--force]
+  launchbed new [dir] [--name <name>] [--app-id <id>] [--target <id>] [--preset <id>] [--addon <id>]... [--out <dir>] [--yes] [--force]
   launchbed catalog [--json]
+  launchbed doctor [--target <id>] [--json]
+  launchbed components [--json]
+  launchbed add <component> [--force] [--out <dir>]
   launchbed validate --config <file|-> [--json]
   launchbed plan --config <file|-> [--json]
   launchbed generate --config <file|-> [--out <file.zip>] [--force]
@@ -73,11 +76,69 @@ async function main(): Promise<void> {
       console.log(`Template: ${catalog.template.displayName} (${catalog.template.version})`);
       console.log(`SDK defaults: min ${catalog.template.minSdk}, compile ${catalog.template.compileSdk}, target ${catalog.template.targetSdk}`);
       console.log("");
+      console.log("Targets:");
+      for (const target of catalog.targets) {
+        console.log(`- ${target.id}: ${target.displayName} (${target.strategy}, ${target.status})`);
+      }
+      console.log("");
       for (const addon of catalog.addons) {
         const suffix = addon.generatable ? "" : ` [${addon.status}]`;
         console.log(`- ${addon.id}${suffix}: ${addon.displayName}`);
       }
     }
+    return;
+  }
+
+  if (args.command === "components") {
+    const { loadComponentCatalog } = await import("@launchbed/generator");
+    const catalog = loadComponentCatalog();
+    if (args.flags.has("json")) {
+      console.log(JSON.stringify(catalog, null, 2));
+    } else {
+      for (const component of catalog.components) {
+        const targets = Object.entries(component.targets)
+          .map(([id, support]) => `${id}:${support.status}`)
+          .join(", ");
+        console.log(`- ${component.name}: ${component.displayName} (${targets})`);
+      }
+    }
+    return;
+  }
+
+  if (args.command === "add") {
+    const name = args.positionals[0];
+    if (!name) {
+      console.error("launchbed add requires a component name.");
+      process.exit(2);
+    }
+    const { addComponent } = await import("@launchbed/generator");
+    try {
+      const result = addComponent({
+        name,
+        projectRoot: args.values.get("out") ?? process.cwd(),
+        force: args.flags.has("force"),
+      });
+      console.log(result.wrote ? `Wrote ${result.path}` : `${result.path} is already up to date.`);
+    } catch (error) {
+      fail(error);
+    }
+    return;
+  }
+
+  if (args.command === "doctor") {
+    const { collectDoctorReport } = await import("@launchbed/generator");
+    const target = args.values.get("target") ?? "android-compose";
+    const report = collectDoctorReport(target);
+    if (args.flags.has("json")) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      console.log(`Target: ${report.target} (${report.ok ? "ok" : "missing required tools"})`);
+      for (const check of report.checks) {
+        const mark = check.ok ? "ok" : check.required ? "missing" : "optional-missing";
+        console.log(`- ${check.id}: ${mark} — ${check.detail}`);
+      }
+    }
+    process.exit(report.ok ? 0 : 1);
     return;
   }
 
@@ -127,6 +188,10 @@ async function main(): Promise<void> {
         console.log(`Template: ${plan.template.id} ${plan.template.version}`);
         console.log(`Files: ${plan.totals.files} (${plan.totals.bytes} bytes)`);
         console.log(`Addons: ${plan.request.addons.length === 0 ? "none" : plan.request.addons.join(", ")}`);
+        console.log(`Target: ${plan.target} (${plan.strategy})`);
+        for (const step of plan.steps) {
+          console.log(`Step: ${step.command} ${step.argv.join(" ")}`);
+        }
         for (const warning of plan.warnings) console.log(`Warning: ${warning}`);
         for (const file of plan.files) console.log(`  ${file.path} (${file.size} bytes)`);
       }
