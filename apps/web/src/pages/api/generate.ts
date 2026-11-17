@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { LIMITS, toErrorPayload } from "@launchbed/schema";
-import { createPlan, formatNewCommand, generateProject, parseRequestJson } from "@launchbed/generator";
+import { LIMITS, formatDelegateStep, toErrorPayload } from "@launchbed/schema";
+import { generateProject, parseRequestJson } from "@launchbed/generator";
 
 export const prerender = false;
 
@@ -31,20 +31,6 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.text();
     const parsed = parseRequestJson(body);
-    if (parsed.target !== "android-compose") {
-      const plan = await createPlan(parsed);
-      const command = formatNewCommand({
-        projectName: parsed.projectName,
-        applicationId: parsed.applicationId,
-        preset: parsed.preset,
-        addons: parsed.addons,
-        target: parsed.target,
-      });
-      return new Response(JSON.stringify({ strategy: plan.strategy, plan, command }), {
-        status: 200,
-        headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-      });
-    }
     const project = await generateProject(parsed);
     const zipBytes = new Uint8Array(project.zip.length);
     zipBytes.set(project.zip);
@@ -59,6 +45,9 @@ export const POST: APIRoute = async ({ request }) => {
         "x-generation-files": String(project.plan.totals.files),
         "x-generation-bytes": String(project.plan.totals.bytes),
         "x-generation-hash": project.plan.request.hash,
+        "x-generation-strategy": project.plan.strategy,
+        // Delegated targets: the ZIP holds only Launchbed overlays. Run this official command first.
+        ...(project.plan.steps[0] ? { "x-delegate-command": formatDelegateStep(project.plan.steps[0]) } : {}),
       },
     });
   } catch (error) {

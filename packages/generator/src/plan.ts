@@ -16,7 +16,16 @@ import {
   TEMPLATE_VERSION,
   issuesFromZod,
   normalizeRequest,
+  presetAddonsForTarget,
+  homeRouteFor,
+  topLevelDestinations,
+  TOP_LEVEL_DESTINATIONS,
+  type TopLevelDestination,
   projectSlug,
+  delegateSetupCommands,
+  formatNewCommand,
+  overlayZipFileName,
+  type DelegateStep,
   validateRelativePath,
   type AddonManifest,
   type CatalogResponse,
@@ -104,11 +113,27 @@ export function isExecutablePath(path: string): boolean {
 }
 
 function homeRoute(addonIds: ReadonlySet<string>): string {
-  if (addonIds.has("ui/dashboard")) return "Dashboard";
-  if (addonIds.has("ui/settings")) return "Settings";
-  if (addonIds.has("ui/notes")) return "Notes";
-  if (addonIds.has("ui/catalog")) return "Catalog";
-  return "Welcome";
+  return homeRouteFor(addonIds);
+}
+
+export { TOP_LEVEL_DESTINATIONS, topLevelDestinations, type TopLevelDestination };
+
+function topLevelVars(addonIds: ReadonlySet<string>): Record<string, string> {
+  const destinations = topLevelDestinations(addonIds);
+  const icons = [...new Set(destinations.map((destination) => destination.icon))].sort();
+  return {
+    topLevelRoutes: destinations.map((destination) => `AppRoute.${destination.route}`).join(", "),
+    topLevelLabelBranches: destinations
+      .map((destination) => `    AppRoute.${destination.route} -> ${JSON.stringify(destination.label)}\n`)
+      .join(""),
+    topLevelIconBranches: destinations
+      .map((destination) => `    AppRoute.${destination.route} -> Icons.Filled.${destination.icon}\n`)
+      .join(""),
+    topLevelIconImports:
+      icons.length > 0
+        ? ["import androidx.compose.material.icons.Icons", ...icons.map((icon) => `import androidx.compose.material.icons.filled.${icon}`)].join("\n") + "\n"
+        : "",
+  };
 }
 
 function startRouteParts(addonIds: ReadonlySet<string>, packageName: string): { imports: string; body: string } {
@@ -159,6 +184,7 @@ function buildTemplateVars(request: ProjectRequest, tokens: ThemeTokens, resolve
     afterOnboardingRoute,
     startRouteImports: startRoute.imports,
     startRouteBody: startRoute.body,
+    ...topLevelVars(addonIds),
     projectName: request.projectName,
     applicationId: request.applicationId,
     namespace: request.namespace,
@@ -225,18 +251,19 @@ export async function materializeProject(
   if (preset && !isPresetGeneratable(preset)) {
     throw new LaunchbedError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
   }
-  if (preset && request.target !== "android-compose") {
+  const presetAddons = preset ? presetAddonsForTarget(preset, request.target) : [];
+  if (preset && presetAddons === undefined) {
     throw new LaunchbedError(
       "INCOMPATIBLE_ADDON",
-      `Preset "${preset.id}" only applies to the android-compose target, not ${request.target}.`,
-      [{ path: "preset", message: `${preset.id} is android-compose only` }],
+      `Preset "${preset.id}" does not apply to the ${request.target} target. It supports: ${preset.targets.join(", ")}.`,
+      [{ path: "preset", message: `${preset.id} supports ${preset.targets.join(", ")}` }],
     );
   }
   const defaultTheme = ThemeConfigSchema.parse({});
   const resolvedRequest = preset
     ? {
         ...request,
-        addons: [...new Set([...preset.requiredAddons, ...request.addons])].sort(),
+        addons: [...new Set([...(presetAddons ?? []), ...request.addons])].sort(),
         theme:
           JSON.stringify(request.theme) === JSON.stringify(defaultTheme)
             ? preset.defaultTheme
@@ -349,6 +376,59 @@ export async function materializeProject(
 }
 
 
+/** Setup notes shipped at the root of every delegated project and overlay ZIP. */
+export const OVERLAY_README = "LAUNCHBED_OVERLAY.md";
+
+const TARGET_LABELS: Record<string, string> = { expo: "Expo", flutter: "Flutter" };
+
+function overlayReadme(
+  request: ProjectRequest,
+  addons: readonly AddonManifest[],
+  material: { target: string; step: DelegateStep; warnings: readonly string[] },
+): string {
+  const label = TARGET_LABELS[material.target] ?? material.target;
+  const zipFileName = overlayZipFileName(request.projectName);
+  const manual = delegateSetupCommands({ target: material.target, step: material.step, zipFileName });
+  const cli = formatNewCommand({
+    projectName: request.projectName,
+    applicationId: request.applicationId,
+    preset: request.preset,
+    addons: request.preset ? [] : addons.map((addon) => addon.id),
+    target: material.target,
+  });
+  return [
+    `# ${request.projectName}: Launchbed overlay for ${label}`,
+    "",
+    `This project starts from the official ${label} template and adds Launchbed files on top`,
+    "(design tokens, registry components, screens, mise, just, CI). The official files come from",
+    "the official CLI; Launchbed never re-hosts them.",
+    "",
+    "## With the Launchbed CLI",
+    "",
+    "One command runs the official CLI and applies these overlays:",
+    "",
+    "```sh",
+    cli,
+    "```",
+    "",
+    "## Without the Launchbed CLI",
+    "",
+    `Run the official command, then unzip \`${zipFileName}\` over the new project`,
+    "(`-o` lets the overlays replace the official files listed below):",
+    "",
+    "```sh",
+    ...manual,
+    "```",
+    "",
+    "Then run `mise install`; `just --list` shows the recipes.",
+    "",
+    "## Notes",
+    "",
+    ...material.warnings.map((warning) => `- ${warning}`),
+    "",
+  ].join("\n");
+}
+
 function materializeDelegateProject(
   request: ProjectRequest,
   addons: readonly AddonManifest[],
@@ -375,6 +455,7 @@ function materializeDelegateProject(
   const files = new Map<string, Uint8Array>();
   const origins = new Map<string, "template" | "generated" | "addon" | "overlay">();
   addFile(files, origins, "design-tokens.json", encoder.encode(serializeDtcg(dtcg)), "overlay");
+  addFile(files, origins, OVERLAY_README, encoder.encode(overlayReadme(request, addons, material)), "overlay");
   for (const overlay of material.overlays) {
     addFile(files, origins, overlay.path, encoder.encode(overlay.contents), "overlay");
   }
@@ -471,7 +552,7 @@ export async function generateProject(
   return {
     zip,
     plan,
-    fileName: `${projectSlug(plan.request.projectName)}.zip`,
+    fileName: plan.strategy === "delegate" ? overlayZipFileName(plan.request.projectName) : `${projectSlug(plan.request.projectName)}.zip`,
   };
 }
 

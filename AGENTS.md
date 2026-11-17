@@ -41,7 +41,7 @@ The pipeline is documented in `docs/architecture.md`:
 
 Web routes in `apps/web/src/pages/api/*` and `packages/cli` only parse input and call `packages/generator`. Do not reimplement generation in the UI.
 
-Generated apps: mise pins tools and env (no secrets). just is the command catalog (`doctor`, `build`, `test`, `run`, …). mise `[tasks]` are shortcuts to just. Addon `tooling` contributions are merged deterministically; conflicting tool versions or recipe bodies fail before files are written. See `docs/addon-spec.md`. Android Compose addons now include onboarding (DataStore), auth (login/register with an in-memory fake — not a real backend; see `docs/auth-backends.md`) and profile; the `app-starter` preset composes them with dashboard and settings.
+Generated apps: mise pins tools and env (no secrets). just is the command catalog (`doctor`, `build`, `test`, `run`, …). mise `[tasks]` are shortcuts to just. Addon `tooling` contributions are merged deterministically; conflicting tool versions or recipe bodies fail before files are written. See `docs/addon-spec.md`. Android Compose addons now include onboarding (DataStore), auth (login/register with an in-memory fake — not a real backend; see `docs/auth-backends.md`) and profile; the `app-starter` preset composes them with dashboard and settings. With 2+ top-level screens, Compose apps get a Material 3 bottom bar (`ui/navigation/TopLevelDestinations.kt`); the tab rules live in `packages/schema/src/navigation.ts` and are shared with the web preview. Presets declare `targets` and per-target `targetAddons`: `app-starter` also works on Expo and Flutter, where `ui/navigation`, `ui/onboarding`, `ui/auth`, `ui/profile` and `ui/dashboard` become a screen pack (`packages/generator/src/screen-packs.ts`, fragments under `templates/fragments/expo` and `templates/fragments/flutter`).
 
 ## Rules
 
@@ -53,9 +53,9 @@ Generated apps: mise pins tools and env (no secrets). just is the command catalo
 - Do not use `git am` or `git apply` when preparing a delivery for the maintainer; prefer a ZIP of changed files plus a `.patch` for inspection, applied by unzip + `git add`.
 - Do not push or write to remotes unless the user explicitly asked for that exact action.
 - Multi-target: `android-compose` is owned; `expo` and `flutter` are beta delegate adapters (`launchbed new --target …`). Tauri and the RN community CLI are still planned. See `docs/roadmap-multi-target.md`.
-- Component registry: `launchbed components --json` and `launchbed add <component>` copy shadcn-style sources (Button, TextField, Card, ListItem, Badge, Switch, Avatar, AppBar, Snackbar, Dialog) into a project that has `launchbed.json`. The registry is embedded into `packages/generator/src/registry.generated.ts` by `bun run templates:embed` (Node SSR/Vercel never read `registry/` from disk).
+- Component registry: `launchbed components --json` and `launchbed add <component>` copy shadcn-style sources (Button, TextField, Card, ListItem, Badge, Switch, Avatar, AppBar, Snackbar, Dialog, Bottom Sheet) into a project that has `launchbed.json`. The registry is embedded into `packages/generator/src/registry.generated.ts` by `bun run templates:embed` (Node SSR/Vercel never read `registry/` from disk).
 - Web UI (`apps/web`): Tailwind v4 + shadcn-style tokens in `src/styles/global.css`; `Button`/`Badge` in `src/components/ui/` are copied from solid-ui (MIT). Tabs and segmented controls are hand-written WAI-ARIA (no Kobalte primitives in islands, they broke Astro hydration). The phone preview (`packages/preview`) is illustrative and must mirror the generated screens.
-- `launchbed doctor [--target <id>]` checks local prerequisites. The web/API never runs official CLIs for delegate targets; it returns the plan and command.
+- `launchbed doctor [--target <id>]` checks local prerequisites. The web/API never runs official CLIs for delegate targets; `/api/generate` returns an overlay-only ZIP (with `LAUNCHBED_OVERLAY.md`, plan/ZIP parity) plus the official command in `x-delegate-command`.
 
 ## Device and scrcpy recipes
 

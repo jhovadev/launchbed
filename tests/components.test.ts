@@ -14,6 +14,7 @@ describe("component registry", () => {
       "app-bar",
       "avatar",
       "badge",
+      "bottom-sheet",
       "button",
       "card",
       "dialog",
@@ -199,5 +200,47 @@ describe("embedded component registry (Node SSR / Vercel safe)", () => {
   test("runtime code never depends on Bun-only import.meta.dir", () => {
     const source = readFileSync(join(import.meta.dir, "../packages/generator/src/components.ts"), "utf8");
     expect(source).not.toContain("import.meta.dir");
+  });
+});
+
+describe("Bottom Sheet", () => {
+  test("contract props and native primitives on every platform", async () => {
+    const { componentSources } = await import("@launchbed/generator");
+    const contract = loadComponentCatalog().components.find((component) => component.name === "bottom-sheet")!;
+    expect(contractProblems(contract)).toEqual([]);
+    expect(contract.a11y).toContain("heading");
+    const source = (target: string) => componentSources(contract).find((file) => file.target === target)!.content;
+    for (const target of ["android-compose", "expo", "flutter"] as const) {
+      expect(contract.targets[target]?.status).toBe("supported");
+      expect(source(target)).toContain("title");
+    }
+    expect(source("android-compose")).toContain("ModalBottomSheet(");
+    expect(source("android-compose")).toContain("onDismissRequest = onDismiss");
+    expect(source("android-compose")).toContain("heading()");
+    expect(source("expo")).toContain('animationType="slide"');
+    expect(source("expo")).toContain("onRequestClose={onDismiss}");
+    expect(source("expo")).toContain('accessibilityLabel="Close sheet"');
+    expect(source("expo")).toContain('accessibilityRole="header"');
+    expect(source("flutter")).toContain("showModalBottomSheet<T>(");
+    expect(source("flutter")).toContain("showDragHandle: true");
+    expect(source("flutter")).toContain("Semantics(");
+  });
+
+  test("launchbed add bottom-sheet writes the platform file", () => {
+    for (const [target, path] of [
+      ["android-compose", "app/src/main/java/com/example/demo/ui/components/LaunchbedBottomSheet.kt"],
+      ["expo", "components/ui/BottomSheet.tsx"],
+      ["flutter", "lib/ui/components/bottom_sheet.dart"],
+    ] as const) {
+      const root = mkdtempSync(join(tmpdir(), "launchbed-sheet-"));
+      try {
+        writeFileSync(join(root, "launchbed.json"), JSON.stringify({ schemaVersion: 1, target, projectName: "Demo", applicationId: "com.example.demo", packageName: "com.example.demo", addons: [], components: [] }) + "\n");
+        const result = addComponent({ name: "bottom-sheet", projectRoot: root });
+        expect(result.path).toBe(path);
+        expect(readFileSync(join(root, path), "utf8")).not.toMatch(/\{\{package(Name|Path)\}\}/);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    }
   });
 });

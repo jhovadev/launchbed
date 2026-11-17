@@ -65,7 +65,7 @@ LAUNCHBED_DEPLOY_URL='https://your-actual-domain.vercel.app' bun run deploy:smok
 node scripts/deployment/vercel-smoke.mjs --url 'https://your-actual-domain.vercel.app'
 ```
 
-The smoke checks the homepage, the catalog and presets endpoints, POST `/api/plan`, and two POST `/api/generate` calls. It compares response metadata and SHA-256 of the ZIP, without saving the generated app or invoking Android SDK tools. A homepage rendering alone is insufficient.
+The smoke checks the homepage, the catalog and presets endpoints, POST `/api/plan`, two POST `/api/generate` calls, and one Expo overlay-ZIP request (delegate headers and file count). It compares response metadata and SHA-256 of the ZIP, without saving the generated app or invoking Android SDK tools. A homepage rendering alone is insufficient.
 
 ### Troubleshooting
 

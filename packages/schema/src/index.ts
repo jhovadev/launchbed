@@ -11,3 +11,4 @@ export * from "./tooling";
 export * from "./cli-command";
 export * from "./targets";
 export * from "./project-config";
+export * from "./navigation";

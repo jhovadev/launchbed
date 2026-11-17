@@ -7,9 +7,11 @@ export interface TextFieldProps {
   onChange: (value: string) => void;
   error?: string | null;
   disabled?: boolean;
+  /** Hides the value, for passwords. */
+  secure?: boolean;
 }
 
-export function TextField({ label, value, onChange, error, disabled = false }: TextFieldProps) {
+export function TextField({ label, value, onChange, error, disabled = false, secure = false }: TextFieldProps) {
   return (
     <View>
       <Text accessibilityRole="text">{label}</Text>
@@ -19,6 +21,8 @@ export function TextField({ label, value, onChange, error, disabled = false }: T
         value={value}
         onChangeText={onChange}
         editable={!disabled}
+        secureTextEntry={secure}
+        autoCapitalize={secure ? "none" : undefined}
         style={{
           borderWidth: 1,
           borderColor: error ? tokens.colorLightError : tokens.colorLightOutline,

@@ -1,12 +1,12 @@
-            entry<AppRoute.Login> {
-                LoginScreen(
-                    onLoggedIn = { backStack.replaceRoot(AppRoute.{{initialRoute}}) },
-                    onRegister = { backStack.add(AppRoute.Register) },
-                )
-            }
-            entry<AppRoute.Register> {
-                RegisterScreen(
-                    onRegistered = { backStack.replaceRoot(AppRoute.{{initialRoute}}) },
-                    onSignIn = { if (backStack.size > 1) backStack.removeLastOrNull() },
-                )
-            }
+                entry<AppRoute.Login> {
+                    LoginScreen(
+                        onLoggedIn = { backStack.replaceRoot(AppRoute.{{initialRoute}}) },
+                        onRegister = { backStack.add(AppRoute.Register) },
+                    )
+                }
+                entry<AppRoute.Register> {
+                    RegisterScreen(
+                        onRegistered = { backStack.replaceRoot(AppRoute.{{initialRoute}}) },
+                        onSignIn = { if (backStack.size > 1) backStack.removeLastOrNull() },
+                    )
+                }

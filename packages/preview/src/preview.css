@@ -304,3 +304,50 @@
 .aip-snackbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 240px; max-width: 100%; padding: 12px 16px; border-radius: 6px; background: var(--m-on-surface); color: var(--m-surface); font-size: 14px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25); box-sizing: border-box; }
 .aip-snackbar-action { font-weight: 600; color: var(--m-primary-container); }
 .aip-dialog { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; padding: 20px 20px 12px; border-radius: 28px; background: var(--m-surface); color: var(--m-on-surface); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); box-sizing: border-box; border: 1px solid var(--m-outline-variant); }
+
+/* Bottom navigation bar (Material 3 NavigationBar), mirrored from the generated app. */
+.aip-navbar {
+  display: flex;
+  flex: none;
+  justify-content: space-around;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  background: var(--m-surface-variant);
+  background: color-mix(in oklab, var(--m-surface-variant) 55%, var(--m-surface));
+}
+.aip-navbar-item {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--m-on-surface-variant);
+}
+.aip-navbar-indicator {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 28px;
+  border-radius: 999px;
+}
+.aip-navbar-active .aip-navbar-indicator {
+  background: var(--m-secondary-container);
+  color: var(--m-on-secondary-container);
+}
+.aip-navbar-label {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aip-navbar-active .aip-navbar-label { color: var(--m-on-surface); font-weight: 600; }
+
+/* Bottom sheet (registry component demo). */
+.aip-sheet-demo { display: flex; align-items: flex-end; justify-content: center; width: 100%; max-width: 340px; height: 260px; overflow: hidden; border-radius: 16px; background: color-mix(in oklab, var(--m-scrim, #000) 32%, var(--m-background)); }
+.aip-sheet { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0 12px 12px; border-radius: 28px 28px 0 0; background: var(--m-surface); color: var(--m-on-surface); box-sizing: border-box; }
+.aip-sheet > .aip-title { padding: 0 12px 4px; }
+.aip-sheet-handle { align-self: center; width: 32px; height: 4px; margin: 16px 0 12px; border-radius: 999px; background: var(--m-on-surface-variant); opacity: 0.4; }

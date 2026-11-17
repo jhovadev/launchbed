@@ -1,0 +1,30 @@
+package {{packageName}}.ui.navigation
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
+import org.junit.Assume.assumeTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class AppBottomBarTest {
+    @get:Rule val composeRule = createComposeRule()
+
+    @Test fun showsEveryTopLevelDestinationAndReportsSelection() {
+        assumeTrue(TopLevelRoutes.size >= 2)
+        var selected: AppRoute? = null
+        composeRule.setContent {
+            AppBottomBar(current = TopLevelRoutes.first(), onSelect = { selected = it })
+        }
+        TopLevelRoutes.forEach { route -> composeRule.onNodeWithText(route.topLevelLabel()).assertIsDisplayed() }
+        composeRule.onNodeWithText(TopLevelRoutes.first().topLevelLabel()).assertIsSelected()
+        composeRule.onNodeWithText(TopLevelRoutes.last().topLevelLabel()).performClick()
+        assertEquals(TopLevelRoutes.last(), selected)
+    }
+}

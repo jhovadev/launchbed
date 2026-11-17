@@ -1,0 +1,56 @@
+package {{packageName}}.ui.navigation
+
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.navigation3.runtime.NavKey
+{{topLevelIconImports}}
+/**
+ * Top-level destinations shown in the bottom navigation bar, in order. The first one is the
+ * home destination. Launchbed generates this list from the selected screen add-ons; the bar is
+ * only shown when there are at least two destinations and the current screen is one of them.
+ */
+val TopLevelRoutes: List<AppRoute> = listOf({{topLevelRoutes}})
+
+fun AppRoute.topLevelLabel(): String = when (this) {
+{{topLevelLabelBranches}}    else -> toString()
+}
+
+fun AppRoute.topLevelIcon(): ImageVector? = when (this) {
+{{topLevelIconBranches}}    else -> null
+}
+
+fun shouldShowBottomBar(current: NavKey?): Boolean =
+    TopLevelRoutes.size >= 2 && current is AppRoute && current in TopLevelRoutes
+
+/**
+ * Switches tab: the stack becomes [home] or [home, destination], so system Back from any tab
+ * returns to the home tab before leaving the app.
+ */
+internal fun MutableList<NavKey>.selectTopLevel(destination: AppRoute, home: AppRoute = TopLevelRoutes.first()) {
+    if (lastOrNull() == destination) return
+    val target: List<NavKey> = if (destination == home) listOf(home) else listOf(home, destination)
+    addAll(target)
+    while (size > target.size) {
+        removeAt(0)
+    }
+}
+
+@Composable
+fun AppBottomBar(current: NavKey?, onSelect: (AppRoute) -> Unit, modifier: Modifier = Modifier) {
+    NavigationBar(modifier = modifier.testTag("bottom-navigation")) {
+        TopLevelRoutes.forEach { route ->
+            NavigationBarItem(
+                selected = current == route,
+                onClick = { onSelect(route) },
+                icon = { route.topLevelIcon()?.let { Icon(imageVector = it, contentDescription = null) } },
+                label = { Text(route.topLevelLabel()) },
+            )
+        }
+    }
+}

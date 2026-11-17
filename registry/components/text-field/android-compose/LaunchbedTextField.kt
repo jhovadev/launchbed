@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 
 @Composable
 fun LaunchbedTextField(
@@ -16,6 +18,7 @@ fun LaunchbedTextField(
     modifier: Modifier = Modifier,
     error: String? = null,
     enabled: Boolean = true,
+    secure: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -26,5 +29,6 @@ fun LaunchbedTextField(
         supportingText = error?.let { { Text(it) } },
         enabled = enabled,
         singleLine = true,
+        visualTransformation = if (secure) PasswordVisualTransformation() else VisualTransformation.None,
     )
 }

@@ -1,0 +1,56 @@
+{
+  "name": "bottom-sheet",
+  "displayName": "Bottom Sheet",
+  "description": "Modal bottom sheet with a drag handle, a title and custom content.",
+  "variants": [
+    "modal"
+  ],
+  "sizes": [
+    "md"
+  ],
+  "states": [
+    "open",
+    "closed"
+  ],
+  "tokens": [
+    "color.light.surface",
+    "color.light.onSurface",
+    "color.light.onSurfaceVariant",
+    "color.light.scrim"
+  ],
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "onDismiss",
+      "type": "callback",
+      "required": true
+    },
+    {
+      "name": "children",
+      "type": "slot",
+      "required": true
+    }
+  ],
+  "a11y": "Modal: the title is announced as a heading, back/escape or a tap on the scrim dismisses it (Compose and Flutter also support a swipe down), and the scrim is a labelled close button. Flutter exposes showLaunchbedBottomSheet(context, title:, builder:) returning a Future that completes on dismiss.",
+  "targets": {
+    "android-compose": {
+      "status": "supported",
+      "source": "android-compose/LaunchbedBottomSheet.kt",
+      "destination": "app/src/main/java/{{packagePath}}/ui/components/LaunchbedBottomSheet.kt"
+    },
+    "expo": {
+      "status": "supported",
+      "source": "expo/BottomSheet.tsx",
+      "destination": "components/ui/BottomSheet.tsx"
+    },
+    "flutter": {
+      "status": "supported",
+      "source": "flutter/bottom_sheet.dart",
+      "destination": "lib/ui/components/bottom_sheet.dart"
+    }
+  }
+}

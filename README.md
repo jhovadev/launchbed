@@ -74,6 +74,11 @@ curl -s -X POST http://localhost:4321/api/generate \
   -H 'content-type: application/json' --data @examples/basic.json -o demo-app.zip
 ```
 
+For `"target": "expo"` or `"flutter"`, `/api/generate` returns an overlay-only
+ZIP (`<slug>-launchbed-overlay.zip`). Run the official command from the
+`x-delegate-command` header (also in `LAUNCHBED_OVERLAY.md`), then
+`cd <dir> && unzip -o ../<slug>-launchbed-overlay.zip`.
+
 Errors are typed JSON (`INVALID_REQUEST`, `RESOLUTION_ERROR`, `LIMIT_EXCEEDED`,
 `SECURITY_ERROR`, `TEMPLATE_ERROR`, `ZIP_ERROR`) with field-level issues. The
 server never executes user input and never fetches remote templates.

@@ -1,1 +1,1 @@
-            entry<AppRoute.Settings> { SettingsScreen() }
+                entry<AppRoute.Settings> { SettingsScreen() }

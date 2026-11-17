@@ -89,6 +89,17 @@ function Demo(props: { name: string }): JSX.Element {
       return <div class="aip-snackbar"><span>Note deleted</span><span class="aip-snackbar-action">Undo</span></div>;
     case "dialog":
       return <div class="aip-dialog"><span class="aip-title">Delete note?</span><span class="aip-body-muted">This removes the note from this device.</span><span class="flex justify-end gap-2"><PButton label="Cancel" variant="text" /><PButton label="Delete" variant="text" /></span></div>;
+    case "bottom-sheet":
+      return (
+        <div class="aip-sheet-demo">
+          <div class="aip-sheet" role="presentation">
+            <span class="aip-sheet-handle" aria-hidden="true" />
+            <span class="aip-title">Sort notes</span>
+            <PListItem headline="Newest first" trailing={<Check size={18} aria-hidden="true" />} />
+            <PListItem headline="Oldest first" />
+          </div>
+        </div>
+      );
     default:
       return <span class="aip-body-muted">No preview yet.</span>;
   }

@@ -17,20 +17,26 @@ test('validates timeout and arguments strictly', () => {
   }
 });
 
-function mockResponses({ corruptZip = false, mismatchHash = false, oldBuilder = false } = {}) {
+function mockResponses({ corruptZip = false, mismatchHash = false, oldBuilder = false, noDelegate = false } = {}) {
   const reqHash = 'example-deterministic-hash';
   const zip = Buffer.from('504b03046162636465666768696a6b6c6d6e6f707172737475767778797a', 'hex');
-  const fakeFetch = async (url) => {
+  const fakeFetch = async (url, init = {}) => {
     const path = new URL(url).pathname;
+    const delegate = typeof init.body === 'string' && init.body.includes('"target":"expo"');
     if (path === '/') return new Response(`<title>Launchbed</title><div id="configurator" ${oldBuilder ? '' : 'data-launchbed-ui="v1"'}><form><input id="projectName" name="projectName" /></form></div>`, { headers: { 'content-type': 'text/html' } });
     if (path === '/components') return new Response('<div data-launchbed-components="v1"></div>', { headers: { 'content-type': 'text/html' } });
     if (path === '/api/components') return Response.json({ components: [{}, {}, {}, {}, {}, {}] });
     if (path === '/api/catalog') return Response.json({ addons: [] });
     if (path === '/api/presets') return Response.json({ presets: [{}, {}, {}, {}] });
-    if (path === '/api/plan') return Response.json({ totals: { files: 3 }, request: { hash: reqHash } });
+    if (path === '/api/plan') return Response.json({ totals: { files: delegate ? 2 : 3 }, request: { hash: reqHash } });
     if (path === '/api/generate') {
       return new Response(corruptZip ? Buffer.from('bad zip of adequate length for test data') : zip, {
-        headers: { 'content-type': 'application/zip', 'x-generation-hash': mismatchHash ? 'not-matching' : reqHash, 'x-generation-files': '3' },
+        headers: {
+          'content-type': 'application/zip',
+          'x-generation-hash': mismatchHash ? 'not-matching' : reqHash,
+          'x-generation-files': delegate ? '2' : '3',
+          ...(delegate && !noDelegate ? { 'x-generation-strategy': 'delegate', 'x-delegate-command': 'npx --yes create-expo-app@5.0.0 demo' } : {}),
+        },
       });
     }
     throw new Error(`Unexpected path ${path}`);
@@ -44,6 +50,11 @@ test('verifies homepage, API contracts and repeat ZIP determinism', async () => 
   assert.equal(result.components, 6);
   assert.equal(result.files, 3);
   assert.ok(result.zipSha256.length === 64);
+  assert.equal(result.overlayFiles, 2);
+});
+
+test('requires an overlay ZIP with the official command for delegated targets', async () => {
+  await assert.rejects(runSmoke('https://launchbed.vercel.app', mockResponses({ noDelegate: true })), /delegate strategy/);
 });
 
 test('rejects invalid ZIP and mismatched request hash', async () => {

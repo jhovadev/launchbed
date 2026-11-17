@@ -4,6 +4,7 @@ import { LAUNCHBED_PROJECT_FILE } from "@launchbed/schema";
 import { ACTION_PINS, EXPO_PINS, FLUTTER_PINS, GENERATED_MISE } from "./versions";
 import { dartPackageName, npmProjectSlug, organizationFromApplicationId, validateDelegateStep } from "./delegate";
 import type { CompiledDesignTokens } from "@launchbed/design-tokens/style-dictionary";
+import { expoScreenPack, flutterScreenPack, type ScreenPack } from "./screen-packs";
 
 const encoder = new TextEncoder();
 
@@ -76,7 +77,7 @@ run = "just test"
 `;
 }
 
-function expoJustfile(includeScrcpy: boolean): string {
+function expoJustfile(includeScrcpy: boolean, hasAuthTests = false): string {
   const scrcpy = includeScrcpy
     ? `
 # Mirror an Android device with official scrcpy flags. Requires ANDROID_SERIAL when several devices are connected.
@@ -114,10 +115,14 @@ ios:
 lint:
     npx expo lint
 
-# No default unit-test script in the official template; typecheck instead.
+${hasAuthTests ? `# Typecheck, then run the Launchbed auth/validation tests with Bun (pinned in mise.toml).
 test:
     npx tsc --noEmit
-
+    bun test src/launchbed
+` : `# No default unit-test script in the official template; typecheck instead.
+test:
+    npx tsc --noEmit
+`}
 prebuild:
     npx expo prebuild
 
@@ -253,7 +258,7 @@ DTCG tokens were compiled at generate time into \`tokens/tokens.css\` and \`toke
 
 ## Addons
 
-Jetpack Compose \`ui/*\` and Android storage/native addons do not apply to Expo. \`tooling/scrcpy\` does: it is for Android devices.
+\`ui/navigation\`, \`ui/onboarding\`, \`ui/auth\`, \`ui/profile\` and \`ui/dashboard\` are ported to Expo as a Launchbed screen pack (see docs/EXPO.md). Other Compose \`ui/*\` packs and Android storage/native addons do not apply. \`tooling/scrcpy\` does: it is for Android devices.
 `;
 }
 
@@ -276,11 +281,40 @@ DTCG tokens were compiled at generate time into \`tokens/tokens.css\` and \`toke
 
 ## Addons
 
-Jetpack Compose \`ui/*\` and Android storage/native addons do not apply to Flutter. \`tooling/scrcpy\` does: it is for Android devices.
+\`ui/navigation\`, \`ui/onboarding\`, \`ui/auth\`, \`ui/profile\` and \`ui/dashboard\` are ported to Flutter as a Launchbed screen pack (see docs/FLUTTER.md). Other Compose \`ui/*\` packs and Android storage/native addons do not apply. \`tooling/scrcpy\` does: it is for Android devices.
 `;
 }
 
-function docs(target: "expo" | "flutter"): string {
+function packDocs(target: "expo" | "flutter", pack: ScreenPack | null): string {
+  if (!pack) return "";
+  const enabled = (Object.keys(pack.features) as (keyof ScreenPack["features"])[])
+    .filter((key) => pack.features[key])
+    .join(", ");
+  const where =
+    target === "expo"
+      ? "Routes live in `src/app` (expo-router), screens and session in `src/launchbed`, registry components in `components/ui`."
+      : "The app shell and screens live in `lib/launchbed`, registry components in `lib/ui/components`, tests in `test/`.";
+  return `
+## Launchbed screen pack
+
+Ported from the Compose add-ons: ${enabled || "navigation only"}. ${where}
+
+- Route gate: onboarding first, then sign-in, then bottom tabs (Home${pack.features.profile ? ", Profile" : ""}).
+- Auth is an in-memory fake (demo@example.com / demo-password). It is not a security boundary; replace it with a real backend before shipping.
+- Onboarding and session state are kept in memory and reset on restart.
+- Validation rules and messages match the Compose \`AuthValidator\`. Run \`just test\`.
+`;
+}
+
+function docs(target: "expo" | "flutter", pack: ScreenPack | null = null): string {
+  return docsBody(target) + packDocs(target, pack);
+}
+
+function packOverlays(pack: ScreenPack | null): OverlayFile[] {
+  return pack ? pack.files.map((file) => ({ path: file.path, contents: file.contents, origin: "overlay" as const })) : [];
+}
+
+function docsBody(target: "expo" | "flutter"): string {
   if (target === "expo") {
     return `# Expo (Launchbed overlay)
 
@@ -331,14 +365,17 @@ export function buildExpoDelegate(options: {
     addons: options.addons.map((addon) => addon.id),
     components: [],
   };
+  const pack = expoScreenPack({ addonIds: config.addons, projectName: options.projectName });
+  if (pack) config.components = [...pack.components];
   const overlays: OverlayFile[] = [
+    ...packOverlays(pack),
     { path: "mise.toml", contents: expoMiseToml(includeScrcpy), origin: "overlay" as const },
-    { path: "justfile", contents: expoJustfile(includeScrcpy), origin: "overlay" as const },
+    { path: "justfile", contents: expoJustfile(includeScrcpy, pack?.features.auth ?? false), origin: "overlay" as const },
     { path: "tokens/tokens.css", contents: options.tokens.css, origin: "overlay" as const },
     { path: "tokens/tokens.ts", contents: options.tokens.ts, origin: "overlay" as const },
     { path: ".github/workflows/ci.yml", contents: expoWorkflow(), origin: "overlay" as const },
     { path: "AGENTS.md", contents: expoAgents(options.projectName), origin: "overlay" as const },
-    { path: "docs/EXPO.md", contents: docs("expo"), origin: "overlay" as const },
+    { path: "docs/EXPO.md", contents: docs("expo", pack), origin: "overlay" as const },
     { path: LAUNCHBED_PROJECT_FILE, contents: projectConfigJson(config), origin: "overlay" as const },
   ].sort((a, b) => a.path.localeCompare(b.path));
   const warnings = [
@@ -346,6 +383,11 @@ export function buildExpoDelegate(options: {
   ];
   if (includeScrcpy) {
     warnings.push("tooling/scrcpy applies to Expo for Android devices. Install scrcpy with mise, then use just devices / just mirror.");
+  }
+  if (pack) {
+    warnings.push(
+      "The Launchbed screen pack replaces src/app/_layout.tsx, src/app/index.tsx and src/app/explore.tsx from the official template. Session and sign-in live in memory (demo only).",
+    );
   }
   return {
     target: "expo",
@@ -398,14 +440,17 @@ export function buildFlutterDelegate(options: {
     addons: options.addons.map((addon) => addon.id),
     components: [],
   };
+  const pack = flutterScreenPack({ addonIds: config.addons, projectName: options.projectName, dartPackage: name });
+  if (pack) config.components = [...pack.components];
   const overlays: OverlayFile[] = [
+    ...packOverlays(pack),
     { path: "mise.toml", contents: flutterMiseToml(includeScrcpy), origin: "overlay" as const },
     { path: "justfile", contents: flutterJustfile(includeScrcpy), origin: "overlay" as const },
     { path: "tokens/tokens.css", contents: options.tokens.css, origin: "overlay" as const },
     { path: "lib/tokens/tokens.dart", contents: options.tokens.flutter, origin: "overlay" as const },
     { path: ".github/workflows/ci.yml", contents: flutterWorkflow(), origin: "overlay" as const },
     { path: "AGENTS.md", contents: flutterAgents(options.projectName), origin: "overlay" as const },
-    { path: "docs/FLUTTER.md", contents: docs("flutter"), origin: "overlay" as const },
+    { path: "docs/FLUTTER.md", contents: docs("flutter", pack), origin: "overlay" as const },
     { path: LAUNCHBED_PROJECT_FILE, contents: projectConfigJson(config), origin: "overlay" as const },
   ].sort((a, b) => a.path.localeCompare(b.path));
   const warnings = [
@@ -414,6 +459,9 @@ export function buildFlutterDelegate(options: {
   ];
   if (includeScrcpy) {
     warnings.push("tooling/scrcpy applies to Flutter for Android devices. Install scrcpy with mise, then use just devices / just mirror.");
+  }
+  if (pack) {
+    warnings.push("The Launchbed screen pack replaces lib/main.dart from the official template. Session and sign-in live in memory (demo only).");
   }
   return {
     target: "flutter",

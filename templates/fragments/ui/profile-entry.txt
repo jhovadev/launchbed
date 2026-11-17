@@ -1,9 +1,9 @@
-            entry<AppRoute.Profile> {
-                ProfileScreen(
-                    onEdit = { backStack.add(AppRoute.ProfileEdit) },
-                    onSignedOut = { backStack.replaceRoot(AppRoute.Login) },
-                )
-            }
-            entry<AppRoute.ProfileEdit> {
-                ProfileEditScreen(onSaved = { if (backStack.size > 1) backStack.removeLastOrNull() })
-            }
+                entry<AppRoute.Profile> {
+                    ProfileScreen(
+                        onEdit = { backStack.add(AppRoute.ProfileEdit) },
+                        onSignedOut = { backStack.replaceRoot(AppRoute.Login) },
+                    )
+                }
+                entry<AppRoute.ProfileEdit> {
+                    ProfileEditScreen(onSaved = { if (backStack.size > 1) backStack.removeLastOrNull() })
+                }

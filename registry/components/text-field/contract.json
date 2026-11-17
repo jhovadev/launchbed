@@ -46,6 +46,12 @@
       "type": "boolean",
       "required": false,
       "default": "false"
+    },
+    {
+      "name": "secure",
+      "type": "boolean",
+      "required": false,
+      "default": "false"
     }
   ],
   "a11y": "Label is associated with the field. Error text is exposed as an accessibility hint.",

@@ -115,7 +115,21 @@ export async function runSmoke(baseUrl, fetchFn = fetch, { timeoutMs = 20000 } =
     hashes.push(createHash('sha256').update(bytes).digest('hex'));
   }
   if (hashes[0] !== hashes[1]) throw new Error('/api/generate: repeated ZIP bytes are not deterministic');
-  return { baseUrl: base, presets: presets.presets.length, components: components.components.length, files: plan.totals.files, zipBytes: size, zipSha256: hashes[0] };
+
+  // Delegated targets (Expo): an overlay-only ZIP plus the official command to run first.
+  const expoBody = JSON.stringify({ ...defaultRequest, target: 'expo' });
+  const expoPlan = await (await makeRequest('/api/plan', { method: 'POST', headers, body: expoBody })).json();
+  const overlay = await makeRequest('/api/generate', { method: 'POST', headers, body: expoBody });
+  if (!overlay.headers.get('content-type')?.includes('application/zip')) throw new Error('/api/generate (expo): expected an overlay ZIP');
+  if (overlay.headers.get('x-generation-strategy') !== 'delegate' || !overlay.headers.get('x-delegate-command')?.startsWith('npx ')) {
+    throw new Error('/api/generate (expo): missing delegate strategy or official command');
+  }
+  if (Number(overlay.headers.get('x-generation-files')) !== expoPlan?.totals?.files) {
+    throw new Error('/api/generate (expo): overlay file count disagrees with /api/plan');
+  }
+  const overlayBytes = Buffer.from(await overlay.arrayBuffer());
+  if (overlayBytes.length < 30 || overlayBytes.toString('hex', 0, 4) !== '504b0304') throw new Error('/api/generate (expo): invalid overlay ZIP');
+  return { baseUrl: base, presets: presets.presets.length, components: components.components.length, files: plan.totals.files, zipBytes: size, zipSha256: hashes[0], overlayFiles: expoPlan.totals.files };
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

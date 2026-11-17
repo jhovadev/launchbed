@@ -1,6 +1,11 @@
 import type { JSX } from "solid-js";
 import { For, Show, children } from "solid-js";
 import type { ThemeTokens } from "@launchbed/design-tokens";
+import { previewTabs, type PreviewScreenId, type PreviewTab, type PreviewTabIcon, type PreviewTarget } from "./tabs";
+import House from "lucide-solid/icons/house";
+import SettingsIcon from "lucide-solid/icons/settings";
+import ShoppingCart from "lucide-solid/icons/shopping-cart";
+import User from "lucide-solid/icons/user";
 import ArrowLeft from "lucide-solid/icons/arrow-left";
 import BatteryFull from "lucide-solid/icons/battery-full";
 import Bell from "lucide-solid/icons/bell";
@@ -24,18 +29,7 @@ import Star from "lucide-solid/icons/star";
 import Trash from "lucide-solid/icons/trash";
 import Wifi from "lucide-solid/icons/wifi";
 
-export type PreviewScreenId =
-  | "welcome"
-  | "dashboard"
-  | "settings"
-  | "notes"
-  | "catalog"
-  | "onboarding"
-  | "login"
-  | "register"
-  | "profile";
-
-export type PreviewTarget = "android-compose" | "expo" | "flutter";
+export type { PreviewScreenId, PreviewTarget };
 
 export const PREVIEW_SCREEN_LABELS: Record<PreviewScreenId, string> = {
   welcome: "Home",
@@ -49,6 +43,33 @@ export const PREVIEW_SCREEN_LABELS: Record<PreviewScreenId, string> = {
   profile: "Profile",
 };
 
+export { previewTabs, type PreviewTab, type PreviewTabIcon };
+
+function TabIcon(props: { icon: PreviewTabIcon }) {
+  return (
+    <>
+      {props.icon === "home" ? <House size={18} />
+        : props.icon === "notes" ? <Pencil size={18} />
+        : props.icon === "catalog" ? <ShoppingCart size={18} />
+        : props.icon === "profile" ? <User size={18} />
+        : <SettingsIcon size={18} />}
+    </>
+  );
+}
+
+function BottomBar(props: { tabs: readonly PreviewTab[]; current: PreviewScreenId }) {
+  return (
+    <div class="aip-navbar" aria-hidden="true">
+      <For each={props.tabs}>{(tab) => (
+        <span class="aip-navbar-item" classList={{ "aip-navbar-active": tab.screen === props.current }}>
+          <span class="aip-navbar-indicator"><TabIcon icon={tab.icon} /></span>
+          <span class="aip-navbar-label">{tab.label}</span>
+        </span>
+      )}</For>
+    </div>
+  );
+}
+
 export interface PreviewScreenProps {
   tokens: ThemeTokens;
   mode: "light" | "dark";
@@ -59,6 +80,8 @@ export interface PreviewScreenProps {
   hasNavigation?: boolean;
   /** Optional caption rendered under the device frame. */
   caption?: string;
+  /** Bottom navigation of the generated app (see previewTabs). Shown with 2+ tabs on a tab screen. */
+  tabs?: readonly PreviewTab[];
 }
 
 /** CSS custom properties that drive every preview element from the DTCG/Material 3 tokens. */
@@ -241,14 +264,20 @@ function TokensScreen(props: { projectName: string; target: PreviewTarget }) {
   );
 }
 
-function WelcomeScreen(props: { projectName: string }) {
+const WELCOME_COPY: Record<PreviewTarget, string> = {
+  "android-compose": "Navigation is ready. Add screens and register their routes in AppRoot.",
+  expo: "Built with Expo and Launchbed design tokens. Add screens under src/app.",
+  flutter: "Built with Flutter and Launchbed design tokens. Add screens under lib/launchbed/screens.",
+};
+
+function WelcomeScreen(props: { projectName: string; target: PreviewTarget }) {
   return (
     <>
       <TopBar title={props.projectName} />
       <div class="aip-content aip-center">
         <span class="aip-hero-icon" aria-hidden="true"><Sparkles size={28} /></span>
         <h4 class="aip-display">Welcome</h4>
-        <p class="aip-body-muted aip-text-center">Navigation is ready. Add screens and register their routes in AppRoot.</p>
+        <p class="aip-body-muted aip-text-center">{WELCOME_COPY[props.target]}</p>
       </div>
     </>
   );
@@ -482,10 +511,13 @@ export function PreviewScreen(props: PreviewScreenProps) {
               : screen() === "login" ? <LoginScreen />
               : screen() === "register" ? <RegisterScreen />
               : screen() === "profile" ? <ProfileScreen />
+              : props.hasNavigation ? <WelcomeScreen projectName={props.projectName} target={target()} />
               : target() !== "android-compose" ? <TokensScreen projectName={props.projectName} target={target()} />
-              : props.hasNavigation ? <WelcomeScreen projectName={props.projectName} />
               : <HomeScreen projectName={props.projectName} />}
           </div>
+          <Show when={(props.tabs?.length ?? 0) >= 2 && props.tabs!.some((tab) => tab.screen === screen())}>
+            <BottomBar tabs={props.tabs!} current={screen()} />
+          </Show>
           <div class="aip-gesture" aria-hidden="true"><span /></div>
         </div>
       </div>

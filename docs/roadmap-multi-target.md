@@ -21,26 +21,26 @@ Launchbed generates **android-compose** (owned templates) and can **delegate** t
 | Tauri 2 + Svelte | Planned | planned | Official Svelte template; verify SvelteKit + `tauri init` before promising it |
 | React Native CLI | Planned (overlaps Expo) | planned | `npx @react-native-community/cli@latest init` |
 
-`launchbed new --target expo|flutter` runs the official CLI (allowlisted argv, `shell: false`) and then writes Launchbed overlays: `mise.toml`, `justfile`, compiled DTCG tokens (`tokens/tokens.ts` + CSS for Expo; `lib/tokens/tokens.dart` + CSS for Flutter), GitHub Actions CI, `AGENTS.md`, `docs/EXPO.md` or `docs/FLUTTER.md`, and `launchbed.json`. The web/API never executes official CLIs; `/api/generate` returns the plan and the equivalent `launchbed new` command.
+`launchbed new --target expo|flutter` runs the official CLI (allowlisted argv, `shell: false`) and then writes Launchbed overlays: `mise.toml`, `justfile`, compiled DTCG tokens (`tokens/tokens.ts` + CSS for Expo; `lib/tokens/tokens.dart` + CSS for Flutter), GitHub Actions CI, `AGENTS.md`, `docs/EXPO.md` or `docs/FLUTTER.md`, and `launchbed.json`. The web/API never executes official CLIs; `/api/generate` returns a deterministic overlay-only ZIP (`<slug>-launchbed-overlay.zip`, verified against the plan) whose `LAUNCHBED_OVERLAY.md` explains both paths: `launchbed new …`, or the official command followed by `unzip -o` inside the new project. The official command is also sent in the `x-delegate-command` header.
 
 ## Design tokens, screens, and components
 
 - One DTCG token source. The generator compiles it with Style Dictionary 5.8.0 at generate time into Compose Kotlin, `tokens/tokens.css`, `tokens/tokens.ts`, and `tokens/tokens.dart` / `lib/tokens/tokens.dart`. See `docs/design-system.md`.
-- Shared screen contracts (login, onboarding, list/detail, settings, profile) are implemented for android-compose. Porting those screens to Expo/Flutter is still pending.
-- A shadcn-style `registry/` ships Button, TextField, Card, ListItem, Badge, Switch, Avatar, AppBar, Snackbar and Dialog for all three generatable targets. `launchbed add <component>` copies source into an existing project (detected via `launchbed.json`). A bottom Sheet is not in the registry yet.
+- Shared screen contracts (login, onboarding, list/detail, settings, profile) are implemented for android-compose. Onboarding, auth (in-memory fake + validation tests), profile and dashboard are ported to Expo (expo-router, TSX) and Flutter (Dart) as a screen pack with bottom tabs; `app-starter` maps to them per target. Notes, catalog and settings are still Compose-only.
+- A shadcn-style `registry/` ships Button, TextField, Card, ListItem, Badge, Switch, Avatar, AppBar, Snackbar, Dialog and Bottom Sheet for all three generatable targets. `launchbed add <component>` copies source into an existing project (detected via `launchbed.json`).
 - Auth and FFI come after the visual pack is stable. Planned FFI paths: UniFFI on Kotlin, `flutter_rust_bridge` on Flutter, official Tauri plugins on Tauri.
 
 ## Suggested order (remaining)
 
-1. Finish remaining registry components and add Expo/Flutter ports of the shared screen pack.
+1. Port settings and notes to the Expo/Flutter screen pack; dark mode for the Expo pack.
 2. Tauri + Solid (matches the existing SolidJS web app).
 3. Tauri + Svelte.
 4. React Native CLI, only if a distinct need remains after Expo.
 
 ## Compatibility and CI
 
-A full cartesian product of stacks × addons will not run on every pull request. Android smoke stays on each PR when the SDK is present. Expo e2e is opt-in (`LAUNCHBED_E2E_EXPO=1`) and runs `launchbed new --target expo` plus `tsc --noEmit` or `expo export`. Flutter e2e is opt-in (`LAUNCHBED_E2E_FLUTTER=1`) and runs `flutter analyze`. `launchbed doctor --target <id>` checks prerequisites.
+A full cartesian product of stacks × addons will not run on every pull request. Android smoke stays on each PR when the SDK is present. Expo e2e is opt-in (`LAUNCHBED_E2E_EXPO=1`) and runs `launchbed new --target expo --preset app-starter`, `tsc --noEmit` (zero errors in Launchbed files), `bun test src/launchbed` and `expo export --platform web`. Flutter e2e is opt-in (`LAUNCHBED_E2E_FLUTTER=1`) and runs `flutter analyze` plus `flutter test` on the app-starter screen pack. `launchbed doctor --target <id>` checks prerequisites.
 
 ## Still planned
 
-Tauri and the React Native community CLI, remaining registry components, shared screen packs on Expo/Flutter, and polishing the web wizard beyond a functional target selector and a read-only component catalog.
+Tauri and the React Native community CLI, settings/notes/catalog screens on Expo/Flutter, and polishing the web wizard beyond a functional target selector and a read-only component catalog.

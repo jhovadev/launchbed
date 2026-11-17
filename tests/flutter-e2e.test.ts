@@ -8,7 +8,7 @@ import { loadComponentCatalog } from "@launchbed/generator";
 const enabled = process.env.LAUNCHBED_E2E_FLUTTER === "1";
 
 describe.skipIf(!enabled)("flutter e2e (LAUNCHBED_E2E_FLUTTER=1)", () => {
-  test("launchbed new --target flutter then flutter analyze", () => {
+  test("launchbed new --target flutter --preset app-starter: analyze and flutter test", () => {
     const out = join(tmpdir(), `launchbed-e2e-flutter-${process.pid}`);
     rmSync(out, { recursive: true, force: true });
     const cli = spawnSync(
@@ -23,6 +23,8 @@ describe.skipIf(!enabled)("flutter e2e (LAUNCHBED_E2E_FLUTTER=1)", () => {
         "com.example.fluttere2e",
         "--target",
         "flutter",
+        "--preset",
+        "app-starter",
         "--out",
         out,
         "--force",
@@ -34,6 +36,8 @@ describe.skipIf(!enabled)("flutter e2e (LAUNCHBED_E2E_FLUTTER=1)", () => {
     }
     expect(existsSync(join(out, "launchbed.json"))).toBe(true);
     expect(existsSync(join(out, "lib/tokens/tokens.dart"))).toBe(true);
+    expect(existsSync(join(out, "lib/launchbed/app_shell.dart"))).toBe(true);
+    expect(existsSync(join(out, "test/auth_validator_test.dart"))).toBe(true);
     // Copy every registry component so the toolchain checks them too.
     for (const component of loadComponentCatalog().components) {
       const added = spawnSync("bun", [join(import.meta.dir, "../packages/cli/src/index.ts"), "add", component.name], {
@@ -53,5 +57,11 @@ describe.skipIf(!enabled)("flutter e2e (LAUNCHBED_E2E_FLUTTER=1)", () => {
     if (analyze.status !== 0) {
       throw new Error(`flutter analyze failed:\n${analyze.stdout}\n${analyze.stderr}`);
     }
+    expect(analyze.stdout).toContain("No issues found");
+    const tested = spawnSync("flutter", ["test"], { cwd: out, encoding: "utf8", timeout: 5 * 60 * 1000, shell: false });
+    if (tested.status !== 0) {
+      throw new Error(`flutter test failed:\n${tested.stdout}\n${tested.stderr}`);
+    }
+    expect(tested.stdout).toContain("All tests passed");
   }, 15 * 60 * 1000);
 });

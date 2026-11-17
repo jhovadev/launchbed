@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { LaunchbedError, type DelegateStep } from "@launchbed/schema";
+import { LaunchbedError, isPositional, type DelegateStep } from "@launchbed/schema";
 
 const SAFE_ARG = /^-{0,2}[A-Za-z0-9][A-Za-z0-9_@./=,+:-]*$/;
 const SAFE_COMMAND = /^(npx|flutter)$/;
@@ -26,28 +26,6 @@ export function validateDelegateStep(step: DelegateStep): DelegateStep {
   return step;
 }
 
-
-/** Flags whose next argument is a value, not a project directory. */
-const VALUE_FLAGS = new Set([
-  "--template",
-  "--project-name",
-  "--org",
-  "--platforms",
-  "--android-language",
-  "--name",
-  "--out",
-  "--cwd",
-  "--config",
-  "--package",
-]);
-
-export function isPositional(argv: readonly string[], index: number): boolean {
-  const arg = argv[index];
-  if (!arg || arg.startsWith("-")) return false;
-  const previous = argv[index - 1];
-  if (previous && VALUE_FLAGS.has(previous)) return false;
-  return true;
-}
 
 /** Returns a copy of argv with the last positional (the project directory) set to outputPath. */
 export function withDelegateOutputPath(argv: readonly string[], outputPath: string): string[] {

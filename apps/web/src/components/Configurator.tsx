@@ -2,8 +2,8 @@ import type { JSX } from "solid-js";
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import type { CatalogResponse, ProjectPresetManifest, ProjectRequest, TargetId, ThemeConfig } from "@launchbed/schema";
 import { resolveThemeTokens } from "@launchbed/design-tokens";
-import { PREVIEW_SCREEN_LABELS, PreviewScreen, type PreviewScreenId } from "@launchbed/preview";
-import { formatNewCommand, projectSlug } from "@launchbed/schema";
+import { PREVIEW_SCREEN_LABELS, PreviewScreen, previewTabs, type PreviewScreenId } from "@launchbed/preview";
+import { delegateSetupCommands, formatNewCommand, overlayZipFileName, presetAddonsForTarget, projectSlug } from "@launchbed/schema";
 import ArrowLeft from "lucide-solid/icons/arrow-left";
 import ArrowRight from "lucide-solid/icons/arrow-right";
 import Atom from "lucide-solid/icons/atom";
@@ -65,6 +65,7 @@ interface PlanSummary {
   warnings: string[];
   strategy: string;
   paths: { path: string; origin: string }[];
+  steps: { command: string; argv: string[] }[];
 }
 
 type Addon = CatalogResponse["addons"][number];
@@ -229,7 +230,7 @@ export default function Configurator(props: Props) {
   const [fieldErrors, setFieldErrors] = createSignal<Record<string, string[]>>({});
   const [formError, setFormError] = createSignal("");
   const [status, setStatus] = createSignal("");
-  const [delegateCommand, setDelegateCommand] = createSignal("");
+  const [commandMode, setCommandMode] = createSignal<"cli" | "manual">("cli");
   const [busy, setBusy] = createSignal<"plan" | "generate" | null>(null);
   const [plan, setPlan] = createSignal<PlanSummary | null>(null);
   const [step, setStep] = createSignal(0);
@@ -250,16 +251,22 @@ export default function Configurator(props: Props) {
   const isOwned = () => target() === "android-compose";
   const targetDef = createMemo(() => targets().find((item) => item.id === target()));
   const supportedPresets = (props.presets ?? []).filter((preset) => preset.status === "stable" || preset.status === "beta");
+  const presetTargets = (preset: ProjectPresetManifest): readonly TargetId[] => preset.targets;
+  const presetsForTarget = createMemo(() => supportedPresets.filter((preset) => presetTargets(preset).includes(target())));
+  const presetAddons = (preset: ProjectPresetManifest | undefined, forTarget: TargetId = target()): readonly string[] =>
+    preset ? (presetAddonsForTarget(preset, forTarget) ?? []) : [];
   const upcomingPresets = (props.presets ?? []).filter((preset) => preset.status === "planned");
   const selectedPreset = createMemo(() => (props.presets ?? []).find((preset) => preset.id === presetId()));
-  const requiredAddons = createMemo(() => selectedPreset()?.requiredAddons ?? []);
+  const requiredAddons = createMemo(() => presetAddons(selectedPreset()));
   const addonById = (id: string): Addon | undefined => props.catalog.addons.find((addon) => addon.id === id);
   const addonName = (id: string) => addonById(id)?.displayName ?? id;
 
   const availableScreens = createMemo(() => {
     const screens: PreviewScreenId[] = [];
     for (const [addon, ids] of ADDON_SCREENS) if (selectedAddons().includes(addon)) screens.push(...ids);
-    return [...screens, "welcome" as const].filter((screen, index, all) => all.indexOf(screen) === index);
+    // Expo and Flutter screen packs open on the dashboard when it exists, so Welcome is unreachable there.
+    const welcome = !isOwned() && selectedAddons().includes("ui/navigation") && selectedAddons().includes("ui/dashboard") ? [] : ["welcome" as const];
+    return [...screens, ...welcome].filter((screen, index, all) => all.indexOf(screen) === index);
   });
   const activePreviewScreen = createMemo<PreviewScreenId>(() =>
     availableScreens().includes(previewScreen()) ? previewScreen() : (availableScreens()[0] ?? "welcome"),
@@ -289,7 +296,7 @@ export default function Configurator(props: Props) {
     formatNewCommand({
       projectName: form().projectName || "Demo App",
       applicationId: form().applicationId || "com.example.demo",
-      preset: (isOwned() && presetId()) || undefined,
+      preset: presetId() || undefined,
       addons: selectedAddons().filter((id) => !requiredAddons().includes(id)),
       out: projectSlug(form().projectName || "Demo App"),
       target: target(),
@@ -334,7 +341,7 @@ export default function Configurator(props: Props) {
   function resetResult(): void {
     setPlan(null);
     setStatus("");
-    setDelegateCommand("");
+    setCommandMode("cli");
     clearErrors();
   }
 
@@ -350,6 +357,12 @@ export default function Configurator(props: Props) {
   function chooseTarget(next: TargetId): void {
     resetResult();
     setTarget(next);
+    const preset = selectedPreset();
+    if (preset && presetTargets(preset).includes(next)) {
+      // Same template, per-target equivalent add-ons (for example app-starter on Expo or Flutter).
+      setSelectedAddons([...presetAddons(preset, next)].sort());
+      return;
+    }
     if (next !== "android-compose") {
       setPresetId("");
       setSelectedAddons((current) => current.filter((id) => {
@@ -366,9 +379,10 @@ export default function Configurator(props: Props) {
     setPresetId(id);
     const preset = (props.presets ?? []).find((entry) => entry.id === id);
     if (!preset || !(preset.status === "stable" || preset.status === "beta")) return;
-    setSelectedAddons([...preset.requiredAddons].sort());
-    const first = ADDON_SCREENS.find(([addon]) => preset.requiredAddons.includes(addon));
-    setPreviewScreen(preset.requiredAddons.includes("ui/dashboard") ? "dashboard" : (first?.[1][0] ?? "welcome"));
+    const addons = presetAddons(preset);
+    setSelectedAddons([...addons].sort());
+    const first = ADDON_SCREENS.find(([addon]) => addons.includes(addon));
+    setPreviewScreen(addons.includes("ui/dashboard") ? "dashboard" : (first?.[1][0] ?? "welcome"));
     const theme = preset.defaultTheme;
     setForm((previous) => {
       const minSdk = Math.max(previous.minSdk, preset.compatibility.minSdk);
@@ -418,7 +432,7 @@ export default function Configurator(props: Props) {
       theme: themeConfig(current),
       addons: selectedAddons(),
       target: target(),
-      ...(presetId() && target() === "android-compose" ? { preset: presetId() } : {}),
+      ...(presetId() ? { preset: presetId() } : {}),
     };
   }
 
@@ -473,6 +487,7 @@ export default function Configurator(props: Props) {
         request: { addons: string[] };
         warnings: string[];
         files: { path: string; origin?: string }[];
+        steps?: { command: string; argv: string[] }[];
       };
       setPlan({
         files: result.totals.files,
@@ -481,6 +496,7 @@ export default function Configurator(props: Props) {
         warnings: result.warnings,
         strategy: result.strategy ?? "owned",
         paths: result.files.map((file) => ({ path: file.path, origin: file.origin ?? "template" })),
+        steps: result.steps ?? [],
       });
       setStatus(`Plan ready: ${result.totals.files} files, ${formatBytes(result.totals.bytes)}.`);
     } catch {
@@ -493,9 +509,8 @@ export default function Configurator(props: Props) {
 
   async function generate(): Promise<void> {
     clearErrors();
-    setDelegateCommand("");
     setBusy("generate");
-    setStatus("Generating ZIP…");
+    setStatus(isOwned() ? "Generating ZIP…" : "Preparing overlay ZIP…");
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -504,18 +519,6 @@ export default function Configurator(props: Props) {
       });
       if (!response.ok) {
         applyError(await readError(response));
-        return;
-      }
-      const contentType = response.headers.get("content-type") ?? "";
-      if (contentType.includes("application/json")) {
-        const payload = (await response.json()) as { command?: string; strategy?: string };
-        const command = payload.command ?? cliCommand();
-        setDelegateCommand(command);
-        setStatus(
-          payload.strategy === "delegate"
-            ? "This platform is created by its official CLI. Run the command below on your machine; the web app never executes it."
-            : "Plan ready. Use the CLI to generate this target.",
-        );
         return;
       }
       const blob = await response.blob();
@@ -531,7 +534,12 @@ export default function Configurator(props: Props) {
       link.remove();
       URL.revokeObjectURL(url);
       const files = response.headers.get("x-generation-files");
-      setStatus(`Downloaded ${fileName} (${files ?? "?"} files, ${formatBytes(blob.size)}).`);
+      if (response.headers.get("x-generation-strategy") === "delegate") {
+        setCommandMode("manual");
+        setStatus(`Downloaded ${fileName} (${files ?? "?"} overlay files). Run the official command, then unzip it inside the new project.`);
+      } else {
+        setStatus(`Downloaded ${fileName} (${files ?? "?"} files, ${formatBytes(blob.size)}).`);
+      }
     } catch {
       setFormError("Generation failed. Check the server logs and try again.");
       setStatus("");
@@ -541,10 +549,26 @@ export default function Configurator(props: Props) {
   }
 
   const errorFor = (field: string) => fieldErrors()[field] ?? [];
+  const presetDescription = (preset: ProjectPresetManifest) => {
+    if (isOwned()) return preset.description;
+    const names = presetAddons(preset).filter((id) => id.startsWith("ui/") && id !== "ui/navigation").map(addonName);
+    return `${names.join(", ")} on the official ${targetDef()?.displayName ?? target()} template, built from registry components and your tokens.`;
+  };
+  const manualCommands = createMemo(() => {
+    const step = plan()?.steps[0];
+    if (!step) return "";
+    return delegateSetupCommands({ target: target(), step, zipFileName: overlayZipFileName(form().projectName || "My App") }).join("\n");
+  });
+  const shownCommand = () => (isOwned() || commandMode() === "cli" ? cliCommand() : manualCommands());
+  const hasScreenPack = () => selectedAddons().includes("ui/navigation");
   const previewCaption = () =>
     isOwned()
       ? "Illustrative preview of the generated Compose screens. Not an emulator."
-      : `Illustrative: your tokens on registry components. The official ${targetDef()?.displayName ?? target()} template screens are not reproduced.`;
+      : hasScreenPack()
+        ? `Illustrative preview of the Launchbed screen pack for ${targetDef()?.displayName ?? target()}. Not an emulator.`
+        : `Illustrative: your tokens on registry components. The official ${targetDef()?.displayName ?? target()} template screens are not reproduced.`;
+  const previewTarget = () => (target() === "tauri-solid" ? "android-compose" : target()) as "android-compose" | "expo" | "flutter";
+  const templateName = () => selectedPreset()?.name ?? (isOwned() ? "Custom setup" : "Official template");
 
   return (
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]" data-launchbed-ui="v1" data-launchbed-ui-rev="2">
@@ -720,12 +744,12 @@ export default function Configurator(props: Props) {
           {/* 3. Preset */}
           <section hidden={step() !== 2} aria-labelledby="section-preset">
             <SectionHeader index={2} id="section-preset" title="Choose a starting point"
-              description={isOwned() ? "Pick a ready-to-build template, or start from scratch and add only what you need." : "Templates are Android-only today. Delegated platforms start from the official template."} />
+              description={isOwned() ? "Pick a ready-to-build template, or start from scratch and add only what you need." : "App Starter ports onboarding, sign-in, profile and dashboard to this platform. Or keep the bare official template."} />
             <fieldset>
               <legend class="sr-only">Project template</legend>
               <div class="grid gap-3 sm:grid-cols-2">
-                <Show when={isOwned()}>
-                  <For each={supportedPresets}>{(preset) => (
+                <Show when={presetsForTarget().length > 0}>
+                  <For each={presetsForTarget()}>{(preset) => (
                     <label class={cn(
                       "relative flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-accent/50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                       presetId() === preset.id && "border-primary ring-1 ring-primary",
@@ -737,12 +761,12 @@ export default function Configurator(props: Props) {
                       </span>
                       <span class="flex flex-col gap-1">
                         <span class="font-semibold leading-tight">{preset.name}</span>
-                        <span class="text-sm text-muted-foreground">{preset.description}</span>
+                        <span class="text-sm text-muted-foreground">{presetDescription(preset)}</span>
                       </span>
                       <span class="mt-auto flex flex-wrap gap-1">
-                        <Show when={preset.requiredAddons.length > 0} fallback={<Badge variant="muted">No add-ons</Badge>}>
-                          <For each={preset.requiredAddons.filter((id) => id.startsWith("ui/") && id !== "ui/foundation" && id !== "ui/navigation").slice(0, 4)}>{(id) => <Badge variant="secondary">{addonName(id)}</Badge>}</For>
-                          <Show when={preset.requiredAddons.length > 4}><Badge variant="muted">+{preset.requiredAddons.length - Math.min(4, preset.requiredAddons.filter((id) => id.startsWith("ui/") && id !== "ui/foundation" && id !== "ui/navigation").length)} more</Badge></Show>
+                        <Show when={presetAddons(preset).length > 0} fallback={<Badge variant="muted">No add-ons</Badge>}>
+                          <For each={presetAddons(preset).filter((id) => id.startsWith("ui/") && id !== "ui/foundation" && id !== "ui/navigation").slice(0, 4)}>{(id) => <Badge variant="secondary">{addonName(id)}</Badge>}</For>
+                          <Show when={presetAddons(preset).length > 4}><Badge variant="muted">+{presetAddons(preset).length - Math.min(4, presetAddons(preset).filter((id) => id.startsWith("ui/") && id !== "ui/foundation" && id !== "ui/navigation").length)} more</Badge></Show>
                         </Show>
                       </span>
                     </label>
@@ -904,13 +928,13 @@ export default function Configurator(props: Props) {
           {/* 6. Review */}
           <section hidden={step() !== 5} aria-labelledby="section-review">
             <SectionHeader index={5} id="section-review" title="Review and download"
-              description={isOwned() ? "Check the file plan, copy the CLI command, then download a verified ZIP." : "Check the overlay plan and copy the command. Delegated platforms are created on your machine."} />
+              description={isOwned() ? "Check the file plan, copy the CLI command, then download a verified ZIP." : "Check the overlay plan, then create the project with the Launchbed CLI or with the official CLI plus the overlay ZIP."} />
             <dl class="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2">
               <For each={[
                 ["Platform", targetDef()?.displayName ?? target()],
                 ["Project", form().projectName],
                 ["Application ID", form().applicationId],
-                ["Template", isOwned() ? (selectedPreset()?.name ?? "Custom setup") : "Official template"],
+                ["Template", templateName()],
               ] as const}>{([term, value]) => (
                 <div class="min-w-0 bg-card p-3">
                   <dt class="text-xs text-muted-foreground">{term}</dt>
@@ -926,22 +950,34 @@ export default function Configurator(props: Props) {
 
             <div class="mt-6 overflow-hidden rounded-lg border bg-zinc-950 text-zinc-50 dark:bg-zinc-900">
               <div class="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
-                <span class="flex items-center gap-2 text-xs text-zinc-400"><Terminal class="size-3.5" aria-hidden="true" /><label for="cliCommand">Equivalent CLI command</label></span>
-                <button type="button" class="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-zinc-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
-                  onClick={() => void copyText(cliCommand(), "cliCommand")} aria-live="polite">
+                <Show when={!isOwned()} fallback={<span class="flex items-center gap-2 text-xs text-zinc-400"><Terminal class="size-3.5" aria-hidden="true" /><span id="commandLabel">Equivalent CLI command</span></span>}>
+                  <div class="flex min-w-0 items-center gap-1" role="group" aria-label="How to create the project">
+                    <For each={[["cli", "Launchbed CLI"], ["manual", "Official CLI + ZIP"]] as const}>{([mode, label]) => (
+                      <button type="button" aria-pressed={commandMode() === mode} onClick={() => setCommandMode(mode)}
+                        class={cn("h-7 shrink-0 rounded-md px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400",
+                          commandMode() === mode ? "bg-white/15 text-white" : "text-zinc-400 hover:bg-white/10 hover:text-white")}>{label}</button>
+                    )}</For>
+                  </div>
+                </Show>
+                <button type="button" class="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-zinc-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:opacity-50"
+                  disabled={!shownCommand()} onClick={() => void copyText(shownCommand(), "cliCommand")} aria-live="polite">
                   <Show when={copied()} fallback={<><Copy class="size-3.5" aria-hidden="true" />Copy</>}><Check class="size-3.5" aria-hidden="true" />Copied</Show>
                 </button>
               </div>
-              <pre id="cliCommand" class="code-scroll px-4 py-3 text-[13px] leading-relaxed" tabindex="0" aria-label="Equivalent CLI command">{cliCommand()}</pre>
+              <pre id="cliCommand" class="code-scroll px-4 py-3 text-[13px] leading-relaxed" tabindex="0" aria-label={isOwned() || commandMode() === "cli" ? "Equivalent CLI command" : "Official command and overlay steps"}>{shownCommand() || "Loading the plan…"}</pre>
             </div>
-            <p class={cn(helpClass, "mt-2")}>Run it from a Launchbed checkout with Bun. It writes a project directory and a sibling ZIP.</p>
+            <p class={cn(helpClass, "mt-2")}>{isOwned()
+              ? "Run it from a Launchbed checkout with Bun. It writes a project directory and a sibling ZIP."
+              : commandMode() === "cli"
+                ? "Runs the official CLI, then applies the Launchbed overlays. Needs a Launchbed checkout with Bun."
+                : `No Launchbed install needed. Download ${overlayZipFileName(form().projectName || "My App")} below, keep it next to the new project folder, then run these lines.`}</p>
 
             <div class="mt-6 flex flex-col gap-3 rounded-lg border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div class="flex min-w-0 flex-col gap-0.5">
                 <span class="text-sm font-medium">{isOwned() ? "Ready to launch?" : "Create it on your machine"}</span>
                 <span class="text-xs text-muted-foreground">{isOwned()
                   ? "The ZIP includes the Gradle wrapper, a pinned mise.toml, a justfile, Kotlin sources and setup scripts."
-                  : "The web app never runs official CLIs. It returns the plan and the exact command."}</span>
+                  : "The web app never runs official CLIs. The ZIP holds only Launchbed overlays (tokens, components, screens, tooling)."}</span>
               </div>
               <div class="flex shrink-0 flex-wrap gap-2">
                 <Button type="button" variant="outline" disabled={busy() !== null} onClick={() => void checkPlan()}>
@@ -949,23 +985,12 @@ export default function Configurator(props: Props) {
                   Refresh plan
                 </Button>
                 <Button type="submit" disabled={busy() !== null}>
-                  <Show when={busy() === "generate"} fallback={isOwned() ? <Download class="size-4" aria-hidden="true" /> : <Terminal class="size-4" aria-hidden="true" />}><LoaderCircle class="size-4 animate-spin" aria-hidden="true" /></Show>
-                  {busy() === "generate" ? "Preparing…" : isOwned() ? "Download Android project" : "Get the command"}
+                  <Show when={busy() === "generate"} fallback={<Download class="size-4" aria-hidden="true" />}><LoaderCircle class="size-4 animate-spin" aria-hidden="true" /></Show>
+                  {busy() === "generate" ? "Preparing…" : isOwned() ? "Download Android project" : "Download overlay ZIP"}
                 </Button>
               </div>
             </div>
             <p class="mt-3 text-sm text-muted-foreground" aria-live="polite" role="status">{status() || (busy() ? "Working…" : "")}</p>
-
-            <Show when={delegateCommand()}>
-              <div class="mt-3 overflow-hidden rounded-lg border">
-                <div class="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium">
-                  <span>Run on your machine</span>
-                  <button type="button" class="inline-flex h-7 items-center gap-1.5 rounded-md px-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => void copyText(delegateCommand(), "delegateCommand")}><Copy class="size-3.5" aria-hidden="true" />Copy</button>
-                </div>
-                <pre id="delegateCommand" class="code-scroll px-4 py-3 font-mono text-[13px]" tabindex="0">{delegateCommand()}</pre>
-              </div>
-            </Show>
 
             <Show when={plan()}>{(summary) => (
               <div class="mt-6 rounded-lg border">
@@ -985,7 +1010,7 @@ export default function Configurator(props: Props) {
                     <ul class="mt-2 grid gap-1 pl-5 text-muted-foreground"><For each={summary().warnings}>{(warning) => <li class="list-disc">{warning}</li>}</For></ul>
                   </details>
                 </Show>
-                <p class="border-t px-4 py-2 text-xs text-muted-foreground">{summary().strategy === "delegate" ? "Overlays are applied after the official CLI finishes." : "The ZIP is verified against this plan before download."}</p>
+                <p class="border-t px-4 py-2 text-xs text-muted-foreground">{summary().strategy === "delegate" ? "The overlay ZIP is verified against this plan. Unzip it after the official CLI finishes." : "The ZIP is verified against this plan before download."}</p>
               </div>
             )}</Show>
           </section>
@@ -1034,13 +1059,14 @@ export default function Configurator(props: Props) {
             </div>
           </Show>
           <div class="rounded-lg bg-muted/40 px-2 py-6 bg-grid">
-            <PreviewScreen tokens={tokens()} mode={previewMode()} screen={activePreviewScreen()} target={target() === "tauri-solid" ? "android-compose" : target() as "android-compose" | "expo" | "flutter"}
+            <PreviewScreen tokens={tokens()} mode={previewMode()} screen={activePreviewScreen()} target={previewTarget()}
               hasNavigation={selectedAddons().includes("ui/navigation")}
+              tabs={previewTabs(previewTarget(), selectedAddons())}
               projectName={form().projectName || "My App"}
               caption={previewCaption()} />
           </div>
           <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-            <dt class="text-muted-foreground">Template</dt><dd class="truncate text-right font-medium">{isOwned() ? (selectedPreset()?.name ?? "Custom") : "Official"}</dd>
+            <dt class="text-muted-foreground">Template</dt><dd class="truncate text-right font-medium">{templateName()}</dd>
             <dt class="text-muted-foreground">Add-ons</dt><dd class="text-right font-medium">{selectedAddons().length}</dd>
             <dt class="text-muted-foreground">App ID</dt><dd class="truncate text-right font-mono" title={form().applicationId}>{form().applicationId}</dd>
             <dt class="text-muted-foreground">Seed</dt><dd class="flex items-center justify-end gap-1.5 font-mono"><span class="size-3 rounded-full border" style={{ "background-color": form().seedColor }} aria-hidden="true" />{form().seedColor.toUpperCase()}</dd>

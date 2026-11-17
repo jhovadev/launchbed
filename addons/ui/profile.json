@@ -9,6 +9,11 @@
     "ui/auth"
   ],
   "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
   "capabilities": [
     "profile",
     "compose-ui",

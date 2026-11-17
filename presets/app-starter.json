@@ -61,7 +61,8 @@
   "compatibility": {
     "minSdk": 26,
     "notes": [
-      "Beta: generated screens use DataStore for onboarding and an in-memory auth fake. Not a production backend."
+      "Beta: generated screens use DataStore for onboarding and an in-memory auth fake. Not a production backend.",
+      "Expo and Flutter get the onboarding, auth, profile and dashboard ports (no settings screen yet) on top of the official templates."
     ]
   },
   "capabilities": [
@@ -71,5 +72,30 @@
     "profile",
     "navigation",
     "settings"
-  ]
+  ],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
+  "targetAddons": {
+    "expo": [
+      "ui/auth",
+      "ui/dashboard",
+      "ui/navigation",
+      "ui/onboarding",
+      "ui/profile",
+      "tooling/github-actions",
+      "tooling/scrcpy"
+    ],
+    "flutter": [
+      "ui/auth",
+      "ui/dashboard",
+      "ui/navigation",
+      "ui/onboarding",
+      "ui/profile",
+      "tooling/github-actions",
+      "tooling/scrcpy"
+    ]
+  }
 }

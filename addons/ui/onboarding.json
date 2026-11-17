@@ -9,6 +9,11 @@
     "ui/navigation"
   ],
   "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
   "capabilities": [
     "onboarding",
     "compose-ui",

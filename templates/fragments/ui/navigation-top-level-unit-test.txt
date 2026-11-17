@@ -1,0 +1,38 @@
+package {{packageName}}.ui.navigation
+
+import androidx.navigation3.runtime.NavKey
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
+import org.junit.Test
+
+class TopLevelNavigationTest {
+    @Test fun destinationsAreUniqueAndLabelled() {
+        assertEquals(TopLevelRoutes.size, TopLevelRoutes.toSet().size)
+        TopLevelRoutes.forEach { route -> assertTrue(route.topLevelLabel().isNotBlank()) }
+    }
+
+    @Test fun bottomBarOnlyOnTopLevelScreens() {
+        assertFalse(shouldShowBottomBar(AppRoute.Welcome))
+        assertFalse(shouldShowBottomBar(null))
+        if (TopLevelRoutes.size >= 2) {
+            TopLevelRoutes.forEach { route -> assertTrue(shouldShowBottomBar(route)) }
+        } else {
+            TopLevelRoutes.forEach { route -> assertFalse(shouldShowBottomBar(route)) }
+        }
+    }
+
+    @Test fun selectingATabKeepsHomeUnderneath() {
+        assumeTrue(TopLevelRoutes.size >= 2)
+        val home = TopLevelRoutes.first()
+        val other = TopLevelRoutes.last()
+        val stack = mutableListOf<NavKey>(AppRoute.Welcome, home)
+        stack.selectTopLevel(other)
+        assertEquals(listOf<NavKey>(home, other), stack)
+        stack.selectTopLevel(other)
+        assertEquals(listOf<NavKey>(home, other), stack)
+        stack.selectTopLevel(home)
+        assertEquals(listOf<NavKey>(home), stack)
+    }
+}

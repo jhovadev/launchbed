@@ -8,6 +8,7 @@ class LaunchbedTextField extends StatefulWidget {
     required this.onChanged,
     this.error,
     this.enabled = true,
+    this.secure = false,
   });
 
   final String label;
@@ -15,6 +16,7 @@ class LaunchbedTextField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final String? error;
   final bool enabled;
+  final bool secure;
 
   @override
   State<LaunchbedTextField> createState() => _LaunchbedTextFieldState();
@@ -52,6 +54,7 @@ class _LaunchbedTextFieldState extends State<LaunchbedTextField> {
       controller: _controller,
       onChanged: widget.onChanged,
       enabled: widget.enabled,
+      obscureText: widget.secure,
       decoration: InputDecoration(
         labelText: labelForDecoration,
         errorText: widget.error,

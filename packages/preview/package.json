@@ -8,7 +8,11 @@
       "types": "./src/index.tsx",
       "default": "./src/index.tsx"
     },
-    "./styles.css": "./src/preview.css"
+    "./styles.css": "./src/preview.css",
+    "./tabs": {
+      "types": "./src/tabs.ts",
+      "default": "./src/tabs.ts"
+    }
   },
   "dependencies": {
     "@launchbed/design-tokens": "workspace:*",

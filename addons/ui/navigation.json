@@ -2,11 +2,16 @@
   "id": "ui/navigation",
   "version": "0.1.0",
   "displayName": "Navigation",
-  "description": "Type-safe Navigation 3 root, back stack and composable destination registration.",
+  "description": "Type-safe Navigation 3 root, back stack, composable destination registration and a bottom navigation bar for top-level screens.",
   "category": "ui",
   "status": "beta",
   "dependencies": [],
   "conflicts": [],
+  "targets": [
+    "android-compose",
+    "expo",
+    "flutter"
+  ],
   "capabilities": [
     "navigation",
     "compose-navigation",
@@ -117,6 +122,11 @@
       "template": "ui/navigation-welcome-screen"
     },
     {
+      "type": "add",
+      "path": "app/src/main/java/{{packagePath}}/ui/navigation/TopLevelDestinations.kt",
+      "template": "ui/navigation-top-level"
+    },
+    {
       "type": "insert",
       "path": "app/src/main/java/{{packagePath}}/MainActivity.kt",
       "slot": "main-content",
@@ -132,6 +142,16 @@
       "type": "add",
       "path": "app/src/androidTest/java/{{packagePath}}/ui/navigation/NavigationSmokeTest.kt",
       "template": "ui/navigation-test"
+    },
+    {
+      "type": "add",
+      "path": "app/src/test/java/{{packagePath}}/ui/navigation/TopLevelNavigationTest.kt",
+      "template": "ui/navigation-top-level-unit-test"
+    },
+    {
+      "type": "add",
+      "path": "app/src/androidTest/java/{{packagePath}}/ui/navigation/AppBottomBarTest.kt",
+      "template": "ui/navigation-top-level-test"
     }
   ],
   "compatibility": {
