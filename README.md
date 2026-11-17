@@ -1,17 +1,20 @@
-# Kotlaunch — Native Android Initializr
+# Launchbed — mobile-first starter generator
 
-Generate **native Android** projects — Kotlin + Jetpack Compose Material 3 — from the
-web, an HTTP API or the CLI. The generated ZIP builds on its own with the Gradle
-wrapper; Android Studio is optional.
+Generate **native Android** projects — Kotlin + Jetpack Compose Material 3 — from
+the web, an HTTP API or the CLI. The generated project includes a Gradle wrapper,
+a pinned `mise.toml` (tools and env) and a `justfile` (build, test, run and other
+complex commands). Android Studio is optional.
 
-> **Current scope:** Native Compose presets, declarative addons, deterministic ZIPs,
-> material design tokens, web and CLI generation. Some addons remain beta pending
-> instrumented runtime tests. No managed APK builds or cloud synchronization.
+This repository is the continuation of [Kotlaunch](https://github.com/jhovadev/kotlaunch)
+under a new name. Internal TypeScript packages remain `@android-initializr/*` for
+now so the workspace stays stable; the user-facing command is `launchbed`.
+`android-initializr` is kept as a compatible alias.
 
-## Deploy the web app to Vercel
-
-See [docs/deployment-vercel.md](docs/deployment-vercel.md) for the SSR adapter, Bun
-lockfile update, monorepo root settings and production API smoke tests.
+> **Current scope:** Native Compose presets, declarative addons, deterministic
+> ZIPs (and a project directory from `launchbed new`), mise + just in generated
+> apps, web and CLI generation. Some addons remain beta pending instrumented
+> runtime tests. Multi-target stacks (Expo, Flutter, Tauri, RN) are planned; see
+> [docs/roadmap-multi-target.md](docs/roadmap-multi-target.md).
 
 ## Quick start (no Android Studio)
 
@@ -21,20 +24,26 @@ bun install
 just dev                     # Astro + SolidJS on http://localhost:4321
 ```
 
-Open the configurator, generate a ZIP, then:
+Or generate from the CLI:
 
 ```bash
-unzip demo-app.zip -d demo-app
+bun packages/cli/src/index.ts new --yes --name "Demo App" --app-id com.example.demo --preset compose-minimal --out demo-app
 cd demo-app
 mise install
-just sdk-setup               # read-only inspection; add INSTALL=1 to install packages
 just doctor
-just build                   # app/build/outputs/apk/debug/app-debug.apk
+just build
 just test
-just run                     # build + install + launch on the selected device
+just run
 ```
 
-Windows: run the PowerShell scripts directly (`.\scripts\sdk-setup.ps1 -Install`),
+`launchbed new` writes a directory **and** a sibling ZIP (`demo-app.zip`). Pass
+`--force` to replace an existing output. Without flags, an interactive prompt
+runs when stdin is a TTY; use `--yes` in CI.
+
+Open the web configurator, pick a preset, then download a ZIP, or copy the
+equivalent `launchbed new` command shown in the review step.
+
+Windows: run the PowerShell scripts in a generated project (`.\scripts\sdk-setup.ps1 -Install`),
 or use `just` from Git Bash.
 
 Full verification in this repository:
@@ -44,33 +53,24 @@ just check                   # typecheck + tests + template drift + web build
 just android-smoke           # real assembleDebug + unit tests (needs Android SDK)
 ```
 
-## What F0 actually does
+## mise and just
 
-- **Schema-first contracts** (`packages/schema`): `ProjectRequest`, `ThemeConfig`,
-  `AddonManifest`, `GenerationPlan`, all strict Zod schemas with explicit limits.
-- **Shared engine** (`packages/generator`): validate → resolve → plan → render →
-  package. Web endpoints and the CLI call exactly the same functions.
-- **Real template** (`templates/android-compose-minimal`): Kotlin, Compose M3,
-  version catalog, wrapper with SHA-256, unit tests, `mise.toml`, `justfile`,
-  SDK setup and device scripts for POSIX shells and PowerShell.
-- **Deterministic ZIP**: sorted paths, fixed 1980-01-01 timestamps, STORE method,
-  0644/0755 permissions, no data descriptors, path-traversal checks, 8 MB limit.
-- **Plan/ZIP parity**: before download the archive is re-read and compared with
-  the announced paths, sizes and SHA-256 hashes.
-- **Declarative addons** (`addons/`): 18 planned entries across storage, UI,
-  native and tooling. Planned/experimental addons are rejected by the resolver.
-- **Design tokens** (`packages/design-tokens`): Material 3 schemes derived from a
-  seed color, semantic overrides, typography, shape, spacing and component tokens.
-  Kotlin code generation and the web preview share the same resolver.
+Generated projects follow a fixed split:
+
+- **mise** (`mise.toml`) pins tools and env. No secrets. `mise install` and
+  `mise exec` put the toolchain on `PATH`. Optional `[tasks]` are only shortcuts
+  to `just` recipes (`mise run build` → `just build`).
+- **just** (`justfile`) is the command catalog: `doctor`, `build`, `test`, `run`,
+  SDK setup, and later FFI or release flows. Addons may contribute extra recipes
+  and mise tools; conflicting recipe bodies or tool versions fail before any
+  files are written.
 
 ## API
 
 ```bash
 curl -s http://localhost:4321/api/catalog
-
 curl -s -X POST http://localhost:4321/api/plan \
   -H 'content-type: application/json' --data @examples/basic.json
-
 curl -s -X POST http://localhost:4321/api/generate \
   -H 'content-type: application/json' --data @examples/basic.json -o demo-app.zip
 ```
@@ -83,12 +83,15 @@ server never executes user input and never fetches remote templates.
 
 ```bash
 bun packages/cli/src/index.ts catalog
+bun packages/cli/src/index.ts new --yes --preset compose-starter --out starter-app
 bun packages/cli/src/index.ts validate --config examples/basic.json
 bun packages/cli/src/index.ts plan --config examples/basic.json --json
 bun packages/cli/src/index.ts generate --config examples/basic.json --out demo-app.zip
 ```
 
-`generate` refuses to overwrite an existing file unless `--force` is passed.
+`generate` still writes a ZIP only. Prefer `new` when you want a ready directory.
+`--addon` may be repeated. `generate` and `new` refuse to overwrite unless `--force`
+is passed.
 
 ## Repository layout
 
@@ -98,25 +101,28 @@ packages/schema/           Zod contracts, identifiers, limits, typed errors
 packages/catalog/          Validated addon registry (imports addons/*.json)
 packages/resolver/         Dependency, conflict, SDK and status resolution
 packages/generator/        Planner, renderer, deterministic ZIP, self-check
-packages/design-tokens/    Theme resolution + Kotlin Compose code generation
+packages/design-tokens/    Theme resolution + Compose token code generation
 packages/preview/          SolidJS Material 3 preview (web simulation)
-packages/cli/              CLI over the shared engine
+packages/cli/              launchbed CLI over the shared engine
 templates/                 Real Android template + local addon fragments
 addons/                    Declarative addon manifests
 examples/                  Example ProjectRequest
 tests/                     Schema, resolver, generator, security, scripts, drift
 docs/                      Architecture, compatibility, addon spec, ADRs, phases
+AGENTS.md                  How to work in this repo (humans and coding agents)
 ```
 
 ## Documentation
 
+- [AGENTS.md](AGENTS.md) — commands that exist, rules, how to add addons
 - [Architecture](docs/architecture.md)
 - [Compatibility matrix](docs/compatibility.md)
 - [Addon specification](docs/addon-spec.md)
 - [Design system](docs/design-system.md)
 - [Native FFI contracts](docs/ffi.md)
 - [F0 report](docs/phases/F0-foundation.md)
-- [Roadmap](docs/roadmap.md)
+- [Historical roadmap](docs/roadmap.md)
+- [Multi-target roadmap](docs/roadmap-multi-target.md)
 - [ADRs](docs/adr/0001-foundation.md)
 - [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
@@ -151,11 +157,7 @@ without Android SDK or device access. Results are saved to
 
 `just release-check` additionally reads opt-in runtime and benchmark reports.
 Without executed instrumented tests on a device it reports **BLOCKED** (exit 78),
-not PASS. `just patch-replay` reconstructs historical F0→F1.6B patches in a
-throwaway local clone. Extract F1.6A, F1.6A.1, F1.6B ZIPs into `~/Downloads`
-first; use `node scripts/integrity/patch-replay.mjs --downloads PATH` otherwise.
-See `docs/integrity.md` for caveats, particularly R8 release settings, local
-backup policy, transitive native dependencies, and the deferred i18n addon.
+not PASS. See `docs/integrity.md` for caveats.
 
 ## Pruebas Android sin Android Studio
 

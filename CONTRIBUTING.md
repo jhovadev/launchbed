@@ -2,6 +2,9 @@
 
 ## Setup
 
+Read [AGENTS.md](AGENTS.md) for commands that actually exist and for the rules coding agents should follow.
+
+
 ```bash
 mise install
 bun install
@@ -14,7 +17,7 @@ and an Android SDK with `android-37.0` and Build Tools 36.0.0.
 
 ## Ground rules
 
-- Preserve native-first: Kotlin + Jetpack Compose Material 3 for generated apps.
+- Preserve native-first for generated apps today: Kotlin + Jetpack Compose Material 3 for generated apps.
 - Do not add a dependency without pinning an exact version and documenting it in
   `docs/compatibility.md`.
 - Never add remote templates, arbitrary script execution, dynamic versions or

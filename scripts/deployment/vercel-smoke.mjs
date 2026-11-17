@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Public HTTP contract smoke for a deployed Kotlaunch Initializr. No SDK needed. */
+/** Public HTTP contract smoke for a deployed Launchbed. No SDK needed. */
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
@@ -35,7 +35,7 @@ export function parseArgs(argv) {
 
 const defaultRequest = {
   template: 'android-compose-minimal',
-  projectName: 'Kotlaunch Deploy Smoke',
+  projectName: 'Launchbed Deploy Smoke',
   applicationId: 'dev.kotlaunch.smoke',
   namespace: 'dev.kotlaunch.smoke',
   minSdk: 26,
@@ -70,8 +70,8 @@ export async function runSmoke(baseUrl, fetchFn = fetch, { timeoutMs = 20000 } =
     throw diagnose('Solid configurator form missing (check SSR function logs)');
   }
 
-  if (!html.includes('data-kotlaunch-ui="f17b"')) {
-    throw diagnose('outdated project builder; F1.7B has not reached this deployment');
+  if (!html.includes('data-launchbed-ui="v1"')) {
+    throw diagnose('outdated project builder; the Launchbed wizard has not reached this deployment');
   }
 
   const catalog = await (await makeRequest('/api/catalog')).json();
@@ -114,9 +114,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
     const { baseUrl, timeoutMs } = parseArgs(process.argv.slice(2));
     const output = await runSmoke(baseUrl, fetch, { timeoutMs });
-    process.stdout.write(`PASS Kotlaunch Vercel smoke: ${JSON.stringify(output)}\n`);
+    process.stdout.write(`PASS Launchbed Vercel smoke: ${JSON.stringify(output)}\n`);
   } catch (error) {
-    console.error(`FAIL Kotlaunch Vercel smoke: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`FAIL Launchbed Vercel smoke: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;
   }
 }

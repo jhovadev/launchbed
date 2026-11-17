@@ -1,0 +1,6 @@
+---
+description: Launchbed project rules for coding agents
+alwaysApply: true
+---
+
+Before changing Launchbed, read AGENTS.md at the repository root. Use only commands documented there or shown by `just --list`. Follow docs/addon-spec.md when touching addons. Do not invent APIs, push to remotes, or claim unimplemented multi-target stacks as done.

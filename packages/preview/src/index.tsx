@@ -95,7 +95,7 @@ export function PreviewScreen(props: PreviewScreenProps) {
               </div>
               <div class="aip-card" style={{ "background-color": colors().surface, "border-color": colors().outlineVariant, "border-radius": `${card().cornerRadius}px` }}>
                 <span class="aip-card-title" style={{ color: colors().onSurface }}>About</span>
-                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Android Initializr</span>
+                <span class="aip-card-meta" style={{ color: colors().onSurfaceVariant }}>Launchbed</span>
               </div>
             </>
           ) : (

@@ -35,6 +35,7 @@ import { FRAGMENT_FILES, TEMPLATE_FILES } from "./templates.generated";
 import { TOOLCHAIN, sdkPlatformPackage } from "./versions";
 import { createZip, readZip } from "./zip";
 import { applyComposition } from "./composition";
+import { applyTooling } from "./tooling";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
@@ -238,6 +239,8 @@ export function materializeProject(
     vars,
     options.fragments,
   );
+
+  applyTooling(files, resolution.addons);
 
   if (files.size > LIMITS.files) {
     throw new InitializrError("LIMIT_EXCEEDED", `Generated ${files.size} files; the limit is ${LIMITS.files}.`);

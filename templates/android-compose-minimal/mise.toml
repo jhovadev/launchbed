@@ -1,5 +1,8 @@
-# Toolchain for the generated project. The Android SDK itself is installed by
-# `just sdk-setup`, because mise has no official Android SDK backend.
+# Toolchain for the generated Launchbed project.
+# The Android SDK itself is installed by `just sdk-setup`, because mise has no
+# official Android SDK backend.
+# Tool versions are pinned from docs/compatibility.md in the Launchbed repo.
+# The generator rewrites this file so addons can merge tools and env safely.
 min_version = "2026.10.13"
 
 [tools]

@@ -1,0 +1,154 @@
+import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import {
+  InitializrError,
+  projectSlug,
+  type ProjectRequestInput,
+} from "@android-initializr/schema";
+import {
+  ALL_PRESETS,
+  findPreset,
+  isPresetGeneratable,
+} from "@android-initializr/catalog";
+import {
+  createZip,
+  formatNewCommand,
+  getCatalog,
+  isExecutablePath,
+  materializeProject,
+  verifyZipAgainstPlan,
+  writeProjectTree,
+} from "@android-initializr/generator";
+import type { Args } from "./args";
+import { promptLine, promptList } from "./prompt";
+
+const DEFAULT_NAME = "Demo App";
+const DEFAULT_PRESET = "compose-minimal";
+
+export interface NewOptions {
+  projectName: string;
+  applicationId: string;
+  preset?: string;
+  addons: string[];
+  outDir: string;
+  force: boolean;
+}
+
+export function slugToApplicationId(projectName: string): string {
+  const slug = projectSlug(projectName).replaceAll("-", "");
+  const candidate = slug.length > 0 ? slug : "app";
+  const safe = /^[a-z]/.test(candidate) ? candidate : `app${candidate}`;
+  return `com.example.${safe}`;
+}
+
+export async function resolveNewOptions(args: Args, interactive: boolean): Promise<NewOptions> {
+  const force = args.flags.has("force");
+  const yes = args.flags.has("yes");
+  if (args.positionals.length > 1) {
+    throw new Error("launchbed new accepts at most one positional output directory.");
+  }
+  if (args.positionals.length === 1 && args.values.has("out")) {
+    throw new Error("Pass the output directory as a positional argument or as --out, not both.");
+  }
+
+  let projectName = args.values.get("name") ?? "";
+  let applicationId = args.values.get("app-id") ?? "";
+  let preset = args.values.get("preset") ?? "";
+  let addons = [...(args.lists.get("addon") ?? [])];
+
+  if (!yes && interactive) {
+    if (!projectName) projectName = await promptLine("Project name", DEFAULT_NAME);
+    if (!applicationId) {
+      applicationId = await promptLine("Application ID", slugToApplicationId(projectName || DEFAULT_NAME));
+    }
+    const generatable = ALL_PRESETS.filter(isPresetGeneratable).map((entry) => ({
+      id: entry.id,
+      label: `${entry.name} (${entry.status})`,
+    }));
+    if (!preset) {
+      preset = await promptList("Preset (id or number, empty for none)", generatable, DEFAULT_PRESET);
+    }
+    if (addons.length === 0) {
+      const catalog = getCatalog();
+      const optional = catalog.addons.filter((addon) => addon.generatable);
+      console.log("Generatable addons:");
+      for (const addon of optional) {
+        console.log(`  - ${addon.id}: ${addon.displayName}`);
+      }
+      const extra = await promptLine("Extra addons (comma-separated ids, empty for none)", "");
+      if (extra) {
+        addons = extra.split(/[,\s]+/).map((id) => id.trim()).filter(Boolean);
+      }
+    }
+  } else if (!yes && !interactive) {
+    throw new Error("launchbed new needs a TTY for prompts, or pass --yes with flags.");
+  }
+
+  projectName = projectName || DEFAULT_NAME;
+  applicationId = applicationId || slugToApplicationId(projectName);
+  if (preset === "") {
+    preset = yes ? DEFAULT_PRESET : "";
+  }
+
+  const outDir = resolve(args.values.get("out") ?? args.positionals[0] ?? projectSlug(projectName));
+  return { projectName, applicationId, preset: preset || undefined, addons, outDir, force };
+}
+
+export function requestFromNewOptions(options: NewOptions): ProjectRequestInput {
+  if (options.preset) {
+    const preset = findPreset(options.preset);
+    if (!preset) {
+      throw new InitializrError("INVALID_REQUEST", `Unknown project preset "${options.preset}".`);
+    }
+    if (!isPresetGeneratable(preset)) {
+      throw new InitializrError("RESOLUTION_ERROR", `Preset "${preset.id}" is ${preset.status} and cannot be generated yet.`);
+    }
+  }
+  return {
+    template: "android-compose-minimal",
+    projectName: options.projectName,
+    applicationId: options.applicationId,
+    namespace: options.applicationId,
+    ...(options.preset ? { preset: options.preset } : {}),
+    addons: options.addons,
+  };
+}
+
+export function writeGeneratedProject(
+  options: NewOptions,
+): { directory: string; zipPath: string; command: string; files: number; bytes: number; warnings: string[] } {
+  const request = requestFromNewOptions(options);
+  const materialized = materializeProject(request);
+  const directory = writeProjectTree(materialized.files, options.outDir, { force: options.force });
+  const zipPath = `${directory}.zip`;
+  if (existsSync(zipPath) && !options.force) {
+    throw new InitializrError("IO_ERROR", `Refusing to overwrite ${zipPath}. Pass --force to replace it.`);
+  }
+  const zip = createZip(
+    [...materialized.files.entries()].map(([path, data]) => ({
+      path,
+      data,
+      executable: isExecutablePath(path),
+    })),
+  );
+  verifyZipAgainstPlan(zip, materialized.plan);
+  mkdirSync(dirname(zipPath), { recursive: true });
+  const temporary = `${zipPath}.tmp-${process.pid}`;
+  writeFileSync(temporary, zip);
+  renameSync(temporary, zipPath);
+  const command = formatNewCommand({
+    projectName: options.projectName,
+    applicationId: options.applicationId,
+    preset: options.preset,
+    addons: options.addons,
+    out: options.outDir,
+  });
+  return {
+    directory,
+    zipPath,
+    command,
+    files: materialized.plan.totals.files,
+    bytes: materialized.plan.totals.bytes,
+    warnings: materialized.warnings,
+  };
+}

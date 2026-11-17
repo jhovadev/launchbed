@@ -1,0 +1,85 @@
+# Launchbed — guide for humans and coding agents
+
+Launchbed generates **native Android** starters (Kotlin + Jetpack Compose Material 3) from a shared TypeScript engine used by the web UI, HTTP API and CLI. This repository used to be published as Kotlaunch / Android Initializr. User-facing branding is Launchbed; workspace packages are still named `@android-initializr/*`.
+
+Do not invent commands. The lists below exist in this repo today.
+
+## Everyday commands
+
+From the repository root, after `mise install` and `just install` (or `bun install --frozen-lockfile`):
+
+| Task | Command |
+| --- | --- |
+| Dev server (http://localhost:4321) | `just dev` |
+| Typecheck | `just typecheck` |
+| Unit tests | `just test` |
+| Template drift check | `just templates-check` |
+| Re-embed templates after editing `templates/` | `just templates-embed` |
+| Typecheck + tests + template check + web build | `just check` |
+| Example ZIP via `generate` | `just generate` |
+| Example directory + ZIP via `launchbed new` | `just cli-new` |
+| Tool versions | `just doctor` |
+| Real `assembleDebug` + JVM tests | `just android-smoke` (needs JDK 21 + Android SDK 37) |
+
+CLI (same engine as the API):
+
+```bash
+bun packages/cli/src/index.ts new --yes --name "Demo App" --app-id com.example.demo --preset compose-minimal --out demo-app
+bun packages/cli/src/index.ts catalog
+bun packages/cli/src/index.ts plan --config examples/basic.json --json
+```
+
+`android-initializr` is an alias of the `launchbed` bin. `new` writes a directory and a sibling ZIP. `--addon` is repeatable. `--yes` is required when stdin is not a TTY. `generate` still writes a ZIP only.
+
+Optional Android / integrity recipes also exist: `just runtime-parser-test`, `just integrity-check`, `just runtime-devices`, `just emulator-list`, `just android-test` (needs `ANDROID_SERIAL`). See `just --list`. Deploy smokes: `just vercel-preflight`, `just vercel-smoke` (the script still reads `KOTLAUNCH_DEPLOY_URL`).
+
+## Architecture
+
+The pipeline is documented in `docs/architecture.md`:
+
+`ProjectRequest` → Zod validation → addon resolution → theme tokens → render template + fragments → addon composition (add / insert / merge) → **mise.toml + justfile tooling merge** → limits / path checks → deterministic ZIP with plan/ZIP parity.
+
+Web routes in `apps/web/src/pages/api/*` and `packages/cli` only parse input and call `packages/generator`. Do not reimplement generation in the UI.
+
+Generated apps: mise pins tools and env (no secrets). just is the command catalog (`doctor`, `build`, `test`, `run`, …). mise `[tasks]` are shortcuts to just. Addon `tooling` contributions are merged deterministically; conflicting tool versions or recipe bodies fail before files are written. See `docs/addon-spec.md`.
+
+## Rules
+
+- Pin every new dependency and record it in `docs/compatibility.md`.
+- No remote templates, no executing user input, no dynamic `+` versions, no secrets or keystores in templates.
+- Do not claim a feature works without a test or a real command proving it.
+- Keep changes small. Conventional Commits, subject ≤ 72 characters.
+- Do not use `git am` or `git apply` when preparing a delivery for the maintainer; prefer a ZIP of changed files plus a `.patch` for inspection, applied by unzip + `git add`.
+- Do not push or write to remotes unless the user explicitly asked for that exact action.
+- Multi-target stacks in `docs/roadmap-multi-target.md` are a **plan**, not implemented generators.
+
+## How to add an addon
+
+1. Read `docs/addon-spec.md` and the skill `.agents/skills/add-addon/SKILL.md`.
+2. Start as `planned` under `addons/<category>/<name>.json` with no `fileOperations` and empty `tooling`.
+3. Implement fragments under `templates/fragments/`, file operations, resolver tests, and only then set `beta` or `stable`.
+4. If the addon needs tools or just recipes, declare them in `tooling`. Never reuse a reserved just recipe name (`doctor`, `build`, `test`, `run`, …).
+5. Run `just templates-embed` if you edited templates or fragments, then `just check`.
+
+## How to add a preset
+
+1. Read `.agents/skills/add-preset/SKILL.md`.
+2. Add `presets/<id>.json` and register it in `packages/catalog/src/presets.ts`.
+3. Required addons must already be generatable. `planned` presets cannot be generated.
+4. Add or extend tests that materialize the preset. Run `just test`.
+
+## How to generate and verify a project
+
+See `.agents/skills/generate-and-verify/SKILL.md`. Typical path: `launchbed new --yes …`, then in the output directory `mise install`, `just doctor`, `just test`, `just build`. In this repo, `just check` covers the generator; `just android-smoke` covers a real Gradle build when the SDK is present.
+
+## How to update compatibility versions
+
+See `.agents/skills/update-compatibility/SKILL.md`. Change versions in `packages/generator/src/versions.ts` (including `GENERATED_MISE`) and `docs/compatibility.md` together, re-embed if the Android template catalogs change, and run `just check` plus `just android-smoke` when Gradle/SDK versions move.
+
+## What not to touch
+
+- Real devices, production keystores, or secrets.
+- Historical files under `patches/` (they document past reviews).
+- Business data, if any appears in a local environment.
+- A wholesale rename of `@android-initializr/*` packages unless a dedicated, tested change is requested.
+- Do not mark multi-target adapters (Expo/Flutter/Tauri/RN) as implemented until they have tests and a generator path.

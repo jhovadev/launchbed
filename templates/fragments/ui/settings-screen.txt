@@ -70,7 +70,7 @@ fun SettingsScreen() {
             HorizontalDivider()
             SettingsGroup(title = "About") {
                 ListItem(
-                    headlineContent = { Text("Android Initializr") },
+                    headlineContent = { Text("Launchbed") },
                     supportingContent = { Text("Generated native Android project") },
                 )
                 ListItem(

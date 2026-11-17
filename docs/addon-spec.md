@@ -130,3 +130,21 @@ planned/experimental rejection.
 - Status: `beta`, generatable.
 - Standalone demo catalog screen with local search and empty state.
 - No backend, payments or persistence.
+
+
+## Tooling contributions (mise + just)
+
+Optional `tooling` on a generatable addon declares:
+
+- `tools`: pinned mise tool names and versions (merged into generated `mise.toml`)
+- `env`: non-secret environment keys (rejected if the key looks like a secret)
+- `justRecipes`: named just recipes inserted above `# @initializr-slot just-recipes`
+
+The generator always writes a canonical `mise.toml` with the Java and just
+versions from `docs/compatibility.md`, plus optional `[tasks]` that only call
+`just`. Reserved recipes (`doctor`, `build`, `test`, `run`, and the other base
+template tasks) cannot be redefined. Two addons may contribute the same tool
+version or an identical recipe body (they are deduplicated). A different version
+or a different body is a `RESOLUTION_ERROR` and no project is written.
+
+Planned and experimental addons must leave `tooling` empty.

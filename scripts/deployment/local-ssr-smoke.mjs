@@ -60,7 +60,7 @@ if (!existsSync(entry)) {
   try {
     await waitForServer(base, child, () => output);
     const result = await runSmoke(base);
-    console.log(`PASS Kotlaunch local SSR and ZIP smoke: ${JSON.stringify(result)}`);
+    console.log(`PASS Launchbed local SSR and ZIP smoke: ${JSON.stringify(result)}`);
   } catch (error) {
     console.error(`FAIL local SSR smoke: ${error instanceof Error ? error.message : String(error)}`);
     if (output.trim()) console.error(output);

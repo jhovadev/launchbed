@@ -1,9 +1,9 @@
 {
-  "name": "android-initializr",
+  "name": "launchbed",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Generator for native Android projects built with Kotlin and Jetpack Compose",
+  "description": "Launchbed \u2014 generate mobile-first starters. mise for tools, just for complex commands.",
   "license": "MIT",
   "packageManager": "bun@1.4.4",
   "engines": {

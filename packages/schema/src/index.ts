@@ -7,3 +7,5 @@ export * from "./operations";
 export * from "./addon";
 export * from "./plan";
 export * from "./preset";
+export * from "./tooling";
+export * from "./cli-command";

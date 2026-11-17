@@ -12,46 +12,26 @@ import {
   getCatalog,
   parseRequestJson,
 } from "@android-initializr/generator";
+import { parseArgs } from "./args";
+import { resolveNewOptions, writeGeneratedProject } from "./new-command";
 
-const USAGE = `android-initializr - generate native Android projects from the command line
+export const USAGE = `launchbed - generate mobile starters from the command line
 
 Usage:
-  android-initializr catalog [--json]
-  android-initializr validate --config <file|-> [--json]
-  android-initializr plan --config <file|-> [--json]
-  android-initializr generate --config <file|-> [--out <file.zip>] [--force]
-  android-initializr --help
+  launchbed new [dir] [--name <name>] [--app-id <id>] [--preset <id>] [--addon <id>]... [--out <dir>] [--yes] [--force]
+  launchbed catalog [--json]
+  launchbed validate --config <file|-> [--json]
+  launchbed plan --config <file|-> [--json]
+  launchbed generate --config <file|-> [--out <file.zip>] [--force]
+  launchbed --help
 
-Config is a JSON ProjectRequest. Use "-" to read from stdin.
-The CLI uses the exact same engine as the web API.
+\`launchbed new\` writes a project directory and a sibling ZIP, using the same
+deterministic engine as the web API. Pass --yes to skip prompts (required when
+stdin is not a TTY). The android-initializr command is kept as a compatible alias.
+
+Config files used by validate/plan/generate are JSON ProjectRequest documents.
+Use "-" to read from stdin.
 `;
-
-interface Args {
-  command: string;
-  values: Map<string, string>;
-  flags: Set<string>;
-}
-
-function parseArgs(argv: string[]): Args {
-  const [command = "help", ...rest] = argv;
-  const values = new Map<string, string>();
-  const flags = new Set<string>();
-  for (let i = 0; i < rest.length; i += 1) {
-    const arg = rest[i]!;
-    if (!arg.startsWith("--")) throw new Error(`Unexpected argument: ${arg}`);
-    const [key, inline] = arg.slice(2).split("=", 2) as [string, string | undefined];
-    if (["config", "out"].includes(key)) {
-      const value = inline ?? rest[++i];
-      if (!value) throw new Error(`--${key} requires a value`);
-      values.set(key, value);
-    } else if (["json", "force", "help"].includes(key)) {
-      flags.add(key);
-    } else {
-      throw new Error(`Unknown option: --${key}`);
-    }
-  }
-  return { command, values, flags };
-}
 
 function readConfig(path: string): string {
   if (path === "-") {
@@ -70,8 +50,8 @@ function fail(error: unknown): never {
   process.exit(1);
 }
 
-function main(): void {
-  let args: Args;
+async function main(): Promise<void> {
+  let args;
   try {
     args = parseArgs(process.argv.slice(2));
   } catch (error) {
@@ -80,7 +60,7 @@ function main(): void {
     process.exit(2);
   }
 
-  if (args.command === "help" || args.flags.has("help")) {
+  if (args.command === "help" || args.flags.has("help") || args.command === "--help") {
     console.log(USAGE);
     return;
   }
@@ -97,6 +77,26 @@ function main(): void {
         const suffix = addon.generatable ? "" : ` [${addon.status}]`;
         console.log(`- ${addon.id}${suffix}: ${addon.displayName}`);
       }
+    }
+    return;
+  }
+
+  if (args.command === "new") {
+    try {
+      const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+      const options = await resolveNewOptions(args, interactive);
+      const result = writeGeneratedProject(options);
+      console.log(`Created project ${result.directory}`);
+      console.log(`Wrote ZIP ${result.zipPath}`);
+      console.log(`Files: ${result.files}, bytes: ${result.bytes}`);
+      console.log(`Equivalent command: ${result.command}`);
+      for (const warning of result.warnings) console.log(`Warning: ${warning}`);
+      console.log("Next: cd into the directory, run `mise install`, then `just doctor` and `just build`.");
+    } catch (error) {
+      if (error instanceof InitializrError) fail(error);
+      console.error((error as Error).message);
+      console.error(USAGE);
+      process.exit(2);
     }
     return;
   }
@@ -157,4 +157,4 @@ function main(): void {
   }
 }
 
-main();
+void main();

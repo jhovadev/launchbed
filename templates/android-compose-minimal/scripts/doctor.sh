@@ -10,7 +10,7 @@ ok() { printf '  [ok]      %s\n' "$*"; }
 warn() { printf '  [warning] %s\n' "$*"; }
 missing() { printf '  [missing] %s\n' "$*"; status=1; }
 
-printf 'Android Initializr project doctor\n'
+printf 'Launchbed project doctor\n'
 printf 'OS: %s\n\n' "$(uname -s 2>/dev/null || echo unknown)"
 
 if command -v java >/dev/null 2>&1; then

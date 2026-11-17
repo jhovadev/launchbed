@@ -7,7 +7,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Generate a native Android project with Kotlin and Jetpack Compose." } = Astro.props;
+const { title, description = "Launchbed generates native Android starters with Kotlin, Jetpack Compose, mise and just." } = Astro.props;
 ---
 
 <!doctype html>
@@ -25,16 +25,16 @@ const { title, description = "Generate a native Android project with Kotlin and 
 
     <header class="site-header">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true">K</span>
+        <span class="brand-mark" aria-hidden="true">L</span>
         <span class="brand-text">
-          Kotlaunch
-          <span class="brand-sub">native first · MIT</span>
+          Launchbed
+          <span class="brand-sub">mobile first · MIT</span>
         </span>
       </div>
       <nav class="site-nav" aria-label="Primary">
         <a href="#configurator">Build</a>
         <a href="#how-it-works">How it works</a>
-        <a href="https://github.com/jhovadev/kotlaunch" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+        <a href="https://github.com/jhovadev/launchbed" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
       </nav>
     </header>
 
@@ -44,11 +44,12 @@ const { title, description = "Generate a native Android project with Kotlin and 
 
     <footer class="site-footer" id="scope">
       <div>
-        <p class="footer-title">Kotlaunch · Native Android Initializr</p>
+        <p class="footer-title">Launchbed · mobile-first starters</p>
         <p>
           Native Kotlin + Jetpack Compose projects from reproducible presets. The web and CLI
-          share one deterministic generator. Some addons remain beta pending device tests.
-          The live preview is illustrative, not an Android emulator.
+          share one deterministic generator. Generated apps use mise for tools and just for
+          commands. Some add-ons remain beta pending device tests. The live preview is
+          illustrative, not an Android emulator.
         </p>
       </div>
       <p class="footer-license">MIT licensed · No telemetry · No Android Studio required</p>

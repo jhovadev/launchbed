@@ -8,7 +8,7 @@ function Ok($message) { Write-Host "  [ok]      $message" }
 function Warn($message) { Write-Host "  [warning] $message" }
 function Missing($message) { Write-Host "  [missing] $message"; $script:status = 1 }
 
-Write-Host "Android Initializr project doctor"
+Write-Host "Launchbed project doctor"
 Write-Host "OS: Windows $([System.Environment]::OSVersion.Version)"
 Write-Host ""
 

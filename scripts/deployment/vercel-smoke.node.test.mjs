@@ -22,7 +22,7 @@ function mockResponses({ corruptZip = false, mismatchHash = false, oldBuilder = 
   const zip = Buffer.from('504b03046162636465666768696a6b6c6d6e6f707172737475767778797a', 'hex');
   const fakeFetch = async (url) => {
     const path = new URL(url).pathname;
-    if (path === '/') return new Response(`<title>Kotlaunch</title><div id="configurator" ${oldBuilder ? '' : 'data-kotlaunch-ui="f17b"'}><form><input id="projectName" name="projectName" /></form></div>`, { headers: { 'content-type': 'text/html' } });
+    if (path === '/') return new Response(`<title>Launchbed</title><div id="configurator" ${oldBuilder ? '' : 'data-launchbed-ui="v1"'}><form><input id="projectName" name="projectName" /></form></div>`, { headers: { 'content-type': 'text/html' } });
     if (path === '/api/catalog') return Response.json({ addons: [] });
     if (path === '/api/presets') return Response.json({ presets: [{}, {}, {}, {}] });
     if (path === '/api/plan') return Response.json({ totals: { files: 3 }, request: { hash: reqHash } });

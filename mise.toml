@@ -9,6 +9,7 @@ java = "temurin-21.0.13+9.0.LTS"
 [env]
 # Keep tool output stable and scripts free of interactive noise.
 ANDROID_INITIALIZR_ROOT = "{{ config_root }}"
+LAUNCHBED_ROOT = "{{ config_root }}"
 
 [tasks.install]
 description = "Install web/TypeScript workspace dependencies"

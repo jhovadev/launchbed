@@ -1,7 +1,7 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
-# Android Initializr workspace tasks. This file is for the Initializr repository.
-# Generated Android projects ship their own justfile.
+# Launchbed workspace tasks. This file is for the Launchbed repository.
+# Generated Android projects ship their own justfile (mise for tools, just for commands).
 
 default:
     @just --list
@@ -163,3 +163,7 @@ vercel-build: vercel-preflight
 # Probe the live Vercel URL (KOTLAUNCH_DEPLOY_URL is required).
 vercel-smoke:
     node scripts/deployment/vercel-smoke.mjs
+
+# Generate the example project into a directory plus ZIP (CLI new)
+cli-new:
+    bun packages/cli/src/index.ts new --yes --force --out build/example-app

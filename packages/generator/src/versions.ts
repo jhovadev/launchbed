@@ -22,3 +22,36 @@ export const TOOLCHAIN = {
 export function sdkPlatformPackage(compileSdk: number): string {
   return compileSdk >= 37 ? `${compileSdk}.0` : String(compileSdk);
 }
+
+/**
+ * Pinned mise toolchain written into generated projects.
+ * Values come from the verified environment in docs/compatibility.md.
+ * The Android SDK is not a mise tool; `just sdk-setup` installs it.
+ */
+export const GENERATED_MISE = {
+  minVersion: "2026.10.13",
+  tools: {
+    java: "temurin-21.0.13+9.0.LTS",
+    just: "1.59.0",
+  },
+  /** Optional mise tasks are only shortcuts to just recipes. */
+  shortcuts: ["doctor", "build", "test", "run"],
+} as const;
+
+/** just recipes shipped by the base Android template. Addons may not replace these with a different body. */
+export const RESERVED_JUST_RECIPES = [
+  "default",
+  "doctor",
+  "sdk-setup",
+  "build",
+  "test",
+  "lint",
+  "devices",
+  "install",
+  "launch",
+  "run",
+  "logs",
+  "scrcpy",
+  "clean",
+  "apk",
+] as const;

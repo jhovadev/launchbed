@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { FileOperationSchema } from "./operations";
 import { SDK_LIMITS } from "./limits";
+import { ToolingContributionSchema, toolingIsEmpty } from "./tooling";
 
 export const ADDON_CATEGORIES = ["storage", "ui", "native", "tooling", "foundation"] as const;
 export const ADDON_STATUSES = ["stable", "beta", "experimental", "planned"] as const;
@@ -53,6 +54,7 @@ export const AddonManifestSchema = z
     capabilities: z.array(z.string().regex(CAPABILITY)).max(16).default([]),
     requirements: AddonRequirementsSchema,
     fileOperations: z.array(FileOperationSchema).max(40).default([]),
+    tooling: ToolingContributionSchema,
     compatibility: AddonCompatibilitySchema,
     license: z.string().regex(/^[A-Za-z0-9.+-]+$/, "must be an SPDX license identifier").default("MIT"),
     docsUrl: z.string().regex(HTTPS_URL, "must be an https URL").optional(),
@@ -94,6 +96,13 @@ export const AddonManifestSchema = z
         code: "custom",
         path: ["fileOperations"],
         message: "planned addons are declarative only and cannot declare file operations",
+      });
+    }
+    if ((addon.status === "planned" || addon.status === "experimental") && !toolingIsEmpty(addon.tooling)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["tooling"],
+        message: "planned and experimental addons cannot declare mise or just contributions",
       });
     }
     if ((addon.status === "stable" || addon.status === "beta") && addon.fileOperations.length === 0) {

@@ -1,5 +1,7 @@
 # Roadmap
 
+The Android-only phase plan is below. The multi-technology plan (Expo, Flutter, Tauri, React Native, shared tokens) lives in [roadmap-multi-target.md](./roadmap-multi-target.md) and is not implemented yet.
+
 F0 is intentionally small. Each later phase is a reviewable patch series.
 
 ## F1 — Template depth and first stable addons

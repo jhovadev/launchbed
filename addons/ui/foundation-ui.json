@@ -2,7 +2,7 @@
   "id": "ui/foundation",
   "version": "0.1.0",
   "displayName": "Foundation UI",
-  "description": "Reusable Material 3 Compose components backed by Android Initializr tokens.",
+  "description": "Reusable Material 3 Compose components backed by Launchbed tokens.",
   "category": "ui",
   "status": "beta",
   "dependencies": [],

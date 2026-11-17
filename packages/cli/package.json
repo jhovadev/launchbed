@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
+    "launchbed": "./src/index.ts",
     "android-initializr": "./src/index.ts"
   },
   "exports": {
